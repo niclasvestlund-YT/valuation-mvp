@@ -3,744 +3,1440 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>valuation-mvp | Begagnatvärde för teknik</title>
+    <title>Värdekoll — Begagnatvärde för teknik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       :root {
-        color-scheme: light;
-        font-family: Arial, sans-serif;
+        --bg-base: #F7F5F0;
+        --bg-surface: #EDEAE3;
+        --bg-surface-raised: #FFFFFF;
+        --bg-overlay: rgba(44,42,37,0.5);
+        --border-subtle: #E8E4DB;
+        --border-medium: #D5D0C5;
+        --text-primary: #2C2A25;
+        --text-secondary: #5C5850;
+        --text-muted: #8A8578;
+        --text-faint: #B0AA9E;
+        --accent-positive: #34a873;
+        --accent-warning: #d4a017;
+        --accent-danger: #c4432a;
       }
 
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
 
       body {
-        margin: 0;
-        background: #f4f6f8;
-        color: #1f2933;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        line-height: 1.375;
+        -webkit-font-smoothing: antialiased;
       }
 
-      main {
-        max-width: 960px;
+      /* ─── Layout ─── */
+      .app {
+        max-width: 520px;
         margin: 0 auto;
-        padding: 32px 16px 48px;
+        padding: 0 16px;
+        min-height: 100dvh;
       }
 
-      h1,
-      h2,
-      h3 {
-        margin-top: 0;
-      }
-
-      p {
-        margin-top: 0;
-        color: #52606d;
-      }
-
-      .card {
-        background: #ffffff;
-        border: 1px solid #d9e2ec;
-        border-radius: 14px;
-        padding: 20px;
-        margin-top: 20px;
-      }
-
-      .hero {
-        display: grid;
-        gap: 16px;
-      }
-
-      input[type="file"],
-      input[type="text"] {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #bcccdc;
-        border-radius: 10px;
-        background: #fff;
-      }
-
-      button {
-        margin-top: 16px;
-        padding: 12px 18px;
-        border: 0;
-        border-radius: 10px;
-        background: #1565c0;
-        color: #fff;
-        font-size: 16px;
-        cursor: pointer;
-      }
-
-      button.secondary {
-        background: #334e68;
-      }
-
-      button:disabled {
-        cursor: wait;
-        opacity: 0.7;
-      }
-
-      .preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 12px;
-        margin-top: 16px;
-      }
-
-      .preview-item {
-        background: #f8fafc;
-        border: 1px solid #d9e2ec;
-        border-radius: 12px;
-        padding: 8px;
-      }
-
-      .preview-item img {
-        display: block;
-        width: 100%;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 8px;
-        background: #e4e7eb;
-      }
-
-      .preview-item span {
-        display: block;
-        margin-top: 8px;
-        font-size: 12px;
-        word-break: break-word;
-      }
-
-      .result-empty {
-        color: #7b8794;
-      }
-
-      .status-banner {
-        border-radius: 12px;
-        padding: 16px 18px;
-        border: 1px solid transparent;
-      }
-
-      .status-ok {
-        background: #e8f7ee;
-        border-color: #b7e3c6;
-        color: #0f5132;
-      }
-
-      .status-ambiguous {
-        background: #fff4d8;
-        border-color: #f0d58b;
-        color: #7c5700;
-      }
-
-      .status-insufficient {
-        background: #f5f7fa;
-        border-color: #d9e2ec;
-        color: #334e68;
-      }
-
-      .status-degraded {
-        background: #fff1f0;
-        border-color: #f2b8b5;
-        color: #8a1f17;
-      }
-
-      .status-error {
-        background: #fde8e8;
-        border-color: #ef9a9a;
-        color: #7a1010;
-      }
-
-      .status-title {
-        font-size: 18px;
-        font-weight: 700;
-      }
-
-      .status-message {
-        margin-top: 6px;
-        color: inherit;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-
-      .product-name {
-        font-size: 30px;
-        font-weight: 700;
-        line-height: 1.15;
-      }
-
-      .result-layout {
-        display: grid;
-        gap: 18px;
-      }
-
-      .section-block {
-        display: grid;
-        gap: 10px;
-      }
-
-      .section-title {
-        font-size: 18px;
-        font-weight: 700;
-      }
-
-      .section-copy {
-        color: #52606d;
-        line-height: 1.6;
-      }
-
-      .range-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 12px;
-      }
-
-      .range-card {
-        background: #f8fafc;
-        border: 1px solid #d9e2ec;
-        border-radius: 12px;
-        padding: 16px;
-      }
-
-      .range-card.primary {
-        background: #eef6ff;
-        border-color: #9ec5f8;
-      }
-
-      .range-label {
-        font-size: 13px;
-        color: #7b8794;
-      }
-
-      .range-value {
-        margin-top: 6px;
-        font-size: 28px;
-        font-weight: 700;
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-      }
-
-      .stat-card {
-        background: #f8fafc;
-        border: 1px solid #d9e2ec;
-        border-radius: 12px;
-        padding: 14px;
-      }
-
-      .stat-label {
-        font-size: 13px;
-        color: #7b8794;
-      }
-
-      .stat-value {
-        margin-top: 6px;
-        font-size: 28px;
-        font-weight: 700;
-      }
-
-      .confidence-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-weight: 700;
-      }
-
-      .confidence-high {
-        background: #d9f2e3;
-        color: #0b6b34;
-      }
-
-      .confidence-medium {
-        background: #fff2d6;
-        color: #8d5d00;
-      }
-
-      .confidence-low {
-        background: #fde8e8;
-        color: #a61b1b;
-      }
-
-      .source-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-      }
-
-      .candidate-list,
-      .angle-list,
-      .warning-list,
-      .reason-list,
-      .notes-list {
-        margin: 0;
-        padding-left: 20px;
-      }
-
-      .tag-list {
+      /* ─── Header ─── */
+      .app-header {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 20px 0 16px;
       }
 
-      .tag {
+      .app-logo {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-faint);
+      }
+
+      .app-menu-btn {
+        position: absolute;
+        right: 0;
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+      }
+
+      .adm-nav-btn {
+        position: absolute;
+        left: 0;
         display: inline-flex;
         align-items: center;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: #f8fafc;
-        border: 1px solid #d9e2ec;
-        font-size: 14px;
-      }
-
-      .source-card {
-        display: block;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 14px;
+        border: 1px solid var(--border-medium);
+        background: var(--bg-surface);
+        color: var(--text-muted);
+        font-family: inherit;
+        font-size: 0.8125rem;
         text-decoration: none;
-        color: inherit;
-        background: #ffffff;
-        border: 1px solid #d9e2ec;
-        border-radius: 12px;
-        padding: 14px;
-        transition: transform 0.12s ease, border-color 0.12s ease;
+        transition: color 150ms, border-color 150ms;
       }
+      .adm-nav-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
 
-      .source-card:hover {
-        transform: translateY(-1px);
-        border-color: #1565c0;
-      }
+      /* ─── Typography utilities ─── */
+      .text-xs  { font-size: 0.6875rem; line-height: 1rem; }
+      .text-sm  { font-size: 0.8125rem; line-height: 1.25rem; }
+      .text-base{ font-size: 0.875rem;  line-height: 1.375rem; }
+      .text-lg  { font-size: 0.9375rem; line-height: 1.5rem; }
+      .text-xl  { font-size: 1.125rem;  line-height: 1.375rem; }
+      .text-2xl { font-size: 1.25rem;   line-height: 1.5rem; }
+      .text-hero{ font-size: 3.25rem;   line-height: 1; }
 
-      .source-title {
+      .text-primary   { color: var(--text-primary); }
+      .text-secondary { color: var(--text-secondary); }
+      .text-muted     { color: var(--text-muted); }
+      .text-faint     { color: var(--text-faint); }
+
+      .section-header {
+        font-size: 0.6875rem;
         font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-faint);
+        margin-bottom: 10px;
       }
 
-      .source-meta {
-        margin-top: 6px;
-        font-size: 13px;
-        color: #7b8794;
+      /* ─── Upload Screen ─── */
+      .upload-screen {
+        padding-bottom: 32px;
       }
 
-      .manual-form {
-        display: grid;
-        gap: 12px;
+      .upload-hero {
+        padding: 24px 0 28px;
       }
 
-      .detail-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-      }
-
-      .detail-card {
-        background: #f8fafc;
-        border: 1px solid #d9e2ec;
-        border-radius: 12px;
-        padding: 14px;
-      }
-
-      .detail-card strong {
-        display: block;
+      .upload-hero h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.4;
         margin-bottom: 6px;
       }
 
-      .summary-card {
-        display: grid;
-        gap: 16px;
-        padding: 20px;
-        border: 1px solid #d9e2ec;
-        border-radius: 16px;
-      }
-
-      .summary-card[data-status="ok"] {
-        background: linear-gradient(135deg, #eef9f1 0%, #ffffff 58%);
-      }
-
-      .summary-card[data-status="ambiguous_model"] {
-        background: linear-gradient(135deg, #fff7e6 0%, #ffffff 58%);
-      }
-
-      .summary-card[data-status="insufficient_evidence"] {
-        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 58%);
-      }
-
-      .summary-card[data-status="degraded"],
-      .summary-card[data-status="error"] {
-        background: linear-gradient(135deg, #fff4f2 0%, #ffffff 58%);
-      }
-
-      .summary-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
-        gap: 16px;
-        align-items: start;
-      }
-
-      .summary-panel {
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid #d9e2ec;
-        border-radius: 14px;
-        padding: 16px;
-      }
-
-      .summary-side {
-        display: grid;
-        gap: 12px;
-      }
-
-      .summary-eyebrow {
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #7b8794;
-      }
-
-      .summary-main-value {
-        margin-top: 8px;
-        font-size: 34px;
-        font-weight: 700;
-        line-height: 1.1;
-      }
-
-      .summary-secondary-value {
-        margin-top: 8px;
-        font-size: 28px;
-        font-weight: 700;
-        line-height: 1.1;
-      }
-
-      .summary-support {
-        margin: 8px 0 0;
-        color: #52606d;
+      .upload-hero p {
+        font-size: 0.9375rem;
+        color: var(--text-muted);
         line-height: 1.5;
-        font-size: 14px;
       }
 
-      .summary-chip-row {
+      .upload-area {
+        background: var(--bg-surface);
+        border: 2px dashed var(--border-medium);
+        border-radius: 20px;
+        min-height: 180px;
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 14px;
-      }
-
-      .summary-chip {
-        display: inline-flex;
+        flex-direction: column;
         align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: #ffffff;
-        border: 1px solid #d9e2ec;
-        font-size: 14px;
-        font-weight: 600;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        position: relative;
+        transition: border-color 0.15s ease, background 0.15s ease;
+        padding: 28px 16px;
       }
 
-      .summary-note {
-        display: grid;
+      .upload-area:hover,
+      .upload-area.drag-over {
+        border-color: var(--text-muted);
+        background: var(--border-subtle);
+      }
+
+      .upload-area input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+      }
+
+      .upload-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--bg-base);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .upload-area-label {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        text-align: center;
+      }
+
+      .upload-area-sub {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        text-align: center;
+      }
+
+      /* ─── Thumbnail Row ─── */
+      .thumb-row {
+        display: flex;
         gap: 10px;
-        padding: 16px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.92);
-        border: 1px solid #d9e2ec;
+        overflow-x: auto;
+        padding: 14px 0 4px;
+        scrollbar-width: none;
       }
 
-      .summary-note-title {
-        font-size: 16px;
-        font-weight: 700;
+      .thumb-row::-webkit-scrollbar { display: none; }
+
+      .thumb-item {
+        flex-shrink: 0;
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
       }
 
-      .summary-note-text {
-        color: #52606d;
-        line-height: 1.6;
+      .thumb-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
 
-      .summary-note .tag-list {
+      /* ─── Tips Row ─── */
+      .tips-section {
+        margin-top: 24px;
+      }
+
+      .tips-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
 
-      .action-row {
+      .tip-card {
+        background: var(--bg-surface);
+        border-radius: 10px;
+        padding: 12px 10px;
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-align: center;
       }
 
-      .copy-status {
-        font-size: 13px;
-        color: #52606d;
+      .tip-card-label {
+        font-size: 0.6875rem;
+        color: var(--text-secondary);
+        line-height: 1.3;
       }
 
-      .dev-error-panel {
-        display: grid;
+      /* ─── Submit Button ─── */
+      .btn-primary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        height: 48px;
+        background: var(--text-primary);
+        color: var(--bg-base);
+        border: none;
+        border-radius: 14px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+        margin-top: 20px;
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 48px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-medium);
+        border-radius: 14px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+        padding: 0 20px;
+      }
+
+      .btn-secondary:hover {
+        border-color: var(--text-muted);
+      }
+
+      /* ─── Scanning / Loading ─── */
+      .scanning-screen {
+        padding: 20px 0 32px;
+      }
+
+      .scan-photo {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        border-radius: 16px;
+        display: block;
+        background: var(--bg-surface);
+      }
+
+      .scan-steps {
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .scan-step {
+        display: flex;
+        align-items: flex-start;
         gap: 14px;
-        padding: 16px;
-        border: 1px solid #d9e2ec;
-        border-radius: 14px;
-        background: #f8fafc;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border-subtle);
       }
 
-      .dev-error-panel .action-row button {
-        margin-top: 0;
-        flex: 1 1 180px;
+      .scan-step:last-child {
+        border-bottom: none;
       }
 
-      .dev-technical-panel {
-        display: grid;
+      .step-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+      }
+
+      .step-circle.done {
+        background: var(--text-primary);
+      }
+
+      .step-circle.active {
+        border: 2px solid var(--text-muted);
+        background: transparent;
+        animation: pulse-border 1.4s ease-in-out infinite;
+      }
+
+      .step-circle.waiting {
+        border: 2px solid var(--border-medium);
+        background: transparent;
+      }
+
+      .step-circle .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-muted);
+      }
+
+      @keyframes pulse-border {
+        0%, 100% { border-color: var(--text-muted); opacity: 1; }
+        50% { border-color: var(--border-medium); opacity: 0.5; }
+      }
+
+      .step-body {
+        flex: 1;
+      }
+
+      .step-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        line-height: 1.4;
+      }
+
+      .step-title.muted {
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+
+      .step-sub {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      /* ─── Result: Quick View ─── */
+      .result-screen {
+        padding: 8px 0 32px;
+      }
+
+      .product-row {
+        display: flex;
+        align-items: center;
         gap: 12px;
-        padding: 14px;
+        padding: 16px 0;
+      }
+
+      .product-thumb {
+        width: 52px;
+        height: 52px;
         border-radius: 12px;
-        border: 1px solid #d9e2ec;
-        background: #ffffff;
+        object-fit: cover;
+        background: var(--bg-surface);
+        flex-shrink: 0;
+        display: block;
       }
 
-      .dev-path-list {
-        margin: 0;
-        padding-left: 20px;
-        color: #52606d;
+      .product-thumb-placeholder {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: var(--bg-surface);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .collapsible {
-        background: #ffffff;
-        border: 1px solid #d9e2ec;
+      .product-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .product-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .product-sub {
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .match-quality-badge {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 4px;
+        padding: 2px 8px;
+        background: rgba(212, 160, 23, 0.12);
+        color: var(--accent-warning);
+        border-radius: 100px;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .product-edit-btn {
+        background: none;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .estimate-section {
+        padding: 8px 0 16px;
+      }
+
+      .estimate-value {
+        font-size: 3.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.04em;
+        line-height: 1;
+        margin: 6px 0 8px;
+      }
+
+      .estimate-info-line {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+
+      /* ─── Value Retention Bar ─── */
+      .retention-bar-wrap {
+        background: var(--bg-surface);
         border-radius: 14px;
+        padding: 14px 16px;
+        margin: 8px 0 16px;
+      }
+
+      .retention-bar-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .retention-bar-label {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+      }
+
+      .retention-pct {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      .retention-bar-track {
+        height: 6px;
+        border-radius: 99px;
+        background: var(--border-subtle);
         overflow: hidden;
       }
 
-      .collapsible summary {
+      .retention-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: var(--text-primary);
+        transition: width 0.6s ease;
+      }
+
+      /* ─── Action Buttons Row ─── */
+      .actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 4px 0 16px;
+      }
+
+      .quick-links {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 8px 0;
+      }
+
+      .quick-link {
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-family: inherit;
+        padding: 0;
+      }
+
+      .result-timestamp {
+        font-size: 0.6875rem;
+        color: var(--text-faint);
+        text-align: center;
+        margin-top: 8px;
+      }
+
+      /* ─── Advanced View ─── */
+      .advanced-view {
+        overflow: hidden;
+        transition: max-height 0.35s ease-out;
+        max-height: 0;
+      }
+
+      .advanced-view.open {
+        max-height: 9999px;
+      }
+
+      .advanced-inner {
+        padding-top: 8px;
+        border-top: 1px solid var(--border-subtle);
+        margin-top: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-bottom: 16px;
+      }
+
+      .adv-section {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Source chips */
+      .source-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .source-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 10px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 99px;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+      }
+
+      /* Dot plot */
+      .dot-plot-wrap {
+        background: var(--bg-surface);
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .dot-plot-axis {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+      }
+
+      /* Quick comparables (main view) */
+      .quick-comparables-wrap {
+        margin-top: 16px;
+      }
+
+      .quick-comparables-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .quick-comparables-title {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .quick-comparables-hint {
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+      }
+
+      .quick-comparables-list {
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-surface);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-subtle);
+      }
+
+      .quick-comparable-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .quick-comparable-row:last-child {
+        border-bottom: none;
+      }
+
+      .quick-comparable-left {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .quick-comparable-title {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .quick-comparable-sub {
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .quick-comparable-price {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .quick-comparable-link {
+        display: flex;
+        align-items: center;
+      }
+
+      /* Comparable listings (advanced view) */
+      .comparables-list {
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-surface);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .comparable-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .comparable-row:last-child {
+        border-bottom: none;
+      }
+
+      .comparable-body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .comparable-title {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .comparable-meta {
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .condition-tag {
+        display: inline-block;
+        padding: 1px 6px;
+        background: var(--bg-base);
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+      }
+
+      .comparable-price {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .show-all-link {
+        display: block;
+        text-align: center;
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        padding: 10px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        width: 100%;
+        font-family: inherit;
+      }
+
+      /* Reasoning */
+      .reasoning-block {
+        border-left: 2px solid var(--border-medium);
+        padding-left: 16px;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.65;
+      }
+
+      /* Feedback */
+      .feedback-block {
+        background: var(--bg-surface);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .feedback-label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .feedback-btns {
+        display: flex;
+        gap: 8px;
+      }
+
+      .feedback-btn {
+        flex: 1;
+        height: 36px;
+        border: 1px solid var(--border-medium);
+        border-radius: 10px;
+        background: var(--bg-base);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-family: inherit;
+        transition: border-color 0.15s, background 0.15s;
+      }
+
+      .feedback-btn:hover {
+        border-color: var(--text-muted);
+      }
+
+      .feedback-btn.selected-yes {
+        background: var(--accent-positive);
+        border-color: var(--accent-positive);
+        color: #fff;
+      }
+
+      .feedback-btn.selected-no {
+        background: var(--text-primary);
+        border-color: var(--text-primary);
+        color: var(--bg-base);
+      }
+
+      /* Next steps */
+      .next-steps-list {
+        background: var(--bg-surface);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .next-step-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background 0.12s;
+      }
+
+      .next-step-row:last-child {
+        border-bottom: none;
+      }
+
+      .next-step-row:hover {
+        background: var(--border-subtle);
+      }
+
+      /* ─── Ambiguous State ─── */
+      .ambiguous-screen {
+        padding: 8px 0 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .state-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+
+      .state-badge.warning {
+        background: rgba(212, 160, 23, 0.12);
+        color: var(--accent-warning);
+      }
+
+      .state-badge.danger {
+        background: rgba(196, 67, 42, 0.10);
+        color: var(--accent-danger);
+      }
+
+      .state-photo-wrap {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .state-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        background: var(--bg-surface);
+      }
+
+      .state-photo-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        background: rgba(212, 160, 23, 0.88);
+        color: #fff;
+      }
+
+      .extra-angles-block {
+        background: var(--bg-surface);
+        border-radius: 14px;
         padding: 16px;
-        font-weight: 700;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .extra-angles-label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .angle-slots {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .angle-slot {
+        height: 80px;
+        background: var(--bg-base);
+        border: 2px dashed var(--border-medium);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .angle-slot input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .angle-slot-label {
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        text-align: center;
+      }
+
+      .blockquote-note {
+        border-left: 2px solid var(--border-medium);
+        padding-left: 16px;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      /* ─── Insufficient Evidence State ─── */
+      .insufficient-screen {
+        padding: 8px 0 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .empty-state-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--bg-surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .found-data-list {
+        background: var(--bg-surface);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .found-data-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        font-size: 0.875rem;
+      }
+
+      .found-data-row:last-child { border-bottom: none; }
+
+      /* ─── Error State ─── */
+      .error-screen {
+        padding: 8px 0 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+      }
+
+      /* ─── Manual Correction Sheet ─── */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: var(--bg-overlay);
+        z-index: 50;
+        display: flex;
+        align-items: flex-end;
+      }
+
+      .overlay.hidden { display: none; }
+
+      .correction-sheet {
+        background: var(--bg-surface-raised);
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+        width: 100%;
+        padding: 16px 20px 40px;
+        max-height: 80dvh;
+        overflow-y: auto;
+      }
+
+      .sheet-handle {
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border-subtle);
+        margin: 0 auto 20px;
+      }
+
+      .sheet-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
+
+      .sheet-sub {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+      }
+
+      .manual-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .manual-input {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--border-medium);
+        border-radius: 10px;
+        background: var(--bg-surface);
+        font-size: 0.875rem;
+        font-family: inherit;
+        color: var(--text-primary);
+        outline: none;
+      }
+
+      .manual-input:focus {
+        border-color: var(--text-muted);
+      }
+
+      .manual-input::placeholder {
+        color: var(--text-faint);
+      }
+
+      .sheet-cancel {
+        display: block;
+        text-align: center;
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-family: inherit;
+        margin-top: 14px;
+        width: 100%;
+      }
+
+      /* ─── Debug / Dev ─── */
+      .dev-panel {
+        background: var(--bg-surface);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      .dev-panel-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .dev-panel-copy {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      .dev-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 8px;
+      }
+
+      .dev-card {
+        background: var(--bg-base);
+        border-radius: 8px;
+        padding: 10px 12px;
+      }
+
+      .dev-card strong {
+        display: block;
+        font-size: 0.6875rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+
+      .dev-card span {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        word-break: break-all;
+      }
+
+      .dev-action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .btn-dev {
+        flex: 1;
+        min-width: 120px;
+        height: 36px;
+        border: 1px solid var(--border-medium);
+        border-radius: 10px;
+        background: var(--bg-base);
+        font-size: 0.8125rem;
+        font-family: inherit;
+        color: var(--text-secondary);
+        cursor: pointer;
+      }
+
+      .dev-panel-section {
+        margin-top: 8px;
+      }
+
+      .dev-section-title {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 6px;
+      }
+
+      .dev-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .debug-id-line {
+        font-size: 0.6875rem;
+        color: var(--text-faint);
+        text-align: center;
+        margin-top: 8px;
+      }
+
+      /* Collapsible debug */
+      .collapsible-block {
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .collapsible-block summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
         cursor: pointer;
         list-style: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-secondary);
       }
 
-      .collapsible summary::-webkit-details-marker {
-        display: none;
-      }
+      .collapsible-block summary::-webkit-details-marker { display: none; }
 
-      .collapsible-meta {
-        font-size: 13px;
-        color: #7b8794;
+      .collapsible-block .collapsible-meta {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
         font-weight: 400;
       }
 
       .collapsible-content {
-        display: grid;
-        gap: 16px;
         padding: 0 16px 16px;
-        border-top: 1px solid #e4e7eb;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding-top: 14px;
       }
 
-      .manual-collapsible .collapsible-content {
-        padding-top: 16px;
-      }
-
-      .manual-note {
-        margin-bottom: 0;
-      }
-
-      .muted {
-        color: #7b8794;
-      }
-
-      @media (max-width: 720px) {
-        main {
-          padding: 20px 12px 36px;
-        }
-
-        .card {
-          padding: 16px;
-          margin-top: 16px;
-        }
-
-        .status-banner,
-        .summary-card {
-          padding: 16px;
-        }
-
-        .product-name {
-          font-size: 26px;
-        }
-
-        .summary-grid,
-        .detail-grid,
-        .source-grid,
-        .range-grid,
-        .stats-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .summary-main-value {
-          font-size: 30px;
-        }
-
-        .summary-secondary-value,
-        .range-value,
-        .stat-value {
-          font-size: 24px;
-        }
-
-        button {
-          width: 100%;
-        }
-      }
+      /* ─── Utilities ─── */
+      .hidden { display: none !important; }
+      .divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
     </style>
   </head>
   <body>
-    <main>
-      <section class="card hero">
-        <div>
-          <h1>valuation-mvp</h1>
-          <p>Ladda upp bilder för att uppskatta andrahandsvärdet på teknik och hjälpa oss identifiera rätt produkt.</p>
+    <div class="app">
+      <header class="app-header">
+        <a href="/admin" class="adm-nav-btn">
+          <i data-lucide="database" style="width:14px;height:14px;stroke-width:1.5"></i>
+          Admin
+        </a>
+        <span class="app-logo">Värdekoll</span>
+        <button class="app-menu-btn" aria-label="Meny">
+          <i data-lucide="menu" style="width:20px;height:20px;stroke-width:1.5"></i>
+        </button>
+      </header>
+
+      <!-- Upload Screen -->
+      <div id="uploadScreen" class="upload-screen">
+        <div class="upload-hero">
+          <h1>Vad är din pryl värd idag?</h1>
+          <p>Fota en teknikprodukt. Vi kollar vad den säljs för.</p>
         </div>
 
-        <div>
-          <label for="imageInput">Produktbilder</label>
+        <label class="upload-area" id="uploadArea">
           <input id="imageInput" type="file" accept="image/*" multiple />
-          <button id="analyzeButton" type="button">Analysera begagnatvärde</button>
-        </div>
+          <div class="upload-icon-wrap">
+            <i data-lucide="camera" style="width:28px;height:28px;stroke-width:1.5;color:var(--text-muted)"></i>
+          </div>
+          <span class="upload-area-label">Ta ett foto</span>
+          <span class="upload-area-sub">eller välj från biblioteket</span>
+        </label>
 
-        <div id="previewGrid" class="preview-grid"></div>
-      </section>
+        <div id="previewRow" class="thumb-row hidden"></div>
 
-      <section class="card">
-        <h2>Begagnatvärde</h2>
-        <div id="result">
-          <div class="result-empty">Ingen begagnatvärdering ännu.</div>
+        <button id="analyzeButton" class="btn-primary" type="button" style="display:none">
+          Analysera begagnatvärde
+        </button>
+
+        <div class="tips-section">
+          <div class="section-header">Tips för bästa resultat</div>
+          <div class="tips-row">
+            <div class="tip-card">
+              <i data-lucide="camera" style="width:20px;height:20px;stroke-width:1.5;color:var(--text-muted)"></i>
+              <span class="tip-card-label">Hela produkten synlig</span>
+            </div>
+            <div class="tip-card">
+              <i data-lucide="tag" style="width:20px;height:20px;stroke-width:1.5;color:var(--text-muted)"></i>
+              <span class="tip-card-label">Modellnr om möjligt</span>
+            </div>
+            <div class="tip-card">
+              <i data-lucide="sun" style="width:20px;height:20px;stroke-width:1.5;color:var(--text-muted)"></i>
+              <span class="tip-card-label">Bra ljus, ingen blixt</span>
+            </div>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+
+      <!-- Scanning Screen -->
+      <div id="scanningScreen" class="scanning-screen hidden">
+        <img id="scanPhoto" class="scan-photo" src="" alt="Din bild" />
+        <div class="scan-steps">
+          <div class="scan-step" id="step1">
+            <div class="step-circle active" id="step1Circle">
+              <div class="dot"></div>
+            </div>
+            <div class="step-body">
+              <div class="step-title" id="step1Title">Identifierar produkt...</div>
+              <div class="step-sub hidden" id="step1Sub"></div>
+            </div>
+          </div>
+          <div class="scan-step" id="step2">
+            <div class="step-circle waiting" id="step2Circle">
+            </div>
+            <div class="step-body">
+              <div class="step-title muted" id="step2Title">Söker marknadspriser...</div>
+              <div class="step-sub hidden" id="step2Sub"></div>
+            </div>
+          </div>
+          <div class="scan-step" id="step3">
+            <div class="step-circle waiting" id="step3Circle">
+            </div>
+            <div class="step-body">
+              <div class="step-title muted" id="step3Title">Beräknar estimat</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Container -->
+      <div id="resultScreen" class="hidden"></div>
+    </div>
+
+    <!-- Correction Sheet Overlay -->
+    <div id="correctionOverlay" class="overlay hidden">
+      <div class="correction-sheet" id="correctionSheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Rätta produkt</div>
+        <div class="sheet-sub" id="sheetSub">Ange korrekt varumärke och modell</div>
+        <div class="manual-form">
+          <input id="brandField" class="manual-input" type="text" placeholder="Varumärke" />
+          <input id="modelField" class="manual-input" type="text" placeholder='Modell, t.ex. "WH-1000XM5"' />
+          <button id="correctionSubmit" class="btn-primary" type="button" style="margin-top:6px">
+            Värdera igen
+          </button>
+        </div>
+        <button id="correctionCancel" class="sheet-cancel">Avbryt</button>
+      </div>
+    </div>
 
     <script>
-      const imageInput = document.getElementById("imageInput");
-      const analyzeButton = document.getElementById("analyzeButton");
-      const previewGrid = document.getElementById("previewGrid");
-      const result = document.getElementById("result");
+      // ─── DOM refs ───
+      const imageInput       = document.getElementById("imageInput");
+      const analyzeButton    = document.getElementById("analyzeButton");
+      const previewRow       = document.getElementById("previewRow");
+      const uploadScreen     = document.getElementById("uploadScreen");
+      const scanningScreen   = document.getElementById("scanningScreen");
+      const resultScreen     = document.getElementById("resultScreen");
+      const scanPhoto        = document.getElementById("scanPhoto");
+      const correctionOverlay= document.getElementById("correctionOverlay");
+      const brandField       = document.getElementById("brandField");
+      const modelField       = document.getElementById("modelField");
+      const correctionSubmit = document.getElementById("correctionSubmit");
+      const correctionCancel = document.getElementById("correctionCancel");
 
+      // ─── State ───
+      let currentPhotoUrl = null;
+      let lastEnvelope    = null;
+      let advancedOpen    = false;
+      let showAllComparables = false;
+
+      // ─── Source link map (unchanged from original) ───
       const sourceLinks = {
-        "OpenAI Responses API": {
-          href: "https://developers.openai.com/api/reference/responses",
-          meta: "Produktidentifiering",
-        },
-        "OpenAI Vision API": {
-          href: "https://developers.openai.com/api/docs/guides/images-vision",
-          meta: "Bildanalys",
-        },
-        "Manual override": {
-          href: "#manual-correction",
-          meta: "Manuell korrigering",
-        },
-        "Mock vision fallback": {
-          href: "#manual-correction",
-          meta: "Fallback",
-        },
-        "Mock vision fallback (missing OPENAI_API_KEY)": {
-          href: "#manual-correction",
-          meta: "Ingen API-nyckel",
-        },
-        "Mock vision fallback (no usable image data)": {
-          href: "#manual-correction",
-          meta: "Ingen bilddata",
-        },
-        "Mock vision fallback (OpenAI API error)": {
-          href: "https://developers.openai.com/api/docs/guides/images-vision",
-          meta: "API-fallback",
-        },
-        "Mock marketplace data": {
-          href: "https://www.tradera.com/",
-          meta: "Marknadsreferens",
-        },
-        "Mock Google Shopping": {
-          href: "https://shopping.google.com/",
-          meta: "Nypriskontext",
-        },
-        Tradera: {
-          href: "https://www.tradera.com/",
-          meta: "Andrahandsjämförelse",
-        },
-        Blocket: {
-          href: "https://www.blocket.se/",
-          meta: "Andrahandsjämförelse",
-        },
-        blocket_serpapi: {
-          href: "https://www.blocket.se/",
-          meta: "Andrahandsjämförelse",
-        },
-        tradera_serpapi: {
-          href: "https://www.tradera.com/",
-          meta: "Andrahandsjämförelse",
-        },
-        "SerpApi Google Shopping": {
-          href: "https://serpapi.com/google-shopping-api",
-          meta: "Nypriskontext",
-        },
+        "OpenAI Responses API":                              { href: "https://developers.openai.com/api/reference/responses",         meta: "Produktidentifiering" },
+        "OpenAI Vision API":                                 { href: "https://developers.openai.com/api/docs/guides/images-vision",    meta: "Bildanalys" },
+        "Manual override":                                   { href: "#manual-correction", meta: "Manuell korrigering" },
+        "Mock vision fallback":                              { href: "#manual-correction", meta: "Fallback" },
+        "Mock vision fallback (missing OPENAI_API_KEY)":     { href: "#manual-correction", meta: "Ingen API-nyckel" },
+        "Mock vision fallback (no usable image data)":       { href: "#manual-correction", meta: "Ingen bilddata" },
+        "Mock vision fallback (OpenAI API error)":           { href: "https://developers.openai.com/api/docs/guides/images-vision", meta: "API-fallback" },
+        "Mock marketplace data":                             { href: "https://www.tradera.com/",        meta: "Marknadsreferens" },
+        "Mock Google Shopping":                              { href: "https://shopping.google.com/",   meta: "Nypriskontext" },
+        Tradera:                                             { href: "https://www.tradera.com/",        meta: "Andrahandsjämförelse" },
+        Blocket:                                             { href: "https://www.blocket.se/",         meta: "Andrahandsjämförelse" },
+        blocket_serpapi:                                     { href: "https://www.blocket.se/",         meta: "Andrahandsjämförelse" },
+        tradera_serpapi:                                     { href: "https://www.tradera.com/",        meta: "Andrahandsjämförelse" },
+        "SerpApi Google Shopping":                           { href: "https://serpapi.com/google-shopping-api", meta: "Nypriskontext" },
       };
+
       const INTERNAL_SOURCES = new Set([
-        "OpenAI Responses API",
-        "OpenAI Vision API",
-        "Manual override",
-        "Mock vision service",
-        "Mock vision fallback",
+        "OpenAI Responses API", "OpenAI Vision API", "Manual override",
+        "Mock vision service", "Mock vision fallback",
         "Mock vision fallback (missing OPENAI_API_KEY)",
         "Mock vision fallback (no usable image data)",
         "Mock vision fallback (OpenAI API error)",
       ]);
 
+      // ─── API ───
       function getApiUrl() {
         if (window.location.protocol === "http:" || window.location.protocol === "https:") {
           return "/value";
         }
-
         return "http://127.0.0.1:8000/value";
       }
 
+      // ─── Formatting helpers (unchanged) ───
       function formatCurrency(value, currency = "SEK") {
-        if (value === null || value === undefined || Number.isNaN(Number(value))) {
-          return "Okänt";
-        }
-
+        if (value === null || value === undefined || Number.isNaN(Number(value))) return "Okänt";
         const rounded = Math.round(Number(value));
-
-        if (currency === "SEK") {
-          return `${new Intl.NumberFormat("sv-SE").format(rounded)} kr`;
-        }
-
+        if (currency === "SEK") return `${new Intl.NumberFormat("sv-SE").format(rounded)} kr`;
         try {
-          return new Intl.NumberFormat("sv-SE", {
-            style: "currency",
-            currency,
-            maximumFractionDigits: 0,
-          }).format(rounded);
-        } catch (error) {
+          return new Intl.NumberFormat("sv-SE", { style: "currency", currency, maximumFractionDigits: 0 }).format(rounded);
+        } catch {
           return `${new Intl.NumberFormat("sv-SE").format(rounded)} ${currency}`;
         }
       }
 
       function getConfidenceLabel(confidence) {
-        if (confidence === null || confidence === undefined) {
-          return { label: "Okänd", className: "confidence-medium" };
-        }
-
-        if (confidence >= 0.8) {
-          return { label: "Hög", className: "confidence-high" };
-        }
-
-        if (confidence >= 0.6) {
-          return { label: "Medel", className: "confidence-medium" };
-        }
-
-        return { label: "Låg", className: "confidence-low" };
+        if (confidence === null || confidence === undefined) return { label: "Okänd", className: "confidence-medium" };
+        if (confidence >= 0.8) return { label: "Hög konfidens", className: "confidence-high" };
+        if (confidence >= 0.6) return { label: "Medel konfidens", className: "confidence-medium" };
+        return { label: "Låg konfidens", className: "confidence-low" };
       }
 
       function getConfidenceText(confidence) {
         const label = getConfidenceLabel(confidence);
-        if (confidence === null || confidence === undefined) {
-          return label.label;
-        }
-
+        if (confidence === null || confidence === undefined) return label.label;
         return `${label.label} (${confidence.toFixed(2)})`;
       }
 
@@ -748,46 +1444,45 @@
         return String(value || "").toLowerCase().replace(/[-_\s]+/g, " ").trim();
       }
 
+      function formatTimeAgo(dateStr) {
+        if (!dateStr) return null;
+        try {
+          const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+          if (diff <= 0) return "idag";
+          if (diff === 1) return "igår";
+          if (diff < 7) return `${diff} dagar sedan`;
+          if (diff < 30) return `${Math.floor(diff / 7)} veckor sedan`;
+          if (diff < 365) return `${Math.floor(diff / 30)} mån sedan`;
+          return `${Math.floor(diff / 365)} år sedan`;
+        } catch { return null; }
+      }
+
       function getDetectedProductName(data) {
         const parts = [];
         const seen = new Set();
-
         [data.brand, data.line, data.model, data.variant].forEach((part) => {
           if (!part) return;
           const key = normalizeKey(part);
           if (!key || seen.has(key)) return;
-
-          if (parts.length) {
-            const combinedKey = normalizeKey(parts.join(" "));
-            if (combinedKey.includes(key)) return;
-            if (key.includes(combinedKey)) {
-              parts.length = 0;
-              seen.clear();
-            }
+          // Skip if already covered by the combined string so far
+          const combinedKey = parts.length ? normalizeKey(parts.join(" ")) : "";
+          if (combinedKey && combinedKey.includes(key)) return;
+          // Remove any existing part that the new key supersedes (new is more specific)
+          const indicesToRemove = [];
+          parts.forEach((existingPart, i) => {
+            if (key.includes(normalizeKey(existingPart))) indicesToRemove.push(i);
+          });
+          for (let i = indicesToRemove.length - 1; i >= 0; i--) {
+            seen.delete(normalizeKey(parts[indicesToRemove[i]]));
+            parts.splice(indicesToRemove[i], 1);
           }
-
           parts.push(part);
           seen.add(key);
         });
-
         return parts.join(" ").trim();
       }
 
-      function getStatusClass(status) {
-        if (status === "ok") return "status-ok";
-        if (status === "ambiguous_model") return "status-ambiguous";
-        if (status === "insufficient_evidence") return "status-insufficient";
-        if (status === "degraded") return "status-degraded";
-        return "status-error";
-      }
-
-      function buildClientErrorEnvelope({
-        message,
-        technicalMessage = null,
-        debugId = "client_request_failure",
-        errorStage = "response_build",
-        status = "error",
-      }) {
+      function buildClientErrorEnvelope({ message, technicalMessage = null, debugId = "client_request_failure", errorStage = "response_build", status = "error" }) {
         const userMessage = message || "Begäran kunde inte slutföras.";
         return {
           status,
@@ -807,46 +1502,9 @@
         };
       }
 
-      function createStatusBanner(envelope) {
-        const banner = document.createElement("div");
-        const title = document.createElement("div");
-        const message = document.createElement("div");
-
-        banner.className = `status-banner ${getStatusClass(envelope.status)}`;
-        title.className = "status-title";
-        message.className = "status-message";
-        title.textContent = envelope.user_status_title || envelope.status_title || "Resultat";
-        message.textContent = envelope.user_explanation || envelope.status_message || "";
-        banner.appendChild(title);
-        banner.appendChild(message);
-        return banner;
-      }
-
-      function renderPreviews(files) {
-        previewGrid.innerHTML = "";
-
-        files.forEach((file) => {
-          const item = document.createElement("div");
-          const image = document.createElement("img");
-          const label = document.createElement("span");
-          const imageUrl = URL.createObjectURL(file);
-
-          item.className = "preview-item";
-          image.src = imageUrl;
-          image.alt = file.name;
-          image.onload = () => URL.revokeObjectURL(imageUrl);
-          label.textContent = file.name;
-
-          item.appendChild(image);
-          item.appendChild(label);
-          previewGrid.appendChild(item);
-        });
-      }
-
       function fileToDataUrl(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-
           reader.onload = () => resolve(reader.result);
           reader.onerror = () => reject(new Error(`Kunde inte läsa ${file.name}`));
           reader.readAsDataURL(file);
@@ -856,21 +1514,14 @@
       async function buildImagePayloads() {
         const files = Array.from(imageInput.files);
         const images = await Promise.all(files.map(fileToDataUrl));
-
-        return {
-          files,
-          images,
-        };
+        return { files, images };
       }
 
       async function requestValuation(overrides = {}) {
         const { files, images } = await buildImagePayloads();
-
         const response = await fetch(getApiUrl(), {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: files[0] ? files[0].name : null,
             images,
@@ -881,12 +1532,7 @@
 
         if (!response.ok) {
           let payload = null;
-
-          try {
-            payload = await response.json();
-          } catch (error) {
-            payload = null;
-          }
+          try { payload = await response.json(); } catch { payload = null; }
 
           if (payload?.status) {
             const error = new Error(payload.user_message || payload.status_message || "Begäran misslyckades");
@@ -895,10 +1541,9 @@
           }
 
           const detail = payload?.detail;
-          const technicalMessage =
-            typeof detail === "string"
-              ? detail
-              : detail?.message || (payload ? JSON.stringify(payload) : "Inget extra felsvar kunde läsas.");
+          const technicalMessage = typeof detail === "string"
+            ? detail
+            : detail?.message || (payload ? JSON.stringify(payload) : "Inget extra felsvar kunde läsas.");
           const error = new Error(payload?.user_message || detail?.message || "Begäran misslyckades");
           error.envelope = buildClientErrorEnvelope({
             message: error.message,
@@ -913,377 +1558,55 @@
       }
 
       function formatValuationMethod(method) {
-        if (!method) {
-          return "Ej angiven";
-        }
-
+        if (!method) return "Ej angiven";
         const mapping = {
-          relevance_weighted_median_with_robust_outlier_filter:
-            "Median av jämförbara annonser med avvikarfilter",
-          relevance_weighted_median_with_robust_outlier_filter_and_new_price_constraint:
-            "Median av jämförbara annonser med avvikarfilter och nypriskontext",
+          relevance_weighted_median_with_robust_outlier_filter: "Median av jämförbara annonser med avvikarfilter",
+          relevance_weighted_median_with_robust_outlier_filter_and_new_price_constraint: "Median av jämförbara annonser med avvikarfilter och nypriskontext",
         };
-
         return mapping[method] || method.replaceAll("_", " ");
-      }
-
-      function createSectionTitle(text) {
-        const heading = document.createElement("h3");
-        heading.className = "section-title";
-        heading.textContent = text;
-        return heading;
-      }
-
-      function createSectionCopy(text) {
-        const paragraph = document.createElement("p");
-        paragraph.className = "section-copy";
-        paragraph.textContent = text;
-        return paragraph;
-      }
-
-      function createMetricCard(label, value) {
-        const card = document.createElement("div");
-        const strong = document.createElement("strong");
-        const text = document.createElement("div");
-
-        card.className = "detail-card";
-        strong.textContent = label;
-        text.textContent = value;
-        card.appendChild(strong);
-        card.appendChild(text);
-        return card;
-      }
-
-      function createListSection(title, items, className = "notes-list") {
-        if (!items || !items.length) {
-          return null;
-        }
-
-        const section = document.createElement("section");
-        const heading = createSectionTitle(title);
-        const list = document.createElement("ul");
-
-        section.className = "section-block";
-        list.className = className;
-
-        items.forEach((itemText) => {
-          const item = document.createElement("li");
-          item.textContent = itemText;
-          list.appendChild(item);
-        });
-
-        section.appendChild(heading);
-        section.appendChild(list);
-        return section;
-      }
-
-      function isDevelopmentMode() {
-        const params = new URLSearchParams(window.location.search);
-        const host = window.location.hostname;
-        if (params.get("dev") === "1") {
-          return true;
-        }
-        return window.location.protocol === "file:" || host === "localhost" || host === "127.0.0.1";
-      }
-
-      async function copyTextToClipboard(text) {
-        if (!text) {
-          throw new Error("Inget innehåll att kopiera.");
-        }
-
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(text);
-          return;
-        }
-
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.setAttribute("readonly", "readonly");
-        textarea.style.position = "absolute";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-
-      function createTechnicalDetailsContent(envelope, { showIntro = true } = {}) {
-        if (!envelope?.error_stage && !envelope?.technical_message && !envelope?.debug_id) {
-          return null;
-        }
-        const block = document.createElement("div");
-        const grid = document.createElement("div");
-
-        block.className = "section-block";
-        grid.className = "detail-grid";
-
-        if (showIntro) {
-          const intro = document.createElement("p");
-          intro.className = "section-copy";
-          intro.textContent = "Det här hjälper vid felsökning eller om du vill skicka felet vidare till Codex.";
-          block.appendChild(intro);
-        }
-
-        if (envelope.error_stage) {
-          grid.appendChild(createMetricCard("Felssteg", envelope.error_stage));
-        }
-        if (envelope.status) {
-          grid.appendChild(createMetricCard("Status", envelope.status));
-        }
-        if (envelope.debug_id) {
-          grid.appendChild(createMetricCard("Debug ID", envelope.debug_id));
-        }
-
-        if (grid.childNodes.length) {
-          block.appendChild(grid);
-        }
-
-        if (envelope.technical_message) {
-          block.appendChild(createSectionCopy(envelope.technical_message));
-        }
-
-        return block;
-      }
-
-      function createTechnicalDetailsSection(envelope) {
-        const technicalContent = createTechnicalDetailsContent(envelope);
-        if (!technicalContent) {
-          return null;
-        }
-
-        const { details, content } = createCollapsibleSection(
-          "Tekniska detaljer",
-          envelope.debug_id ? `Debug ID ${envelope.debug_id}` : "För felsökning"
-        );
-        content.appendChild(technicalContent);
-        return details;
-      }
-
-      function createDevErrorActionPanel(envelope) {
-        const devError = envelope?.dev_error;
-        if (!isDevelopmentMode() || !devError) {
-          return null;
-        }
-
-        const section = document.createElement("section");
-        const metaGrid = document.createElement("div");
-        const actionRow = document.createElement("div");
-        const feedback = document.createElement("div");
-        const artifactNote = document.createElement("p");
-        const technicalPanel = document.createElement("div");
-        const fixButton = document.createElement("button");
-        const reportButton = document.createElement("button");
-        const detailsButton = document.createElement("button");
-
-        section.className = "dev-error-panel";
-        section.appendChild(createSectionTitle("Fixa felet snabbare"));
-        section.appendChild(
-          createSectionCopy(
-            envelope.user_message || envelope.user_explanation || "Något gick fel i värderingsflödet."
-          )
-        );
-
-        metaGrid.className = "detail-grid";
-        if (envelope.error_stage) {
-          metaGrid.appendChild(createMetricCard("Felssteg", envelope.error_stage));
-        }
-        if (envelope.debug_id) {
-          metaGrid.appendChild(createMetricCard("Debug ID", envelope.debug_id));
-        }
-        metaGrid.appendChild(createMetricCard("Nästa steg", "Kopiera fix-prompt eller felrapport till Codex"));
-        section.appendChild(metaGrid);
-
-        actionRow.className = "action-row";
-
-        fixButton.type = "button";
-        fixButton.textContent = "Fix this";
-        fixButton.addEventListener("click", async () => {
-          try {
-            await copyTextToClipboard(devError.fix_prompt_markdown);
-            feedback.textContent = `Fix-prompt kopierad från ${devError.fix_prompt_path}.`;
-          } catch (error) {
-            feedback.textContent = `Kunde inte kopiera fix-prompten: ${error.message}`;
-          }
-        });
-
-        reportButton.type = "button";
-        reportButton.className = "secondary";
-        reportButton.textContent = "Copy error report";
-        reportButton.addEventListener("click", async () => {
-          try {
-            await copyTextToClipboard(devError.report_markdown);
-            feedback.textContent = `Felrapport kopierad från ${devError.report_path}.`;
-          } catch (error) {
-            feedback.textContent = `Kunde inte kopiera felrapporten: ${error.message}`;
-          }
-        });
-
-        detailsButton.type = "button";
-        detailsButton.className = "secondary";
-        detailsButton.textContent = "Show technical details";
-
-        technicalPanel.className = "dev-technical-panel";
-        technicalPanel.hidden = true;
-        detailsButton.addEventListener("click", () => {
-          technicalPanel.hidden = !technicalPanel.hidden;
-          detailsButton.textContent = technicalPanel.hidden
-            ? "Show technical details"
-            : "Hide technical details";
-        });
-
-        actionRow.appendChild(fixButton);
-        actionRow.appendChild(reportButton);
-        actionRow.appendChild(detailsButton);
-        section.appendChild(actionRow);
-
-        feedback.className = "copy-status";
-        feedback.textContent = `Senaste artefakter sparas i ${devError.fix_prompt_path} och ${devError.report_path}.`;
-        section.appendChild(feedback);
-
-        artifactNote.className = "section-copy";
-        artifactNote.textContent = "Fix-prompten är redan formulerad för Codex och innehåller det viktigaste från felet utan att du behöver skriva om det själv.";
-        section.appendChild(artifactNote);
-
-        const technicalContent = createTechnicalDetailsContent(envelope, { showIntro: false });
-        if (technicalContent) {
-          technicalPanel.appendChild(technicalContent);
-        }
-
-        if (devError.suggested_investigation) {
-          technicalPanel.appendChild(
-            createSectionCopy(`Trolig första kontroll: ${devError.suggested_investigation}`)
-          );
-        }
-
-        if (devError.relevant_filenames?.length) {
-          const fileTitle = document.createElement("strong");
-          const fileList = document.createElement("ul");
-          fileTitle.textContent = "Troliga filer att börja med";
-          fileList.className = "dev-path-list";
-          devError.relevant_filenames.forEach((filename) => {
-            const item = document.createElement("li");
-            item.textContent = filename;
-            fileList.appendChild(item);
-          });
-          technicalPanel.appendChild(fileTitle);
-          technicalPanel.appendChild(fileList);
-        }
-
-        section.appendChild(technicalPanel);
-        return section;
-      }
-
-      function createTagSection(title, items) {
-        if (!items || !items.length) {
-          return null;
-        }
-
-        const section = document.createElement("section");
-        const heading = createSectionTitle(title);
-        const list = document.createElement("div");
-
-        section.className = "section-block";
-        list.className = "tag-list";
-
-        items.forEach((itemText) => {
-          const tag = document.createElement("span");
-          tag.className = "tag";
-          tag.textContent = itemText;
-          list.appendChild(tag);
-        });
-
-        section.appendChild(heading);
-        section.appendChild(list);
-        return section;
-      }
-
-      function createSourceCard(entry) {
-        const fallback = sourceLinks[entry.title] || sourceLinks[entry.source] || {
-          href: "#",
-          meta: "Källa",
-        };
-        const resolvedHref = entry.href || (fallback.href && fallback.href !== "#" ? fallback.href : null);
-        const card = document.createElement(resolvedHref ? "a" : "div");
-        const title = document.createElement("div");
-        const meta = document.createElement("div");
-
-        card.className = "source-card";
-        if (resolvedHref) {
-          card.href = resolvedHref;
-          card.target = "_blank";
-          card.rel = "noreferrer";
-        }
-        title.className = "source-title";
-        meta.className = "source-meta";
-
-        title.textContent = entry.title || entry.source || "Källa";
-        meta.textContent = entry.meta || fallback.meta;
-
-        card.appendChild(title);
-        card.appendChild(meta);
-        return card;
       }
 
       function getSourceNameFromUrl(url) {
         if (!url) return null;
-
-        try {
-          return new URL(url).hostname.replace(/^www\./, "");
-        } catch (error) {
-          return null;
-        }
+        try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return null; }
       }
 
       function getDisplaySourceName(source) {
-        const mapping = {
-          Tradera: "Tradera",
-          tradera_serpapi: "Tradera",
-          Blocket: "Blocket",
-          blocket_serpapi: "Blocket",
-          "SerpApi Google Shopping": "Google Shopping",
-        };
-
+        const mapping = { Tradera: "Tradera", tradera_serpapi: "Tradera", Blocket: "Blocket", blocket_serpapi: "Blocket", "SerpApi Google Shopping": "Google Shopping" };
         return mapping[source] || source || "Marknadsplats";
       }
 
-      function getFallbackMetadata(comparable) {
-        return comparable?.raw?._fallback_metadata || {};
+      function getFallbackMetadata(comparable) { return comparable?.raw?._fallback_metadata || {}; }
+
+      function isAccessoryLikeComparable(comparable) {
+        const text = normalizeKey(`${comparable.title || ""} ${comparable.condition_hint || ""}`);
+        return ["case","fodral","charger","laddare","cable","kabel","battery","batteri","mount","faste","fäste","strap","remote","cover","housing","adapter"].some(k => text.includes(k));
+      }
+
+      function isBundleLikeComparable(comparable) {
+        const text = normalizeKey(comparable.title || "");
+        return ["combo","bundle","paket","kit","adventure","creator","sandisk","mikrofon","microphone","selfie","selfie stick","battery","batteri","minneskort","micro sd","microsd"].some(k => text.includes(k));
       }
 
       function getComparableClassification(comparable) {
-        if (isAccessoryLikeComparable(comparable)) {
-          return "accessories";
-        }
-
-        if (isBundleLikeComparable(comparable)) {
-          return "bundles";
-        }
-
+        if (isAccessoryLikeComparable(comparable)) return "accessories";
+        if (isBundleLikeComparable(comparable)) return "bundles";
         const metadata = getFallbackMetadata(comparable);
-        const sourceQuality = metadata.source_quality || "";
-        const exactnessConfidence = Number(metadata.exactness_confidence || 0);
-
-        if (sourceQuality === "fallback_low_exactness" || exactnessConfidence < 0.65) {
-          return "related";
+        const hasFallbackMetadata = Object.keys(metadata).length > 0;
+        if (hasFallbackMetadata) {
+          const sourceQuality = metadata.source_quality || "";
+          const exactnessConfidence = Number(metadata.exactness_confidence || 0);
+          if (sourceQuality === "fallback_low_exactness" || exactnessConfidence < 0.65) return "related";
         }
-
         return "main";
       }
 
       function getCheapestNewPriceSource(newPrice) {
         const sources = newPrice?.sources || [];
-        const pricedSources = sources
-          .map((source) => ({
-            ...source,
-            numericPrice: Number(source?.price),
-          }))
-          .filter((source) => Number.isFinite(source.numericPrice) && source.numericPrice > 0);
-
-        if (!pricedSources.length) {
-          return null;
-        }
-
-        return pricedSources.sort((left, right) => left.numericPrice - right.numericPrice)[0];
+        const pricedSources = sources.map(s => ({ ...s, numericPrice: Number(s?.price) }))
+          .filter(s => Number.isFinite(s.numericPrice) && s.numericPrice > 0);
+        if (!pricedSources.length) return null;
+        return pricedSources.sort((a, b) => a.numericPrice - b.numericPrice)[0];
       }
 
       function getComparableDisplayPriority(comparable, data) {
@@ -1294,103 +1617,56 @@
         const metadata = getFallbackMetadata(comparable);
         const exactnessConfidence = Number(metadata.exactness_confidence || 0);
         const isSold = comparable?.listing_type === "sold" || comparable?.status === "completed";
-        const hasExactModel = model && title.includes(model);
-        const hasLine = line && title.includes(line);
-        const hasVariant = variant && title.includes(variant);
-
         let priority = 0;
-        if (hasExactModel) priority += 60;
-        if (hasLine) priority += 18;
-        if (hasVariant) priority += 10;
+        if (model && title.includes(model)) priority += 60;
+        if (line && title.includes(line)) priority += 18;
+        if (variant && title.includes(variant)) priority += 10;
         if (isSold) priority += 16;
         priority += Math.round(exactnessConfidence * 20);
-
         return priority;
       }
 
       function collectSourceGroups(data, debugSummary) {
-        const groups = {
-          newPriceEntries: [],
-          mainComparableEntries: [],
-          bundleComparableEntries: [],
-          accessoryComparableEntries: [],
-          relatedComparableEntries: [],
-          otherEntries: [],
-          filteredNoise: [],
-        };
+        const groups = { newPriceEntries: [], mainComparableEntries: [], bundleComparableEntries: [], accessoryComparableEntries: [], relatedComparableEntries: [], otherEntries: [], filteredNoise: [] };
         const seen = new Set();
         const newPriceSources = data?.market_data?.new_price?.sources || [];
-        const comparables = [...(data?.market_data?.comparables || [])].sort((left, right) => {
-          const scoreDelta = getComparableDisplayPriority(right, data) - getComparableDisplayPriority(left, data);
-          if (scoreDelta !== 0) {
-            return scoreDelta;
-          }
-
-          return Number(right?.price || 0) - Number(left?.price || 0);
+        const comparables = [...(data?.market_data?.comparables || [])].sort((a, b) => {
+          const d = getComparableDisplayPriority(b, data) - getComparableDisplayPriority(a, data);
+          return d !== 0 ? d : Number(b?.price || 0) - Number(a?.price || 0);
         });
 
-        [...newPriceSources]
-          .sort((left, right) => Number(left?.price || Infinity) - Number(right?.price || Infinity))
-          .slice(0, 4)
-          .forEach((source) => {
+        [...newPriceSources].sort((a, b) => Number(a?.price || Infinity) - Number(b?.price || Infinity)).slice(0, 4).forEach(source => {
           const key = `${source.source || ""}:${source.url || ""}:${source.price || ""}`;
           if (seen.has(key)) return;
           seen.add(key);
-          groups.newPriceEntries.push({
-            title: source.source || getSourceNameFromUrl(source.url) || "Butik",
-            meta: `${source.price ? formatCurrency(source.price, source.currency || "SEK") : "Pris saknas"} · Nypriskontext`,
-            href: source.url || null,
-          });
-          });
+          groups.newPriceEntries.push({ title: source.source || getSourceNameFromUrl(source.url) || "Butik", meta: `${source.price ? formatCurrency(source.price, source.currency || "SEK") : "Pris saknas"} · Nypriskontext`, href: source.url || null });
+        });
 
-        comparables.forEach((comparable) => {
+        comparables.forEach(comparable => {
           const key = `${comparable.source || ""}:${comparable.url || ""}:${comparable.listing_id || ""}`;
           if (seen.has(key)) return;
           seen.add(key);
-          const hasBids = String(comparable.raw?.HasBids || "").toLowerCase() === "true"
-            || Number(comparable.raw?.BidCount || 0) > 0;
-          const statusLabel = comparable.listing_type === "sold"
-            ? "Såld annons"
-            : hasBids
-              ? "Budgivning"
-              : "Aktiv annons";
-          const entry = {
-            title: comparable.title || comparable.source || "Marknadsplats",
-            meta: `${getDisplaySourceName(comparable.source)} · ${statusLabel} · ${formatCurrency(comparable.price, comparable.currency || "SEK")}`,
-            href: comparable.url || null,
-          };
-          const classification = getComparableClassification(comparable);
-          if (classification === "main") {
-            groups.mainComparableEntries.push(entry);
-          } else if (classification === "bundles") {
-            groups.bundleComparableEntries.push(entry);
-          } else if (classification === "accessories") {
-            groups.accessoryComparableEntries.push(entry);
-          } else {
-            groups.relatedComparableEntries.push(entry);
-          }
+          const hasBids = String(comparable.raw?.HasBids || "").toLowerCase() === "true" || Number(comparable.raw?.BidCount || 0) > 0;
+          const isSoldEntry = comparable.status === "completed" || comparable.listing_type === "sold";
+          const statusLabel = isSoldEntry ? "Såld" : hasBids ? "Budgivning" : "Aktiv";
+          const entry = { title: comparable.title || comparable.source || "Marknadsplats", meta: `${getDisplaySourceName(comparable.source)} · ${statusLabel} · ${formatCurrency(comparable.price, comparable.currency || "SEK")}`, href: comparable.url || null, price: comparable.price, currency: comparable.currency || "SEK", source: comparable.source, status: comparable.status, listing_type: comparable.listing_type, condition_hint: comparable.condition_hint, ended_at: comparable.ended_at, raw: comparable.raw };
+          const cls = getComparableClassification(comparable);
+          if (cls === "main") groups.mainComparableEntries.push(entry);
+          else if (cls === "bundles") groups.bundleComparableEntries.push(entry);
+          else if (cls === "accessories") groups.accessoryComparableEntries.push(entry);
+          else groups.relatedComparableEntries.push(entry);
         });
 
-        (data?.sources || []).forEach((source) => {
+        (data?.sources || []).forEach(source => {
           if (INTERNAL_SOURCES.has(source)) return;
           const key = `fallback:${source}`;
           if (seen.has(key)) return;
           seen.add(key);
           const fallback = sourceLinks[source] || { meta: "Källa", href: null };
-          groups.otherEntries.push({
-            title: source,
-            meta: fallback.meta,
-            href: fallback.href && fallback.href !== "#" ? fallback.href : null,
-          });
+          groups.otherEntries.push({ title: source, meta: fallback.meta, href: fallback.href && fallback.href !== "#" ? fallback.href : null });
         });
 
-        [
-          ...(debugSummary?.top_rejection_reasons || []),
-          ...(debugSummary?.top_downgrade_reasons || []),
-        ].slice(0, 4).forEach((item) => {
-          groups.filteredNoise.push(item);
-        });
-
+        [...(debugSummary?.top_rejection_reasons || []), ...(debugSummary?.top_downgrade_reasons || [])].slice(0, 4).forEach(item => groups.filteredNoise.push(item));
         return groups;
       }
 
@@ -1402,43 +1678,13 @@
         const cheapestSource = getCheapestNewPriceSource(newPrice);
 
         if (value === null || value === undefined) {
-          if (status === "ambiguous_model" && !data?.market_data) {
-            return {
-              value: "Inte hämtat än",
-              meta: "Vi väntar med nypriset tills vi är säkrare på exakt modell.",
-            };
-          }
-
-          if (status === "degraded") {
-            return {
-              value: "Tillfälligt otillgängligt",
-              meta: "Nypriset kunde inte hämtas i det här försöket.",
-            };
-          }
-
-          if (cheapestSource) {
-            return {
-              value: `Från ${formatCurrency(cheapestSource.numericPrice, cheapestSource.currency || currency)}`,
-              meta: sourceCount === 1
-                ? "En butiksträff ger nypriskontext, men underlaget är för svagt för ett fullt nypris."
-                : `Lägsta butiksträff av ${sourceCount} möjliga nypriskällor.`,
-            };
-          }
-
-          return {
-            value: "Hittades inte",
-            meta: sourceCount
-              ? `Vi hittade ${sourceCount} butiksträffar, men underlaget var för svagt för ett tryggt nypris.`
-              : "Visas bara när vi hittar trovärdiga butiksträffar.",
-          };
+          if (status === "ambiguous_model" && !data?.market_data) return { value: "Inte hämtat än", meta: "Vi väntar med nypriset tills vi är säkrare på exakt modell." };
+          if (status === "degraded") return { value: "Tillfälligt otillgängligt", meta: "Nypriset kunde inte hämtas i det här försöket." };
+          if (cheapestSource) return { value: `Från ${formatCurrency(cheapestSource.numericPrice, cheapestSource.currency || currency)}`, meta: sourceCount === 1 ? "En butiksträff ger nypriskontext, men underlaget är för svagt för ett fullt nypris." : `Lägsta butiksträff av ${sourceCount} möjliga nypriskällor.` };
+          return { value: "Hittades inte", meta: sourceCount ? `Vi hittade ${sourceCount} butiksträffar, men underlaget var för svagt för ett tryggt nypris.` : "Visas bara när vi hittar trovärdiga butiksträffar." };
         }
 
-        return {
-          value: formatCurrency(value, currency),
-          meta: sourceCount
-            ? `Stödkontext från ${sourceCount} butik${sourceCount === 1 ? "" : "er"}`
-            : "Nypriskontext",
-        };
+        return { value: formatCurrency(value, currency), meta: sourceCount ? `Stödkontext från ${sourceCount} butik${sourceCount === 1 ? "" : "er"}` : "Nypriskontext", numericValue: value, currency };
       }
 
       function buildUsedValueSummary(envelope) {
@@ -1449,859 +1695,955 @@
         const relevant = debugSummary?.relevant_comparables_kept;
         const sold = debugSummary?.sold_comparables_kept;
 
-        if (status === "ok" && valuation) {
-          return {
-            title: "Uppskattat begagnatvärde",
-            value: formatCurrency(valuation.fair_estimate, valuation.currency),
-            meta: `Låg ${formatCurrency(valuation.low_estimate, valuation.currency)} · Hög ${formatCurrency(valuation.high_estimate, valuation.currency)}`,
-          };
-        }
-
-        if (status === "ambiguous_model") {
-          return {
-            title: "Begagnatvärde",
-            value: "Behöver bättre produktbilder",
-            meta: "Vi väntar med begagnatvärdet tills vi är säkrare på exakt modell.",
-          };
-        }
-
+        if (status === "ok" && valuation) return { title: "Uppskattat begagnatvärde", value: formatCurrency(valuation.fair_estimate, valuation.currency), meta: `${formatCurrency(valuation.low_estimate, valuation.currency)} – ${formatCurrency(valuation.high_estimate, valuation.currency)}`, low: valuation.low_estimate, high: valuation.high_estimate, confidence: valuation.confidence, comparableCount: valuation.comparable_count };
+        if (status === "ambiguous_model") return { title: "Begagnatvärde", value: "Behöver bättre produktbilder", meta: "Vi väntar med begagnatvärdet tills vi är säkrare på exakt modell." };
         if (status === "insufficient_evidence") {
-          if (preliminaryEstimate) {
-            return {
-              title: "Grov uppskattning",
-              value: `~ ${formatCurrency(preliminaryEstimate.estimate, preliminaryEstimate.currency)}`,
-              meta: preliminaryEstimate.basis_summary,
-            };
-          }
-
-          if (fetched && (relevant ?? 0) === 0) {
-            return {
-              title: "Begagnatvärde",
-              value: "För svagt marknadsunderlag",
-              meta: `Vi hittade ${fetched} annonser, men ingen var tillräckligt nära rätt modell.`,
-            };
-          }
-
-          if (fetched && relevant !== null && relevant !== undefined) {
-            return {
-              title: "Begagnatvärde",
-              value: "För svagt marknadsunderlag",
-              meta: `Vi hittade ${fetched} annonser, men bara ${relevant} var tillräckligt relevanta${sold !== null && sold !== undefined ? ` och ${sold} var sålda` : ""}.`,
-            };
-          }
-
-          return {
-            title: "Begagnatvärde",
-            value: "För svagt marknadsunderlag",
-            meta: "Vi visar hellre inget värde än ett missvisande intervall.",
-          };
+          if (preliminaryEstimate) return { title: "Grov uppskattning", value: `~ ${formatCurrency(preliminaryEstimate.estimate, preliminaryEstimate.currency)}`, meta: preliminaryEstimate.basis_summary };
+          if (fetched && (relevant ?? 0) === 0) return { title: "Begagnatvärde", value: "För svagt marknadsunderlag", meta: `Vi hittade ${fetched} annonser, men ingen var tillräckligt nära rätt modell.` };
+          if (fetched && relevant !== null && relevant !== undefined) return { title: "Begagnatvärde", value: "För svagt marknadsunderlag", meta: `Vi hittade ${fetched} annonser, men bara ${relevant} var tillräckligt relevanta${sold !== null && sold !== undefined ? ` och ${sold} var sålda` : ""}.` };
+          return { title: "Begagnatvärde", value: "För svagt marknadsunderlag", meta: "Vi visar hellre inget värde än ett missvisande intervall." };
         }
-
-        if (status === "degraded") {
-          return {
-            title: "Begagnatvärde",
-            value: "Tillfälligt avbrott",
-            meta: "Det här är ett systemproblem, inte ett värderingsresultat.",
-          };
-        }
-
-        return {
-          title: "Begagnatvärde",
-          value: "Kunde inte visas",
-          meta: "Försök gärna igen med samma bilder om en liten stund.",
-        };
+        if (status === "degraded") return { title: "Begagnatvärde", value: "Tillfälligt avbrott", meta: "Det här är ett systemproblem, inte ett värderingsresultat." };
+        return { title: "Begagnatvärde", value: "Kunde inte visas", meta: "Försök gärna igen med samma bilder om en liten stund." };
       }
 
       function getSummaryNote(envelope) {
-        const { status, data, debug_summary: debugSummary } = envelope;
+        const { status, data } = envelope;
         const userTitle = envelope.user_status_title;
         const userExplanation = envelope.user_explanation;
         const recommendedAction = envelope.recommended_action;
 
-        if (status === "ok") {
-          return {
-            title: "Vad du ser här",
-            text: data?.valuation?.evidence_summary || "Begagnatvärdet bygger på de mest relevanta andrahandsannonserna vi hittade.",
-          };
-        }
-
-        if (status === "ambiguous_model") {
-          return {
-            title: userTitle || "Vad du kan göra nu",
-            text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
-            tags: data?.requested_additional_angles || [],
-          };
-        }
-
-        if (status === "insufficient_evidence") {
-          return {
-            title: userTitle || "Varför inget begagnatvärde visas",
-            text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
-          };
-        }
-
-        if (status === "degraded") {
-          return {
-            title: userTitle || "Vad du kan göra nu",
-            text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
-          };
-        }
-
-        return {
-          title: userTitle || "Vad du kan göra nu",
-          text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
-        };
-      }
-
-      function isAccessoryLikeComparable(comparable) {
-        const text = normalizeKey(`${comparable.title || ""} ${comparable.condition_hint || ""}`);
-        return [
-          "case",
-          "fodral",
-          "charger",
-          "laddare",
-          "cable",
-          "kabel",
-          "battery",
-          "batteri",
-          "mount",
-          "faste",
-          "fäste",
-          "strap",
-          "remote",
-          "cover",
-          "housing",
-          "adapter",
-        ].some((keyword) => text.includes(keyword));
-      }
-
-      function isBundleLikeComparable(comparable) {
-        const text = normalizeKey(comparable.title || "");
-        return [
-          "combo",
-          "bundle",
-          "paket",
-          "kit",
-          "adventure",
-          "creator",
-          "sandisk",
-          "mikrofon",
-          "microphone",
-          "selfie",
-          "selfie stick",
-          "battery",
-          "batteri",
-          "minneskort",
-          "micro sd",
-          "microsd",
-        ].some((keyword) => text.includes(keyword));
+        if (status === "ok") return { title: "Vad du ser här", text: data?.valuation?.evidence_summary || "Begagnatvärdet bygger på de mest relevanta andrahandsannonserna vi hittade." };
+        if (status === "ambiguous_model") return { title: userTitle || "Vad du kan göra nu", text: [userExplanation, recommendedAction].filter(Boolean).join(" "), tags: data?.requested_additional_angles || [] };
+        if (status === "insufficient_evidence") return { title: userTitle || "Varför inget begagnatvärde visas", text: [userExplanation, recommendedAction].filter(Boolean).join(" ") };
+        if (status === "degraded") return { title: userTitle || "Vad du kan göra nu", text: [userExplanation, recommendedAction].filter(Boolean).join(" ") };
+        return { title: userTitle || "Vad du kan göra nu", text: [userExplanation, recommendedAction].filter(Boolean).join(" ") };
       }
 
       function getComparableSnapshot(data) {
         const comparables = data?.market_data?.comparables || [];
-        const snapshot = {
-          total: comparables.length,
-          sold: 0,
-          active: 0,
-          bidding: 0,
-          accessoryLike: 0,
-          bundleLike: 0,
-        };
-
-        comparables.forEach((comparable) => {
-          if (comparable.listing_type === "sold" || comparable.status === "completed") {
-            snapshot.sold += 1;
-          } else {
-            snapshot.active += 1;
-          }
-
-          if (String(comparable.raw?.HasBids || "").toLowerCase() === "true" || Number(comparable.raw?.BidCount || 0) > 0) {
-            snapshot.bidding += 1;
-          }
-
-          if (isAccessoryLikeComparable(comparable)) {
-            snapshot.accessoryLike += 1;
-          }
-
-          if (isBundleLikeComparable(comparable)) {
-            snapshot.bundleLike += 1;
-          }
+        const snapshot = { total: comparables.length, sold: 0, active: 0, bidding: 0, accessoryLike: 0, bundleLike: 0 };
+        comparables.forEach(c => {
+          if (c.listing_type === "sold" || c.status === "completed") snapshot.sold += 1; else snapshot.active += 1;
+          if (String(c.raw?.HasBids || "").toLowerCase() === "true" || Number(c.raw?.BidCount || 0) > 0) snapshot.bidding += 1;
+          if (isAccessoryLikeComparable(c)) snapshot.accessoryLike += 1;
+          if (isBundleLikeComparable(c)) snapshot.bundleLike += 1;
         });
-
         return snapshot;
       }
 
-      function createCollapsibleSection(title, meta = "", open = false) {
-        const details = document.createElement("details");
-        const summary = document.createElement("summary");
-        const titleText = document.createElement("span");
-        const metaText = document.createElement("span");
-        const content = document.createElement("div");
-
-        details.className = "collapsible";
-        if (open) {
-          details.open = true;
-        }
-
-        titleText.textContent = title;
-        metaText.className = "collapsible-meta";
-        metaText.textContent = meta;
-        content.className = "collapsible-content";
-
-        summary.appendChild(titleText);
-        if (meta) {
-          summary.appendChild(metaText);
-        }
-
-        details.appendChild(summary);
-        details.appendChild(content);
-        return { details, content };
+      function isDevelopmentMode() {
+        const params = new URLSearchParams(window.location.search);
+        const host = window.location.hostname;
+        return params.get("dev") === "1" || window.location.protocol === "file:" || host === "localhost" || host === "127.0.0.1";
       }
 
-      function createSummaryCard(envelope) {
-        const { status, data } = envelope;
-        const usedValue = buildUsedValueSummary(envelope);
-        const newPrice = getNewPriceContext(data, status);
-        const note = getSummaryNote(envelope);
-        const section = document.createElement("section");
-        const grid = document.createElement("div");
-        const productPanel = document.createElement("div");
-        const side = document.createElement("div");
-        const usedPanel = document.createElement("div");
-        const newPricePanel = document.createElement("div");
-        const chipRow = document.createElement("div");
-        const noteBlock = document.createElement("div");
-        const productEyebrow = document.createElement("div");
-        const productName = document.createElement("div");
-        const productSummary = document.createElement("p");
-        const confidencePill = document.createElement("span");
-        const confidence = getConfidenceLabel(data?.confidence);
+      async function copyTextToClipboard(text) {
+        if (!text) throw new Error("Inget innehåll att kopiera.");
+        if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); return; }
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "readonly");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
 
-        section.className = "summary-card";
-        section.dataset.status = status;
-        grid.className = "summary-grid";
-        productPanel.className = "summary-panel";
-        side.className = "summary-side";
-        usedPanel.className = "summary-panel";
-        newPricePanel.className = "summary-panel";
-        chipRow.className = "summary-chip-row";
-        noteBlock.className = "summary-note";
+      // ─── UI Helpers ───
+      function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+      }
 
-        productEyebrow.className = "summary-eyebrow";
-        productEyebrow.textContent = "Identifierad produkt";
-        productName.className = "product-name";
-        productName.textContent = data ? getDetectedProductName(data) || "Okänd produkt" : "Resultat";
-        productPanel.appendChild(productEyebrow);
-        productPanel.appendChild(productName);
+      function sectionHeader(text) {
+        return el("div", "section-header", text);
+      }
 
-        if (data?.reasoning_summary) {
-          productSummary.className = "summary-support";
-          productSummary.textContent = data.reasoning_summary;
-          productPanel.appendChild(productSummary);
-        }
+      function makeDevCard(label, value) {
+        const card = el("div", "dev-card");
+        card.appendChild(el("strong", null, label));
+        card.appendChild(el("span", null, value));
+        return card;
+      }
 
-        if (data) {
-          confidencePill.className = `confidence-pill ${confidence.className}`;
-          confidencePill.textContent = `Identifiering: ${confidence.label}`;
-          chipRow.appendChild(confidencePill);
-        }
+      function makeDevErrorPanel(envelope) {
+        const devError = envelope?.dev_error;
+        if (!isDevelopmentMode() || !devError) return null;
 
-        if (data?.category) {
-          const categoryChip = document.createElement("span");
-          categoryChip.className = "summary-chip";
-          categoryChip.textContent = `Kategori: ${data.category}`;
-          chipRow.appendChild(categoryChip);
-        }
+        const section = el("div", "dev-panel");
+        section.appendChild(el("div", "dev-panel-title", "Fixa felet snabbare"));
+        section.appendChild(el("div", "dev-panel-copy", envelope.user_message || envelope.user_explanation || "Något gick fel i värderingsflödet."));
 
-        if (chipRow.childNodes.length) {
-          productPanel.appendChild(chipRow);
-        }
-
-        [
-          { panel: usedPanel, eyebrow: usedValue.title, value: usedValue.value, support: usedValue.meta, className: "summary-main-value" },
-          { panel: newPricePanel, eyebrow: "Nypris idag", value: newPrice.value, support: newPrice.meta, className: "summary-secondary-value" },
-        ].forEach((item) => {
-          const eyebrow = document.createElement("div");
-          const value = document.createElement("div");
-          const support = document.createElement("p");
-
-          eyebrow.className = "summary-eyebrow";
-          eyebrow.textContent = item.eyebrow;
-          value.className = item.className;
-          value.textContent = item.value;
-          support.className = "summary-support";
-          support.textContent = item.support;
-          item.panel.appendChild(eyebrow);
-          item.panel.appendChild(value);
-          item.panel.appendChild(support);
-        });
-
-        grid.appendChild(productPanel);
-        side.appendChild(usedPanel);
-        side.appendChild(newPricePanel);
-        grid.appendChild(side);
+        const grid = el("div", "dev-grid");
+        if (envelope.error_stage) grid.appendChild(makeDevCard("Felssteg", envelope.error_stage));
+        if (envelope.debug_id)    grid.appendChild(makeDevCard("Debug ID", envelope.debug_id));
+        grid.appendChild(makeDevCard("Nästa steg", "Kopiera fix-prompt eller felrapport till Codex"));
         section.appendChild(grid);
 
-        if (note?.text) {
-          const title = document.createElement("div");
-          const text = document.createElement("div");
+        const actionRow = el("div", "dev-action-row");
+        const feedback  = el("div", "dev-panel-copy");
+        feedback.textContent = `Senaste artefakter sparas i ${devError.fix_prompt_path} och ${devError.report_path}.`;
 
-          title.className = "summary-note-title";
-          title.textContent = note.title;
-          text.className = "summary-note-text";
-          text.textContent = note.text;
-          noteBlock.appendChild(title);
-          noteBlock.appendChild(text);
+        const fixBtn = el("button", "btn-dev", "Fix this");
+        fixBtn.type = "button";
+        fixBtn.addEventListener("click", async () => {
+          try { await copyTextToClipboard(devError.fix_prompt_markdown); feedback.textContent = `Fix-prompt kopierad från ${devError.fix_prompt_path}.`; }
+          catch (err) { feedback.textContent = `Kunde inte kopiera fix-prompten: ${err.message}`; }
+        });
 
-          if (note.tags?.length) {
-            const list = document.createElement("div");
-            list.className = "tag-list";
-            note.tags.slice(0, 5).forEach((itemText) => {
-              const tag = document.createElement("span");
-              tag.className = "tag";
-              tag.textContent = itemText;
-              list.appendChild(tag);
-            });
-            noteBlock.appendChild(list);
-          }
+        const reportBtn = el("button", "btn-dev", "Copy error report");
+        reportBtn.type = "button";
+        reportBtn.addEventListener("click", async () => {
+          try { await copyTextToClipboard(devError.report_markdown); feedback.textContent = `Felrapport kopierad från ${devError.report_path}.`; }
+          catch (err) { feedback.textContent = `Kunde inte kopiera felrapporten: ${err.message}`; }
+        });
 
-          section.appendChild(noteBlock);
+        const technicalPanel = el("div", "dev-panel-section");
+        technicalPanel.hidden = true;
+        const detailsBtn = el("button", "btn-dev", "Show technical details");
+        detailsBtn.type = "button";
+        detailsBtn.addEventListener("click", () => {
+          technicalPanel.hidden = !technicalPanel.hidden;
+          detailsBtn.textContent = technicalPanel.hidden ? "Show technical details" : "Hide technical details";
+        });
+
+        actionRow.appendChild(fixBtn);
+        actionRow.appendChild(reportBtn);
+        actionRow.appendChild(detailsBtn);
+        section.appendChild(actionRow);
+        section.appendChild(feedback);
+
+        // Technical panel content
+        if (envelope.error_stage || envelope.debug_id || envelope.technical_message) {
+          const tGrid = el("div", "dev-grid");
+          if (envelope.error_stage) tGrid.appendChild(makeDevCard("Felssteg", envelope.error_stage));
+          if (envelope.status)      tGrid.appendChild(makeDevCard("Status", envelope.status));
+          if (envelope.debug_id)    tGrid.appendChild(makeDevCard("Debug ID", envelope.debug_id));
+          technicalPanel.appendChild(tGrid);
+          if (envelope.technical_message) technicalPanel.appendChild(el("div", "dev-panel-copy", envelope.technical_message));
         }
 
+        if (devError.suggested_investigation) technicalPanel.appendChild(el("div", "dev-panel-copy", `Trolig första kontroll: ${devError.suggested_investigation}`));
+
+        if (devError.relevant_filenames?.length) {
+          technicalPanel.appendChild(el("div", "dev-section-title", "Troliga filer att börja med"));
+          const list = el("ul", "dev-list");
+          devError.relevant_filenames.forEach(f => list.appendChild(el("li", null, f)));
+          technicalPanel.appendChild(list);
+        }
+
+        section.appendChild(technicalPanel);
         return section;
       }
 
-      function createMarketSnapshotSection(data, envelope) {
-        const snapshot = envelope.market_snapshot || {};
-        const fallbackSnapshot = getComparableSnapshot(data);
-        const fetched = snapshot.fetched_count ?? envelope.debug_summary?.total_comparables_fetched ?? fallbackSnapshot.total;
-        const relevant = snapshot.relevant_count ?? envelope.debug_summary?.relevant_comparables_kept;
-        const soldKept = snapshot.sold_count ?? envelope.debug_summary?.sold_comparables_kept;
-        const activeCount = snapshot.active_count ?? fallbackSnapshot.active;
-        const biddingCount = snapshot.bidding_count ?? fallbackSnapshot.bidding;
-        const accessoryLikeCount = snapshot.accessory_like_count ?? fallbackSnapshot.accessoryLike;
-        const bundleLikeCount = snapshot.bundle_like_count ?? fallbackSnapshot.bundleLike;
-
-        if (!fetched && !fallbackSnapshot.total && (relevant === null || relevant === undefined)) {
-          return null;
-        }
-
-        const { details, content } = createCollapsibleSection(
-          "Marknadsunderlag",
-          fetched ? `${fetched} hämtade annonser` : "Inget marknadsunderlag"
-        );
-        const intro = document.createElement("p");
-        const grid = document.createElement("div");
-
-        intro.className = "section-copy";
-        intro.textContent = "Här ser du hur annonsunderlaget såg ut innan allt vägdes ihop till ett tryggt begagnatvärde.";
-        grid.className = "detail-grid";
-        grid.appendChild(createMetricCard("Hämtade annonser", String(fetched || 0)));
-        if (soldKept !== null && soldKept !== undefined) {
-          grid.appendChild(createMetricCard("Sålda träffar", String(snapshot.sold_count ?? fallbackSnapshot.sold)));
-        }
-        if (relevant !== null && relevant !== undefined) {
-          grid.appendChild(createMetricCard("Relevanta kvar", String(relevant)));
-        }
-        if (activeCount) {
-          grid.appendChild(createMetricCard("Aktiva annonser", String(activeCount)));
-        }
-        if (biddingCount) {
-          grid.appendChild(createMetricCard("Budgivningar", String(biddingCount)));
-        }
-        if (accessoryLikeCount) {
-          grid.appendChild(createMetricCard("Tillbehörslika träffar", String(accessoryLikeCount)));
-        }
-        if (bundleLikeCount) {
-          grid.appendChild(createMetricCard("Paket / combo", String(bundleLikeCount)));
-        }
-
-        content.appendChild(intro);
-        content.appendChild(grid);
-        return details;
-      }
-
-      function createSourceSection(data, debugSummary) {
-        const sourceGroups = collectSourceGroups(data, debugSummary);
-        const totalCount =
-          sourceGroups.newPriceEntries.length +
-          sourceGroups.mainComparableEntries.length +
-          sourceGroups.bundleComparableEntries.length +
-          sourceGroups.accessoryComparableEntries.length +
-          sourceGroups.relatedComparableEntries.length +
-          sourceGroups.otherEntries.length;
-
-        if (!totalCount) {
-          return null;
-        }
-
-        const { details, content } = createCollapsibleSection(
-          "Källor och annonser",
-          `${totalCount} visade poster`
-        );
-
-        [
-          { title: "Nypriskällor", entries: sourceGroups.newPriceEntries },
-          { title: "Huvudträffar", entries: sourceGroups.mainComparableEntries },
-          { title: "Paket och combo-varianter", entries: sourceGroups.bundleComparableEntries },
-          { title: "Tillbehör och relaterat", entries: sourceGroups.accessoryComparableEntries },
-          { title: "Svagare eller bredare träffar", entries: sourceGroups.relatedComparableEntries },
-          { title: "Övriga källor", entries: sourceGroups.otherEntries },
-        ].forEach((group) => {
-          if (!group.entries.length) return;
-
-          const section = document.createElement("section");
-          const grid = document.createElement("div");
-          const subtitle = document.createElement("h4");
-          section.className = "section-block";
-          grid.className = "source-grid";
-          subtitle.className = "section-title";
-          subtitle.textContent = `${group.title} (${group.entries.length})`;
-          section.appendChild(subtitle);
-          group.entries.slice(0, group.title === "Huvudträffar" ? 6 : 4).forEach((entry) => {
-            grid.appendChild(createSourceCard(entry));
-          });
-          section.appendChild(grid);
-          content.appendChild(section);
-        });
-
-        const filteredNoiseSection = createListSection(
-          "Bortfiltrerat eller svagt brus",
-          sourceGroups.filteredNoise,
-          "reason-list"
-        );
-        if (filteredNoiseSection) {
-          content.appendChild(filteredNoiseSection);
-        }
-
-        return details;
-      }
-
-      function createManualCorrectionSection(data) {
-        const { details, content } = createCollapsibleSection(
-          "Fel modell? Justera manuellt",
-          "Ändra varumärke eller modell"
-        );
-        const note = document.createElement("p");
-        const form = document.createElement("div");
-        const brandField = document.createElement("input");
-        const modelField = document.createElement("input");
-        const button = document.createElement("button");
-
-        details.classList.add("manual-collapsible");
-        details.id = "manual-correction";
-        note.className = "manual-note";
-        note.textContent = "Justera brand eller modell om identifieringen blev fel, och kör värderingen igen.";
-        form.className = "manual-form";
-
-        brandField.type = "text";
-        brandField.placeholder = "Varumärke";
-        brandField.value = data.brand || "";
-
-        modelField.type = "text";
-        modelField.placeholder = "Modell";
-        modelField.value = data.model || "";
-
-        button.type = "button";
-        button.className = "secondary";
-        button.textContent = "Uppdatera identifiering";
-
-        button.addEventListener("click", async () => {
-          try {
-            button.disabled = true;
-            result.innerHTML = '<div class="result-empty">Analyserar uppdaterad identifiering...</div>';
-
-            const updated = await requestValuation({
-              brand: brandField.value.trim(),
-              model: modelField.value.trim(),
-            });
-
-            renderResult(updated);
-        } catch (error) {
-          renderResult(
-            error.envelope || buildClientErrorEnvelope({
-              message: error.message,
-              technicalMessage: error?.stack || null,
-            })
-          );
-        } finally {
-          button.disabled = false;
-        }
-        });
-
-        form.appendChild(brandField);
-        form.appendChild(modelField);
-        form.appendChild(button);
-        content.appendChild(note);
-        content.appendChild(form);
-
-        return details;
-      }
-
-      function renderOkState(wrapper, envelope) {
-        const { data, warnings, reason_details: reasonDetails } = envelope;
-        const valuation = data.valuation;
-        const rangeSection = document.createElement("section");
-        const rangeGrid = document.createElement("div");
-        const detailSection = document.createElement("section");
-        const detailGrid = document.createElement("div");
-        const breakdown = valuation.source_breakdown;
-
-        rangeSection.className = "section-block";
-        rangeGrid.className = "range-grid";
-        rangeSection.appendChild(createSectionTitle("Uppskattat begagnatvärde"));
-
-        [
-          { label: "Låg", value: valuation.low_estimate, primary: false },
-          { label: "Rimlig", value: valuation.fair_estimate, primary: true },
-          { label: "Hög", value: valuation.high_estimate, primary: false },
-        ].forEach((item) => {
-          const card = document.createElement("div");
-          const label = document.createElement("div");
-          const value = document.createElement("div");
-
-          card.className = `range-card${item.primary ? " primary" : ""}`;
-          label.className = "range-label";
-          value.className = "range-value";
-          label.textContent = item.label;
-          value.textContent = formatCurrency(item.value, valuation.currency);
-          card.appendChild(label);
-          card.appendChild(value);
-          rangeGrid.appendChild(card);
-        });
-
-        rangeSection.appendChild(rangeGrid);
-        wrapper.appendChild(rangeSection);
-
-        detailSection.className = "section-block";
-        detailGrid.className = "detail-grid";
-        detailSection.appendChild(createSectionTitle("Varför den här begagnatvärderingen känns rimlig"));
-
-        detailGrid.appendChild(createMetricCard("Tillförlitlighet", getConfidenceText(valuation.confidence)));
-        detailGrid.appendChild(createMetricCard("Jämförbara annonser", String(valuation.comparable_count)));
-        detailGrid.appendChild(createMetricCard("Sålda annonser", String(breakdown.sold_listings)));
-        detailGrid.appendChild(createMetricCard("Nypris som stödkontext", breakdown.used_new_price ? "Använt som stödkontext" : "Inte använt"));
-        detailSection.appendChild(detailGrid);
-        detailSection.appendChild(createSectionCopy(valuation.evidence_summary));
-        wrapper.appendChild(detailSection);
-
-        const breakdownSection = document.createElement("section");
-        const breakdownGrid = document.createElement("div");
-        breakdownSection.className = "section-block";
-        breakdownGrid.className = "detail-grid";
-        breakdownSection.appendChild(createSectionTitle("Underlag"));
-        breakdownGrid.appendChild(createMetricCard("Sålda", String(breakdown.sold_listings)));
-        breakdownGrid.appendChild(createMetricCard("Aktiva", String(breakdown.active_listings)));
-        breakdownGrid.appendChild(createMetricCard("Borttagna avvikare", String(breakdown.outliers_removed)));
-        breakdownGrid.appendChild(createMetricCard("Metod", formatValuationMethod(valuation.valuation_method)));
-        breakdownSection.appendChild(breakdownGrid);
-        wrapper.appendChild(breakdownSection);
-
-        const reasonsSection = createListSection("Noteringar", [...reasonDetails, ...warnings], "notes-list");
-        if (reasonsSection) {
-          wrapper.appendChild(reasonsSection);
-        }
-
-        const marketSnapshot = createMarketSnapshotSection(data, envelope);
-        if (marketSnapshot) {
-          wrapper.appendChild(marketSnapshot);
-        }
-
-        const sourceSection = createSourceSection(data, envelope.debug_summary);
-        if (sourceSection) {
-          wrapper.appendChild(sourceSection);
-        }
-
-        wrapper.appendChild(createManualCorrectionSection(data));
-      }
-
-      function renderAmbiguousState(wrapper, envelope) {
-        const { data, warnings, reason_details: reasonDetails } = envelope;
-        const detailGrid = document.createElement("div");
-        detailGrid.className = "detail-grid";
-        detailGrid.appendChild(createMetricCard("Identifieringssäkerhet", getConfidenceText(data.confidence)));
-        detailGrid.appendChild(createMetricCard("Trolig modell", data.model || "Oklar"));
-        wrapper.appendChild(detailGrid);
-
-        const whySection = createListSection("Varför vi behöver fler bilder", reasonDetails, "reason-list");
-        if (whySection) {
-          wrapper.appendChild(whySection);
-        }
-
-        const warningSection = createListSection("Det här hjälper oss vidare", warnings, "warning-list");
-        if (warningSection) {
-          wrapper.appendChild(warningSection);
-        }
-
-        const candidatesSection = createListSection(
-          "Möjliga modeller",
-          data.candidate_models || [],
-          "candidate-list"
-        );
-        if (candidatesSection) {
-          wrapper.appendChild(candidatesSection);
-        }
-
-        const anglesSection = createTagSection(
-          "Hjälpsamma extra vinklar",
-          data.requested_additional_angles || []
-        );
-        if (anglesSection) {
-          wrapper.appendChild(anglesSection);
-        }
-
-        const sourceSection = createSourceSection(data, envelope.debug_summary);
-        if (sourceSection) {
-          wrapper.appendChild(sourceSection);
-        }
-
-        wrapper.appendChild(createManualCorrectionSection(data));
-      }
-
-      function renderInsufficientEvidenceState(wrapper, envelope) {
-        const { data, warnings, reason_details: reasonDetails, debug_summary: debugSummary } = envelope;
-        const pricingEvidence = data.market_data?.pricing_evidence || {};
-        const preliminaryEstimate = data.preliminary_estimate;
-        const detailGrid = document.createElement("div");
-        detailGrid.className = "detail-grid";
-
-        detailGrid.appendChild(createMetricCard("Identifieringssäkerhet", getConfidenceText(data.confidence)));
-        if (debugSummary?.total_comparables_fetched !== null && debugSummary?.total_comparables_fetched !== undefined) {
-          detailGrid.appendChild(createMetricCard("Hämtade annonser", String(debugSummary.total_comparables_fetched)));
-        }
-        detailGrid.appendChild(createMetricCard("Relevanta jämförelser", String(pricingEvidence.comparable_count ?? 0)));
-        detailGrid.appendChild(createMetricCard("Sålda jämförelser", String(pricingEvidence.sold_comparable_count ?? 0)));
-        detailGrid.appendChild(
-          createMetricCard(
-            "Genomsnittlig relevans",
-            pricingEvidence.average_relevance !== undefined ? String(pricingEvidence.average_relevance) : "0"
-          )
-        );
-
-        const evidenceSection = document.createElement("section");
-        evidenceSection.className = "section-block";
-        evidenceSection.appendChild(createSectionTitle("Varför ingen begagnatvärdering visas"));
-        evidenceSection.appendChild(createSectionCopy("Produkten kan vara rätt identifierad, men underlaget från andrahandsmarknaden är för svagt för att visa ett trovärdigt värdeintervall."));
-        evidenceSection.appendChild(detailGrid);
-        wrapper.appendChild(evidenceSection);
-
-        const reasonSection = createListSection("Det som saknas i underlaget", reasonDetails, "reason-list");
-        if (reasonSection) {
-          wrapper.appendChild(reasonSection);
-        }
-
-        const warningSection = createListSection("Noteringar", warnings, "warning-list");
-        if (warningSection) {
-          wrapper.appendChild(warningSection);
-        }
-
-        if (preliminaryEstimate) {
-          const preliminarySection = document.createElement("section");
-          const preliminaryGrid = document.createElement("div");
-          preliminarySection.className = "section-block";
-          preliminaryGrid.className = "detail-grid";
-          preliminarySection.appendChild(createSectionTitle("Grov uppskattning"));
-          preliminarySection.appendChild(createSectionCopy(preliminaryEstimate.basis_summary));
-          preliminaryGrid.appendChild(createMetricCard("Uppskattning", `~ ${formatCurrency(preliminaryEstimate.estimate, preliminaryEstimate.currency)}`));
-          preliminaryGrid.appendChild(createMetricCard("Tillförlitlighet", getConfidenceText(preliminaryEstimate.confidence)));
-          preliminaryGrid.appendChild(createMetricCard("Marknadssignaler", String(preliminaryEstimate.supporting_signal_count)));
-          if (preliminaryEstimate.new_price_anchor) {
-            preliminaryGrid.appendChild(createMetricCard("Nypriskontext", formatCurrency(preliminaryEstimate.new_price_anchor, preliminaryEstimate.currency)));
-          }
-          preliminarySection.appendChild(preliminaryGrid);
-          wrapper.appendChild(preliminarySection);
-        }
-
-        const marketSnapshot = createMarketSnapshotSection(data, envelope);
-        if (marketSnapshot) {
-          wrapper.appendChild(marketSnapshot);
-        }
-
-        const sourceSection = createSourceSection(data, envelope.debug_summary);
-        if (sourceSection) {
-          wrapper.appendChild(sourceSection);
-        }
-
-        wrapper.appendChild(createManualCorrectionSection(data));
-      }
-
-      function renderDegradedState(wrapper, envelope) {
-        const { warnings, reason_details: reasonDetails } = envelope;
-        const devPanel = createDevErrorActionPanel(envelope);
-
-        if (devPanel) {
-          wrapper.appendChild(devPanel);
-        }
-
-        const reasonSection = createListSection("Vad som hände", reasonDetails, "reason-list");
-        if (reasonSection) {
-          wrapper.appendChild(reasonSection);
-        }
-
-        const warningSection = createListSection("Systemnoteringar", warnings, "warning-list");
-        if (warningSection) {
-          wrapper.appendChild(warningSection);
-        }
-
-        const technicalSection = devPanel ? null : createTechnicalDetailsSection(envelope);
-        if (technicalSection) {
-          wrapper.appendChild(technicalSection);
-        }
-      }
-
-      function renderErrorState(wrapper, envelope) {
-        const { warnings, reason_details: reasonDetails } = envelope;
-        const devPanel = createDevErrorActionPanel(envelope);
-
-        if (devPanel) {
-          wrapper.appendChild(devPanel);
-        }
-
-        const reasonSection = createListSection("Felinformation", reasonDetails, "reason-list");
-        if (reasonSection) {
-          wrapper.appendChild(reasonSection);
-        }
-
-        const warningSection = createListSection("Begäransnoteringar", warnings, "warning-list");
-        if (warningSection) {
-          wrapper.appendChild(warningSection);
-        }
-
-        const technicalSection = devPanel ? null : createTechnicalDetailsSection(envelope);
-        if (technicalSection) {
-          wrapper.appendChild(technicalSection);
-        }
-      }
-
-      function renderDebugSummary(wrapper, envelope) {
+      function makeDebugSummarySection(envelope) {
         const debugSummary = envelope.debug_summary;
-        if (!debugSummary) return;
+        if (!debugSummary) return null;
 
-        const {
-          market_lookup_attempted: marketLookupAttempted,
-          total_comparables_fetched: totalFetched,
-          relevant_comparables_kept: relevantKept,
-          sold_comparables_kept: soldKept,
-          average_relevance: averageRelevance,
-          status_reasons: statusReasons,
-          top_rejection_reasons: topRejectionReasons,
-          top_downgrade_reasons: topDowngradeReasons,
-        } = debugSummary;
+        const { market_lookup_attempted: mla, total_comparables_fetched: totalFetched, relevant_comparables_kept: relevantKept, sold_comparables_kept: soldKept, average_relevance: avgRelevance, status_reasons: statusReasons, top_rejection_reasons: topRejectionReasons, top_downgrade_reasons: topDowngradeReasons } = debugSummary;
 
-        const hasMetrics =
-          totalFetched !== null ||
-          relevantKept !== null ||
-          soldKept !== null ||
-          averageRelevance !== null;
-        const hasReasons =
-          (statusReasons || []).length ||
-          (topRejectionReasons || []).length ||
-          (topDowngradeReasons || []).length;
+        const hasMetrics = totalFetched !== null || relevantKept !== null || soldKept !== null || avgRelevance !== null;
+        const hasReasons = (statusReasons || []).length || (topRejectionReasons || []).length || (topDowngradeReasons || []).length;
+        if (!hasMetrics && !hasReasons) return null;
 
-        if (!hasMetrics && !hasReasons) return;
+        const details = document.createElement("details");
+        details.className = "collapsible-block";
+        const summary = document.createElement("summary");
+        const titleSpan = el("span", null, "Kort underlagsförklaring");
+        const metaSpan = el("span", "collapsible-meta", "För lokal testning");
+        summary.appendChild(titleSpan);
+        summary.appendChild(metaSpan);
+        details.appendChild(summary);
 
-        const { details, content } = createCollapsibleSection(
-          "Kort underlagsförklaring",
-          "För lokal testning"
-        );
-
-        const summaryText = marketLookupAttempted
-          ? "Det här visar kort vad som hämtades och varför vissa annonser vägde mindre eller försvann."
-          : "Marknadsannonser hämtades inte ännu eftersom den exakta modellen inte var tillräckligt säker.";
-        content.appendChild(createSectionCopy(summaryText));
+        const content = el("div", "collapsible-content");
+        content.appendChild(el("div", "dev-panel-copy", mla ? "Det här visar kort vad som hämtades och varför vissa annonser vägde mindre eller försvann." : "Marknadsannonser hämtades inte ännu eftersom den exakta modellen inte var tillräckligt säker."));
 
         if (hasMetrics) {
-          const detailGrid = document.createElement("div");
-          detailGrid.className = "detail-grid";
-          detailGrid.appendChild(createMetricCard("Hämtade annonser", String(totalFetched ?? 0)));
-          if (relevantKept !== null && relevantKept !== undefined) {
-            detailGrid.appendChild(createMetricCard("Relevanta kvar", String(relevantKept)));
-          }
-          if (soldKept !== null && soldKept !== undefined) {
-            detailGrid.appendChild(createMetricCard("Sålda kvar", String(soldKept)));
-          }
-          if (averageRelevance !== null && averageRelevance !== undefined) {
-            detailGrid.appendChild(createMetricCard("Snittrelevans", String(averageRelevance)));
-          }
-          content.appendChild(detailGrid);
+          const grid = el("div", "dev-grid");
+          grid.appendChild(makeDevCard("Hämtade annonser", String(totalFetched ?? 0)));
+          if (relevantKept !== null && relevantKept !== undefined) grid.appendChild(makeDevCard("Relevanta kvar", String(relevantKept)));
+          if (soldKept !== null && soldKept !== undefined) grid.appendChild(makeDevCard("Sålda kvar", String(soldKept)));
+          if (avgRelevance !== null && avgRelevance !== undefined) grid.appendChild(makeDevCard("Snittrelevans", String(avgRelevance)));
+          content.appendChild(grid);
         }
 
-        const statusSection = createListSection("Statusorsaker", statusReasons || [], "reason-list");
-        if (statusSection) {
-          content.appendChild(statusSection);
-        }
+        [["Statusorsaker", statusReasons], ["Vanliga bortfall", topRejectionReasons], ["Vanliga nedjusteringar", topDowngradeReasons]].forEach(([title, items]) => {
+          if (!items?.length) return;
+          content.appendChild(el("div", "dev-section-title", title));
+          const list = el("ul", "dev-list");
+          items.forEach(t => list.appendChild(el("li", null, t)));
+          content.appendChild(list);
+        });
 
-        const rejectionSection = createListSection("Vanliga bortfall", topRejectionReasons || [], "reason-list");
-        if (rejectionSection) {
-          content.appendChild(rejectionSection);
-        }
-
-        const downgradeSection = createListSection("Vanliga nedjusteringar", topDowngradeReasons || [], "reason-list");
-        if (downgradeSection) {
-          content.appendChild(downgradeSection);
-        }
-
-        wrapper.appendChild(details);
+        details.appendChild(content);
+        return details;
       }
 
-      function renderResult(envelope) {
-        const { status, data, debug_id: debugId } = envelope;
-        const wrapper = document.createElement("div");
-        const debugText = document.createElement("div");
+      // ─── Build dot plot SVG ───
+      function buildDotPlot(comparables, estimateValue) {
+        const prices = comparables.map(c => Number(c.price || c.numericPrice)).filter(p => Number.isFinite(p) && p > 0);
+        if (prices.length < 3) return null;
 
-        result.innerHTML = "";
-        wrapper.className = "result-layout";
-        wrapper.appendChild(createStatusBanner(envelope));
+        prices.sort((a, b) => a - b);
+        const minP = prices[0];
+        const maxP = prices[prices.length - 1];
+        const range = maxP - minP || 1;
 
-        wrapper.appendChild(createSummaryCard(envelope));
+        const q1 = prices[Math.floor(prices.length * 0.25)];
+        const q3 = prices[Math.floor(prices.length * 0.75)];
 
-        if (status === "ok" && data?.valuation) {
-          renderOkState(wrapper, envelope);
-        } else if (status === "ambiguous_model" && data) {
-          renderAmbiguousState(wrapper, envelope);
-        } else if (status === "insufficient_evidence" && data) {
-          renderInsufficientEvidenceState(wrapper, envelope);
-        } else if (status === "degraded") {
-          renderDegradedState(wrapper, envelope);
+        const W = 280, H = 48;
+        const PAD = 10;
+        const plotW = W - PAD * 2;
+
+        function xFor(p) { return PAD + ((p - minP) / range) * plotW; }
+
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.style.display = "block";
+
+        // base line
+        const line = document.createElementNS(svgNS, "rect");
+        line.setAttribute("x", PAD); line.setAttribute("y", H / 2 - 1.5);
+        line.setAttribute("width", plotW); line.setAttribute("height", 3);
+        line.setAttribute("rx", "1.5"); line.setAttribute("fill", "#D5D0C5");
+        svg.appendChild(line);
+
+        // IQR band
+        const iqrX = xFor(q1);
+        const iqrW = xFor(q3) - iqrX;
+        if (iqrW > 0) {
+          const band = document.createElementNS(svgNS, "rect");
+          band.setAttribute("x", iqrX); band.setAttribute("y", H / 2 - 5);
+          band.setAttribute("width", iqrW); band.setAttribute("height", 10);
+          band.setAttribute("rx", "3"); band.setAttribute("fill", "#B0AA9E");
+          svg.appendChild(band);
+        }
+
+        // dots
+        prices.forEach(p => {
+          const dot = document.createElementNS(svgNS, "circle");
+          dot.setAttribute("cx", xFor(p)); dot.setAttribute("cy", H / 2);
+          dot.setAttribute("r", 4);
+          const inIQR = p >= q1 && p <= q3;
+          dot.setAttribute("fill", inIQR ? "#5C5850" : "#B0AA9E");
+          svg.appendChild(dot);
+        });
+
+        // estimate marker
+        if (estimateValue !== null && estimateValue !== undefined) {
+          const ex = xFor(Number(estimateValue));
+          const markerLine = document.createElementNS(svgNS, "rect");
+          markerLine.setAttribute("x", ex - 1.5); markerLine.setAttribute("y", 4);
+          markerLine.setAttribute("width", 3); markerLine.setAttribute("height", H - 8);
+          markerLine.setAttribute("rx", "1.5"); markerLine.setAttribute("fill", "#2C2A25");
+          svg.appendChild(markerLine);
+        }
+
+        return svg;
+      }
+
+      // ─── Render ok result (Quick View + Advanced) ───
+      function renderOkResult(envelope) {
+        const { data } = envelope;
+        const valuation = data.valuation;
+        const usedValue = buildUsedValueSummary(envelope);
+        const newPriceCtx = getNewPriceContext(data, "ok");
+        const sourceGroups = collectSourceGroups(data, envelope.debug_summary);
+        const allMainComparables = sourceGroups.mainComparableEntries;
+
+        // New price retention
+        const newPriceNum = data?.market_data?.new_price?.estimated_new_price;
+        const fairEstimate = valuation.fair_estimate;
+        const retentionPct = (newPriceNum && newPriceNum > 0) ? Math.round((fairEstimate / newPriceNum) * 100) : null;
+
+        const wrap = el("div", "result-screen");
+
+        // ── Product row ──
+        const productRow = el("div", "product-row");
+        if (currentPhotoUrl) {
+          const thumb = document.createElement("img");
+          thumb.className = "product-thumb";
+          thumb.src = currentPhotoUrl;
+          thumb.alt = "Produktbild";
+          productRow.appendChild(thumb);
         } else {
-          renderErrorState(wrapper, envelope);
+          const ph = el("div", "product-thumb-placeholder");
+          ph.innerHTML = `<i data-lucide="image" style="width:20px;height:20px;stroke-width:1.5;color:var(--text-muted)"></i>`;
+          productRow.appendChild(ph);
         }
 
-        renderDebugSummary(wrapper, envelope);
-
-        const hideBottomDebugId =
-          (status === "degraded" || status === "error") &&
-          isDevelopmentMode() &&
-          Boolean(envelope.dev_error);
-        if (!hideBottomDebugId && debugId) {
-          debugText.className = "muted";
-          debugText.textContent = `Debug ID: ${debugId}`;
-          wrapper.appendChild(debugText);
+        const productInfo = el("div", "product-info");
+        const productName = el("div", "product-name", getDetectedProductName(data) || "Okänd produkt");
+        const productSub  = el("div", "product-sub");
+        const parts = [data.category, data.brand].filter(Boolean);
+        productSub.textContent = parts.join(" · ") || "Identifierad produkt";
+        productInfo.appendChild(productName);
+        productInfo.appendChild(productSub);
+        // Show soft ambiguity badge when the model was identified but confidence was low
+        const hasSoftAmbiguity = data.needs_more_images || (envelope.warnings || []).some(w => w && (w.includes("tydligare") || w.includes("möjliga")));
+        if (hasSoftAmbiguity) {
+          const matchBadge = el("div", "match-quality-badge", "Möjlig matchning");
+          productInfo.appendChild(matchBadge);
         }
-        result.appendChild(wrapper);
+        productRow.appendChild(productInfo);
+
+        const editBtn = el("button", "product-edit-btn");
+        editBtn.setAttribute("aria-label", "Rätta produkt");
+        editBtn.innerHTML = `<i data-lucide="pencil" style="width:16px;height:16px;stroke-width:1.5"></i>`;
+        editBtn.addEventListener("click", () => openCorrectionSheet(data));
+        productRow.appendChild(editBtn);
+        wrap.appendChild(productRow);
+
+        // ── Estimate ──
+        const estimateSection = el("div", "estimate-section");
+        estimateSection.appendChild(sectionHeader("Begagnat marknadsvärde"));
+
+        const estimateValue = el("div", "estimate-value", usedValue.value);
+        estimateSection.appendChild(estimateValue);
+
+        // Combined info line: range · confidence · sources
+        const confidenceLabel = getConfidenceLabel(valuation.confidence);
+        const infoLine = el("div", "estimate-info-line");
+        infoLine.textContent = `${usedValue.meta} · ${confidenceLabel.label} · ${valuation.comparable_count} källor`;
+        estimateSection.appendChild(infoLine);
+        wrap.appendChild(estimateSection);
+
+        // ── Value retention bar ──
+        if (retentionPct !== null && retentionPct > 0 && retentionPct <= 100) {
+          const retBar = el("div", "retention-bar-wrap");
+          const retTop = el("div", "retention-bar-top");
+          const retLabel = el("div", "retention-bar-label", `Nypris ${formatCurrency(newPriceNum, data?.market_data?.new_price?.currency || "SEK")} → behåller`);
+          const retPct = el("div", "retention-pct", `${retentionPct}%`);
+          retTop.appendChild(retLabel);
+          retTop.appendChild(retPct);
+          retBar.appendChild(retTop);
+          const track = el("div", "retention-bar-track");
+          const fill = el("div", "retention-bar-fill");
+          fill.style.width = `${Math.min(retentionPct, 100)}%`;
+          track.appendChild(fill);
+          retBar.appendChild(track);
+          wrap.appendChild(retBar);
+        }
+
+        // ── Comparables quick list ──
+        if (allMainComparables.length > 0) {
+          const compWrap = el("div", "quick-comparables-wrap");
+          const compHeader = el("div", "quick-comparables-header");
+          compHeader.appendChild(el("span", "quick-comparables-title", "Senaste annonser"));
+          compHeader.appendChild(el("span", "quick-comparables-hint", "Sorterat efter relevans"));
+          compWrap.appendChild(compHeader);
+          const compList = el("div", "quick-comparables-list");
+          const MAX_QUICK = 5;
+          allMainComparables.slice(0, MAX_QUICK).forEach(entry => {
+            const row = el("div", "quick-comparable-row");
+            if (entry.href) { row.style.cursor = "pointer"; row.addEventListener("click", () => window.open(entry.href, "_blank", "noreferrer")); }
+            const left = el("div", "quick-comparable-left");
+            left.appendChild(el("div", "quick-comparable-title", entry.title));
+            const sub = el("div", "quick-comparable-sub");
+            const isSold = entry.status === "completed" || entry.listing_type === "sold";
+            const timeAgo = formatTimeAgo(entry.ended_at);
+            const subParts = [getDisplaySourceName(entry.source), isSold ? "Såld" : "Aktiv", timeAgo].filter(Boolean);
+            sub.appendChild(document.createTextNode(subParts.join(" · ")));
+            if (entry.condition_hint) {
+              const tag = el("span", "condition-tag", entry.condition_hint);
+              tag.style.marginLeft = "4px";
+              sub.appendChild(tag);
+            }
+            left.appendChild(sub);
+            row.appendChild(left);
+            const right = el("div", "quick-comparable-price", formatCurrency(entry.price, entry.currency));
+            if (entry.href) {
+              const linkIcon = el("span", "quick-comparable-link");
+              linkIcon.innerHTML = `<i data-lucide="external-link" style="width:12px;height:12px;stroke-width:1.5;color:var(--text-muted)"></i>`;
+              right.appendChild(linkIcon);
+            }
+            row.appendChild(right);
+            compList.appendChild(row);
+          });
+          compWrap.appendChild(compList);
+          if (allMainComparables.length > MAX_QUICK) {
+            const more = el("button", "show-all-link", `Visa alla ${allMainComparables.length} annonser`);
+            more.addEventListener("click", () => { advancedOpen = true; advancedView.classList.add("open"); detailsBtn.textContent = "Dölj detaljer"; more.closest(".quick-comparables-wrap")?.remove(); });
+            compWrap.appendChild(more);
+          }
+          wrap.appendChild(compWrap);
+        }
+
+        // ── Actions ──
+        const actionsRow = el("div", "actions-row");
+
+        const scanNewBtn = el("button", "btn-primary", "Scanna ny");
+        scanNewBtn.style.marginTop = "0";
+        scanNewBtn.addEventListener("click", resetToUpload);
+
+        const detailsBtn = el("button", "btn-secondary");
+        detailsBtn.textContent = advancedOpen ? "Dölj detaljer" : "Se detaljer";
+        detailsBtn.addEventListener("click", () => {
+          advancedOpen = !advancedOpen;
+          advancedView.classList.toggle("open", advancedOpen);
+          detailsBtn.textContent = advancedOpen ? "Dölj detaljer" : "Se detaljer";
+        });
+
+        actionsRow.appendChild(scanNewBtn);
+        actionsRow.appendChild(detailsBtn);
+        wrap.appendChild(actionsRow);
+
+        // ── Quick links ──
+        const ql = el("div", "quick-links");
+        const traderaLink = el("a", "quick-link", "Sälj på Tradera");
+        traderaLink.href = "https://www.tradera.com/";
+        traderaLink.target = "_blank";
+        traderaLink.rel = "noreferrer";
+        traderaLink.style.textDecoration = "underline";
+        const shareBtn = el("button", "quick-link", "Dela estimat");
+        shareBtn.addEventListener("click", () => {
+          const text = `${getDetectedProductName(data) || "Produkt"} — begagnatvärde ${usedValue.value} (via Värdekoll)`;
+          if (navigator.share) { navigator.share({ title: "Värdekoll", text }); }
+          else { copyTextToClipboard(text); }
+        });
+        ql.appendChild(traderaLink);
+        ql.appendChild(shareBtn);
+        wrap.appendChild(ql);
+
+        // ── Timestamp ──
+        const ts = el("div", "result-timestamp", `Estimerat ${new Date().toLocaleDateString("sv-SE", { day: "numeric", month: "long", year: "numeric" })}`);
+        wrap.appendChild(ts);
+
+        // ── Advanced View ──
+        const advancedView = el("div", "advanced-view");
+        if (advancedOpen) advancedView.classList.add("open");
+        const advancedInner = el("div", "advanced-inner");
+
+        // Source chips
+        const sourcesByName = {};
+        allMainComparables.forEach(c => {
+          const name = getDisplaySourceName(c.source);
+          sourcesByName[name] = (sourcesByName[name] || 0) + 1;
+        });
+        if (Object.keys(sourcesByName).length) {
+          const srcSection = el("div", "adv-section");
+          srcSection.appendChild(sectionHeader("Källor"));
+          const chips = el("div", "source-chips");
+          Object.entries(sourcesByName).forEach(([name, count]) => {
+            const chip = el("div", "source-chip", `${name}: ${count}`);
+            chips.appendChild(chip);
+          });
+          // add new price sources
+          (data?.market_data?.new_price?.sources || []).slice(0, 2).forEach(s => {
+            const name = s.source || getSourceNameFromUrl(s.url) || "Butik";
+            const chip = el("div", "source-chip", `${name} (nypris)`);
+            chips.appendChild(chip);
+          });
+          srcSection.appendChild(chips);
+          advancedInner.appendChild(srcSection);
+        }
+
+        // Price distribution dot plot
+        const allPriceComparables = [...(data?.market_data?.comparables || [])].filter(c => Number.isFinite(Number(c.price)) && Number(c.price) > 0);
+        if (allPriceComparables.length >= 3) {
+          const plotSection = el("div", "adv-section");
+          plotSection.appendChild(sectionHeader("Prisfördelning"));
+          const plotWrap = el("div", "dot-plot-wrap");
+          const svg = buildDotPlot(allPriceComparables, fairEstimate);
+          if (svg) {
+            plotWrap.appendChild(svg);
+            const axis = el("div", "dot-plot-axis");
+            const prices = allPriceComparables.map(c => Number(c.price)).filter(Number.isFinite).sort((a,b) => a-b);
+            axis.appendChild(el("span", "text-xs text-muted", formatCurrency(prices[0])));
+            axis.appendChild(el("span", "text-xs text-muted", formatCurrency(prices[prices.length - 1])));
+            plotWrap.appendChild(axis);
+          }
+          plotSection.appendChild(plotWrap);
+          advancedInner.appendChild(plotSection);
+        }
+
+        // Comparable listings
+        if (allMainComparables.length > 0) {
+          const compSection = el("div", "adv-section");
+          compSection.appendChild(sectionHeader("Senaste försäljningar"));
+          const list = el("div", "comparables-list");
+          const MAX_SHOWN = 5;
+          const toShow = showAllComparables ? allMainComparables : allMainComparables.slice(0, MAX_SHOWN);
+          toShow.forEach(entry => {
+            const row = el("div", "comparable-row");
+            if (entry.href) { row.style.cursor = "pointer"; row.addEventListener("click", () => window.open(entry.href, "_blank", "noreferrer")); }
+            const body = el("div", "comparable-body");
+            body.appendChild(el("div", "comparable-title", entry.title));
+            const meta = el("div", "comparable-meta");
+            meta.appendChild(document.createTextNode(`${getDisplaySourceName(entry.source)} · ${(entry.status === "completed" || entry.listing_type === "sold") ? "Såld" : "Aktiv"}`));
+            if (entry.condition_hint) {
+              const tag = el("span", "condition-tag", entry.condition_hint);
+              meta.appendChild(tag);
+            }
+            body.appendChild(meta);
+            row.appendChild(body);
+            row.appendChild(el("div", "comparable-price", formatCurrency(entry.price, entry.currency)));
+            list.appendChild(row);
+          });
+          compSection.appendChild(list);
+          if (!showAllComparables && allMainComparables.length > MAX_SHOWN) {
+            const showAllBtn = el("button", "show-all-link", `Visa alla ${allMainComparables.length} objekt`);
+            showAllBtn.addEventListener("click", () => { showAllComparables = true; renderResult(lastEnvelope); });
+            compSection.appendChild(showAllBtn);
+          }
+          advancedInner.appendChild(compSection);
+        }
+
+        // Reasoning
+        if (data?.valuation?.evidence_summary) {
+          const reasonSection = el("div", "adv-section");
+          reasonSection.appendChild(sectionHeader("Så räknade vi"));
+          const block = el("div", "reasoning-block", data.valuation.evidence_summary);
+          reasonSection.appendChild(block);
+          advancedInner.appendChild(reasonSection);
+        }
+
+        // Feedback
+        {
+          const fbSection = el("div", "adv-section");
+          const fbBlock = el("div", "feedback-block");
+          fbBlock.appendChild(el("div", "feedback-label", "Identifierade vi rätt produkt?"));
+          const fbBtns = el("div", "feedback-btns");
+          const yesBtn = el("button", "feedback-btn", "Ja, stämmer");
+          const noBtn  = el("button", "feedback-btn", "Nej, fel modell");
+          yesBtn.addEventListener("click", () => { yesBtn.classList.add("selected-yes"); noBtn.classList.remove("selected-no"); });
+          noBtn.addEventListener("click",  () => { noBtn.classList.add("selected-no");  yesBtn.classList.remove("selected-yes"); openCorrectionSheet(data); });
+          fbBtns.appendChild(yesBtn);
+          fbBtns.appendChild(noBtn);
+          fbBlock.appendChild(fbBtns);
+          fbSection.appendChild(fbBlock);
+          advancedInner.appendChild(fbSection);
+        }
+
+        // Next steps
+        {
+          const nsSection = el("div", "adv-section");
+          nsSection.appendChild(sectionHeader("Nästa steg"));
+          const nsList = el("div", "next-steps-list");
+          [
+            { label: "Sälj på Tradera", href: "https://www.tradera.com/" },
+            { label: "Lägg upp på Blocket", href: "https://www.blocket.se/" },
+            { label: "Dela estimat", action: () => { const text = `${getDetectedProductName(data) || "Produkt"} — begagnatvärde ${usedValue.value}`; if (navigator.share) navigator.share({ title: "Värdekoll", text }); else copyTextToClipboard(text); } },
+          ].forEach(item => {
+            const row = item.href ? document.createElement("a") : el("button", null);
+            row.className = "next-step-row";
+            if (item.href) { row.href = item.href; row.target = "_blank"; row.rel = "noreferrer"; }
+            if (item.action) { row.addEventListener("click", item.action); row.style.width = "100%"; row.style.textAlign = "left"; row.style.background = "none"; row.style.border = "none"; row.style.fontFamily = "inherit"; row.style.cursor = "pointer"; }
+            row.appendChild(document.createTextNode(item.label));
+            const arrow = el("span", null);
+            arrow.innerHTML = `<i data-lucide="chevron-right" style="width:16px;height:16px;stroke-width:1.5;color:var(--text-muted)"></i>`;
+            row.appendChild(arrow);
+            nsList.appendChild(row);
+          });
+          nsSection.appendChild(nsList);
+          advancedInner.appendChild(nsSection);
+        }
+
+        // Debug summary (dev mode)
+        const debugSection = makeDebugSummarySection(envelope);
+        if (debugSection) advancedInner.appendChild(debugSection);
+
+        // Debug ID
+        if (envelope.debug_id) {
+          advancedInner.appendChild(el("div", "debug-id-line", `Debug ID: ${envelope.debug_id}`));
+        }
+
+        advancedView.appendChild(advancedInner);
+        wrap.appendChild(advancedView);
+
+        return wrap;
       }
 
-      imageInput.addEventListener("change", () => {
-        renderPreviews(Array.from(imageInput.files));
+      // ─── Render ambiguous state ───
+      function renderAmbiguousResult(envelope) {
+        const { data } = envelope;
+        const wrap = el("div", "ambiguous-screen");
+
+        // Photo
+        if (currentPhotoUrl) {
+          const photoWrap = el("div", "state-photo-wrap");
+          const photo = document.createElement("img");
+          photo.className = "state-photo";
+          photo.src = currentPhotoUrl;
+          photo.alt = "Din bild";
+          photoWrap.appendChild(photo);
+          const badge = el("div", "state-photo-badge", "Otydlig bild");
+          photoWrap.appendChild(badge);
+          wrap.appendChild(photoWrap);
+        }
+
+        // Heading
+        const heading = el("div");
+        heading.appendChild(sectionHeader("Möjlig matchning"));
+        const title = el("div", null);
+        title.style.cssText = "font-size:1.25rem;font-weight:700;color:var(--text-primary);margin-bottom:6px";
+        title.textContent = getDetectedProductName(data) || "Produktfamilj";
+        heading.appendChild(title);
+        const explanation = el("div", null);
+        explanation.style.cssText = "font-size:0.875rem;color:var(--text-secondary);line-height:1.6";
+        explanation.textContent = envelope.user_explanation || "Vi behöver säkrare modellträff för att ge ett korrekt estimat.";
+        heading.appendChild(explanation);
+        wrap.appendChild(heading);
+
+        // Extra angles upload
+        const angles = data?.requested_additional_angles || [];
+        const anglesBlock = el("div", "extra-angles-block");
+        anglesBlock.appendChild(el("div", "extra-angles-label", "Lägg till fler bilder för bättre estimat"));
+        const slots = el("div", "angle-slots");
+        const labels = angles.length ? angles.slice(0, 3) : ["Sidan", "Modellnr.", "Etikett"];
+        labels.forEach(label => {
+          const slot = el("div", "angle-slot");
+          const inp = document.createElement("input");
+          inp.type = "file"; inp.accept = "image/*";
+          inp.addEventListener("change", e => {
+            const f = e.target.files[0];
+            if (f) {
+              // Add to main file input (conceptually)
+              slot.style.background = "var(--bg-surface)";
+            }
+          });
+          slot.appendChild(inp);
+          slot.innerHTML += `<i data-lucide="camera" style="width:16px;height:16px;stroke-width:1.5;color:var(--text-faint)"></i>`;
+          slot.appendChild(el("div", "angle-slot-label", label));
+          slots.appendChild(slot);
+        });
+        anglesBlock.appendChild(slots);
+        wrap.appendChild(anglesBlock);
+
+        // CTA
+        const cta = el("button", "btn-primary", "Ta fler bilder");
+        cta.style.marginTop = "0";
+        cta.addEventListener("click", () => imageInput.click());
+        wrap.appendChild(cta);
+
+        // Manual correction
+        const escapeLink = el("button", "quick-link", "Visa ungefärligt estimat ändå");
+        escapeLink.style.display = "block";
+        escapeLink.style.textAlign = "center";
+        escapeLink.style.marginTop = "12px";
+        escapeLink.addEventListener("click", () => openCorrectionSheet(data));
+        wrap.appendChild(escapeLink);
+
+        // Dev debug
+        const devPanel = makeDevErrorPanel(envelope);
+        if (devPanel) wrap.appendChild(devPanel);
+        const debugSection = makeDebugSummarySection(envelope);
+        if (debugSection) wrap.appendChild(debugSection);
+
+        return wrap;
+      }
+
+      // ─── Render insufficient evidence state ───
+      function renderInsufficientResult(envelope) {
+        const { data, debug_summary: debugSummary } = envelope;
+        const wrap = el("div", "insufficient-screen");
+
+        // Photo + badge
+        if (currentPhotoUrl) {
+          const photoWrap = el("div", "state-photo-wrap");
+          const photo = document.createElement("img");
+          photo.className = "state-photo"; photo.src = currentPhotoUrl; photo.alt = "Din bild";
+          photoWrap.appendChild(photo);
+          wrap.appendChild(photoWrap);
+        }
+
+        // Empty state heading
+        const headingWrap = el("div");
+        headingWrap.style.textAlign = "center";
+        const iconWrap = el("div", "empty-state-icon");
+        iconWrap.style.margin = "0 auto 12px";
+        iconWrap.innerHTML = `<i data-lucide="info" style="width:24px;height:24px;stroke-width:1.5;color:var(--text-muted)"></i>`;
+        headingWrap.appendChild(iconWrap);
+        const t = el("div", null, "Inte tillräckligt med data");
+        t.style.cssText = "font-size:1.25rem;font-weight:700;color:var(--text-primary);margin-bottom:8px";
+        headingWrap.appendChild(t);
+        const sub = el("div", null, envelope.user_explanation || "Vi hittade produkten men underlaget är för svagt för ett trovärdigt estimat.");
+        sub.style.cssText = "font-size:0.875rem;color:var(--text-secondary);line-height:1.6";
+        headingWrap.appendChild(sub);
+        wrap.appendChild(headingWrap);
+
+        // What we found
+        const sourceGroups = collectSourceGroups(data, debugSummary);
+        const totalFound = sourceGroups.mainComparableEntries.length + sourceGroups.relatedComparableEntries.length;
+        if (totalFound > 0 || data?.market_data?.new_price) {
+          const foundSection = el("div", "adv-section");
+          foundSection.appendChild(sectionHeader("Det vi hittade"));
+          const foundList = el("div", "found-data-list");
+
+          if (data?.market_data?.new_price?.estimated_new_price) {
+            const row = el("div", "found-data-row");
+            row.appendChild(el("span", null, "Nypris"));
+            row.appendChild(el("span", null, formatCurrency(data.market_data.new_price.estimated_new_price, data.market_data.new_price.currency)));
+            foundList.appendChild(row);
+          }
+
+          if (debugSummary?.total_comparables_fetched) {
+            const row = el("div", "found-data-row");
+            row.appendChild(el("span", null, "Annonser hittade"));
+            row.appendChild(el("span", null, String(debugSummary.total_comparables_fetched)));
+            foundList.appendChild(row);
+          }
+
+          if (totalFound > 0) {
+            const row = el("div", "found-data-row");
+            row.appendChild(el("span", null, "Relevanta träffar"));
+            row.appendChild(el("span", null, String(totalFound)));
+            foundList.appendChild(row);
+          }
+
+          foundSection.appendChild(foundList);
+          wrap.appendChild(foundSection);
+        }
+
+        // Suggestion
+        if (envelope.recommended_action) {
+          const block = el("div", "blockquote-note", envelope.recommended_action);
+          wrap.appendChild(block);
+        }
+
+        // CTAs
+        const cta = el("button", "btn-primary", "Värdera en annan produkt");
+        cta.style.marginTop = "0";
+        cta.addEventListener("click", resetToUpload);
+        wrap.appendChild(cta);
+
+        const escLink = el("button", "quick-link", "Visa grov uppskattning ändå");
+        escLink.style.display = "block"; escLink.style.textAlign = "center"; escLink.style.marginTop = "12px";
+        escLink.addEventListener("click", () => openCorrectionSheet(data));
+        wrap.appendChild(escLink);
+
+        // Dev
+        const devPanel = makeDevErrorPanel(envelope);
+        if (devPanel) wrap.appendChild(devPanel);
+        const debugSection = makeDebugSummarySection(envelope);
+        if (debugSection) wrap.appendChild(debugSection);
+
+        return wrap;
+      }
+
+      // ─── Render degraded/error state ───
+      function renderErrorResult(envelope) {
+        const wrap = el("div", "error-screen");
+
+        const iconWrap = el("div", "empty-state-icon");
+        iconWrap.innerHTML = `<i data-lucide="alert-circle" style="width:24px;height:24px;stroke-width:1.5;color:var(--accent-danger)"></i>`;
+        wrap.appendChild(iconWrap);
+
+        const t = el("div", null, envelope.status === "degraded" ? "Tillfälligt problem med marknadsdatan" : "Något gick fel");
+        t.style.cssText = "font-size:1.125rem;font-weight:700;color:var(--text-primary)";
+        wrap.appendChild(t);
+
+        const sub = el("div", null, envelope.user_explanation || envelope.status_message || "Försök igen om en liten stund.");
+        sub.style.cssText = "font-size:0.875rem;color:var(--text-secondary);line-height:1.6;max-width:36ch";
+        wrap.appendChild(sub);
+
+        const retryBtn = el("button", "btn-primary", "Försök igen");
+        retryBtn.style.maxWidth = "240px";
+        retryBtn.addEventListener("click", () => { resetToUpload(); });
+        wrap.appendChild(retryBtn);
+
+        // Dev
+        const devPanel = makeDevErrorPanel(envelope);
+        if (devPanel) { wrap.style.textAlign = "left"; wrap.appendChild(devPanel); }
+
+        if (envelope.debug_id && !devPanel) {
+          wrap.appendChild(el("div", "debug-id-line", `Debug ID: ${envelope.debug_id}`));
+        }
+
+        const debugSection = makeDebugSummarySection(envelope);
+        if (debugSection) wrap.appendChild(debugSection);
+
+        return wrap;
+      }
+
+      // ─── Master render ───
+      function renderResult(envelope) {
+        lastEnvelope = envelope;
+        const { status } = envelope;
+
+        resultScreen.innerHTML = "";
+        resultScreen.classList.remove("hidden");
+        uploadScreen.classList.add("hidden");
+        scanningScreen.classList.add("hidden");
+
+        let content;
+        if (status === "ok" && envelope.data?.valuation) {
+          content = renderOkResult(envelope);
+        } else if (status === "ambiguous_model" && envelope.data) {
+          content = renderAmbiguousResult(envelope);
+        } else if (status === "insufficient_evidence" && envelope.data) {
+          content = renderInsufficientResult(envelope);
+        } else if (status === "degraded") {
+          content = renderErrorResult(envelope);
+        } else {
+          content = renderErrorResult(envelope);
+        }
+
+        resultScreen.appendChild(content);
+        lucide.createIcons();
+      }
+
+      // ─── Scanning UI helpers ───
+      function markStepDone(n, text, subText) {
+        const circle = document.getElementById(`step${n}Circle`);
+        const title  = document.getElementById(`step${n}Title`);
+        const sub    = document.getElementById(`step${n}Sub`);
+        circle.className = "step-circle done";
+        circle.innerHTML = `<i data-lucide="check" style="width:14px;height:14px;stroke-width:2.5;color:#F7F5F0"></i>`;
+        title.className = "step-title";
+        title.textContent = text;
+        if (sub && subText) { sub.classList.remove("hidden"); sub.textContent = subText; }
+        lucide.createIcons();
+      }
+
+      function markStepActive(n, text) {
+        const circle = document.getElementById(`step${n}Circle`);
+        const title  = document.getElementById(`step${n}Title`);
+        circle.className = "step-circle active";
+        circle.innerHTML = `<div class="dot"></div>`;
+        title.className = "step-title";
+        title.textContent = text;
+      }
+
+      function showScanningScreen() {
+        uploadScreen.classList.add("hidden");
+        resultScreen.classList.add("hidden");
+        scanningScreen.classList.remove("hidden");
+
+        // Reset steps
+        ["step1","step2","step3"].forEach((id, i) => {
+          const circle = document.getElementById(`${id}Circle`);
+          const title  = document.getElementById(`${id}Title`);
+          const sub    = document.getElementById(`${id}Sub`);
+          if (i === 0) { circle.className = "step-circle active"; circle.innerHTML = `<div class="dot"></div>`; title.className = "step-title"; title.textContent = "Identifierar produkt..."; }
+          else { circle.className = "step-circle waiting"; circle.innerHTML = ""; title.className = "step-title muted"; title.textContent = i === 1 ? "Söker marknadspriser..." : "Beräknar estimat"; }
+          if (sub) sub.classList.add("hidden");
+        });
+
+        // Show the user's photo
+        if (currentPhotoUrl) scanPhoto.src = currentPhotoUrl;
+      }
+
+      // ─── Reset to upload ───
+      function resetToUpload() {
+        uploadScreen.classList.remove("hidden");
+        scanningScreen.classList.add("hidden");
+        resultScreen.classList.add("hidden");
+        resultScreen.innerHTML = "";
+        previewRow.innerHTML = "";
+        previewRow.classList.add("hidden");
+        analyzeButton.style.display = "none";
+        imageInput.value = "";
+        currentPhotoUrl = null;
+        lastEnvelope = null;
+        showAllComparables = false;
+        advancedOpen = false;
+        lucide.createIcons();
+      }
+
+      // ─── Correction sheet ───
+      function openCorrectionSheet(data) {
+        brandField.value = data?.brand || "";
+        modelField.value = data?.model || "";
+        const sub = document.getElementById("sheetSub");
+        const name = getDetectedProductName(data);
+        if (sub && name) sub.textContent = `Vi identifierade: ${name}`;
+        correctionOverlay.classList.remove("hidden");
+      }
+
+      function closeCorrectionSheet() {
+        correctionOverlay.classList.add("hidden");
+      }
+
+      correctionCancel.addEventListener("click", closeCorrectionSheet);
+      correctionOverlay.addEventListener("click", e => { if (e.target === correctionOverlay) closeCorrectionSheet(); });
+
+      correctionSubmit.addEventListener("click", async () => {
+        try {
+          correctionSubmit.disabled = true;
+          closeCorrectionSheet();
+          showScanningScreen();
+          markStepActive(1, "Identifierar produkt...");
+
+          const updated = await requestValuation({
+            brand: brandField.value.trim(),
+            model: modelField.value.trim(),
+          });
+
+          renderResult(updated);
+        } catch (error) {
+          renderResult(error.envelope || buildClientErrorEnvelope({ message: error.message, technicalMessage: error?.stack || null }));
+        } finally {
+          correctionSubmit.disabled = false;
+        }
       });
 
+      // ─── Image input & preview ───
+      imageInput.addEventListener("change", () => {
+        const files = Array.from(imageInput.files);
+        if (!files.length) return;
+
+        previewRow.innerHTML = "";
+        files.forEach((file, idx) => {
+          const url = URL.createObjectURL(file);
+          if (idx === 0) currentPhotoUrl = url;
+          const item = el("div", "thumb-item");
+          const img  = document.createElement("img");
+          img.src = url;
+          img.alt = file.name;
+          img.onload = () => { /* keep url alive for display */ };
+          item.appendChild(img);
+          previewRow.appendChild(item);
+        });
+        previewRow.classList.remove("hidden");
+        analyzeButton.style.display = "flex";
+      });
+
+      // ─── Analyze button ───
       analyzeButton.addEventListener("click", async () => {
+        if (!imageInput.files.length) return;
         try {
           analyzeButton.disabled = true;
-          result.innerHTML = '<div class="result-empty">Analyserar andrahandsvärde...</div>';
+          showScanningScreen();
+
+          // Simulate step progression while waiting
+          const stepTimer1 = setTimeout(() => markStepDone(1, "Produkt identifierad", ""), 1200);
+          const stepTimer2 = setTimeout(() => markStepActive(2, "Söker marknadspriser..."), 1400);
+          const stepTimer3 = setTimeout(() => markStepDone(2, "Marknadspriser hämtade", ""), 4000);
+          const stepTimer4 = setTimeout(() => markStepActive(3, "Beräknar estimat..."), 4200);
+
           const data = await requestValuation();
-          renderResult(data);
+
+          clearTimeout(stepTimer1); clearTimeout(stepTimer2);
+          clearTimeout(stepTimer3); clearTimeout(stepTimer4);
+
+          // Mark all steps done quickly
+          const name = data?.data ? getDetectedProductName(data.data) : "";
+          const comparableCount = data?.data?.valuation?.comparable_count || data?.debug_summary?.total_comparables_fetched || 0;
+          markStepDone(1, name ? `${name} identifierad` : "Produkt identifierad", data?.data?.category || "");
+          markStepDone(2, `${comparableCount} resultat hittade`, "");
+          markStepActive(3, "Beräknar estimat...");
+
+          setTimeout(() => { markStepDone(3, "Estimat klart", ""); setTimeout(() => renderResult(data), 300); }, 400);
+
         } catch (error) {
-          renderResult(
-            error.envelope || buildClientErrorEnvelope({
-              message: error.message,
-              technicalMessage: error?.stack || null,
-            })
-          );
+          renderResult(error.envelope || buildClientErrorEnvelope({ message: error.message, technicalMessage: error?.stack || null }));
         } finally {
           analyzeButton.disabled = false;
         }
       });
+
+      // ─── Init ───
+      lucide.createIcons();
     </script>
   </body>
 </html>

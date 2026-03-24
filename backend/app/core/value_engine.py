@@ -11,7 +11,7 @@ from backend.app.services.pricing_service import MIN_RELEVANCE_SCORE, PricingSer
 from backend.app.services.vision_service import VisionService
 from backend.app.utils.normalization import normalize_product_name
 
-ABSOLUTE_IDENTIFICATION_CONFIDENCE_FLOOR = 0.72
+ABSOLUTE_IDENTIFICATION_CONFIDENCE_FLOOR = 0.55
 AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD = 0.90
 AMBIGUOUS_NEW_PRICE_CONFIDENCE_FLOOR = 0.78
 PRELIMINARY_ESTIMATE_CONFIDENCE_FLOOR = 0.86
@@ -77,9 +77,6 @@ def build_ambiguity_reasons(
     reasons: list[str] = []
     if not identification.brand or not identification.model:
         reasons.append("missing_brand_or_model")
-
-    if identification.needs_more_images:
-        reasons.append("needs_more_images")
 
     if is_manual_override(identification):
         return reasons
@@ -351,6 +348,9 @@ def build_preliminary_estimate(
     if len(product_identification.candidate_models or []) > 1:
         return None
 
+    if (new_price_data or {}).get("method") in {"single_source_insufficient", "no_trustworthy_candidates", "unavailable"}:
+        return None
+
     new_price_anchor = _extract_new_price_anchor(new_price_data, allow_source_fallback=False)
     if not new_price_anchor:
         return None
@@ -490,6 +490,7 @@ class ValueEngine:
         image: str | None = None,
         brand: str | None = None,
         model: str | None = None,
+        category: str | None = None,
     ) -> dict:
         market_comparables: list[dict] = []
         new_price_data: dict | None = None
@@ -498,7 +499,7 @@ class ValueEngine:
                 brand=brand,
                 line=None,
                 model=model,
-                category=None,
+                category=category,
                 variant=None,
                 candidate_models=[],
                 confidence=0.99,
@@ -524,8 +525,21 @@ class ValueEngine:
         )
 
         ambiguity_reasons = build_ambiguity_reasons(resolved_identification)
-        if ambiguity_reasons:
+        # Hard-block only when we have NO brand or model — there is literally nothing to
+        # search for. All other ambiguity signals (low confidence, candidate_models) still
+        # yield a concrete brand+model, so the full pipeline runs and warns the user instead.
+        hard_block_reasons = {"missing_brand_or_model"}
+        hard_blocking = bool(ambiguity_reasons and (set(ambiguity_reasons) & hard_block_reasons))
+        # Soft warnings to carry through the full pipeline when confidence is low but product known
+        soft_ambiguity_warnings: list[str] = []
+        if ambiguity_reasons and not hard_blocking:
+            soft_ambiguity_warnings = build_ambiguity_warnings(ambiguity_reasons)
+            if resolved_identification.needs_more_images and "Vi behöver tydligare bilder" not in soft_ambiguity_warnings:
+                soft_ambiguity_warnings.append("Vi behöver tydligare bilder")
+        if hard_blocking:
             ambiguity_warnings = build_ambiguity_warnings(ambiguity_reasons)
+            if resolved_identification.needs_more_images and "Vi behöver tydligare bilder" not in ambiguity_warnings:
+                ambiguity_warnings.append("Vi behöver tydligare bilder")
             if should_fetch_new_price_for_ambiguous(resolved_identification, ambiguity_reasons):
                 try:
                     new_price_data = self.new_price_service.get_new_price(
@@ -662,7 +676,7 @@ class ValueEngine:
             pricing_result=pricing_result,
         )
         if pricing_result.get("status") == "insufficient_evidence":
-            warnings = list(pricing_result.get("warnings", []))
+            warnings = list(dict.fromkeys([*soft_ambiguity_warnings, *pricing_result.get("warnings", [])]))
             if preliminary_estimate:
                 warnings = list(dict.fromkeys([
                     "Det här är en grov uppskattning, inte ett fullständigt begagnatvärde",
@@ -777,7 +791,7 @@ class ValueEngine:
                 ),
                 "sources": sources,
             },
-            "warnings": pricing_result.get("warnings", []),
+            "warnings": list(dict.fromkeys([*soft_ambiguity_warnings, *pricing_result.get("warnings", [])])),
             "reasons": pricing_result.get("reasons", []),
             "market_snapshot": build_market_snapshot(
                 market_lookup_attempted=True,

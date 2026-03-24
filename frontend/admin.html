@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Värdekoll</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:           #F7F5F0;
+      --bg-surface:        #EDEAE3;
+      --bg-surface-raised: #FFFFFF;
+      --border-subtle:     #E8E4DB;
+      --border-medium:     #D5D0C5;
+      --text-primary:      #2C2A25;
+      --text-secondary:    #5C5850;
+      --text-muted:        #8A8578;
+      --text-faint:        #B0AA9E;
+      --accent-positive:   #34a873;
+      --accent-warning:    #d4a017;
+      --accent-danger:     #c4432a;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background: var(--bg-base);
+      min-height: 100dvh;
+    }
+
+    /* ─── Header ─── */
+    .adm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-base);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .adm-header-left { display: flex; align-items: center; gap: 12px; }
+    .adm-back {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-surface); color: var(--text-muted);
+      text-decoration: none; flex-shrink: 0; transition: background 150ms;
+    }
+    .adm-back:hover { background: var(--border-subtle); }
+    .adm-back svg { width: 16px; height: 16px; stroke-width: 1.5; }
+    .adm-title { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); }
+    .adm-subtitle { font-size: 0.6875rem; color: var(--text-faint); margin-top: 2px; letter-spacing: 0.02em; }
+    .adm-refresh {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 14px;
+      border: 1px solid var(--border-medium); background: var(--bg-surface);
+      color: var(--text-secondary); font-family: inherit; font-size: 0.8125rem;
+      cursor: pointer; transition: border-color 150ms, color 150ms;
+    }
+    .adm-refresh:hover { border-color: var(--text-muted); color: var(--text-primary); }
+    .adm-refresh svg { width: 14px; height: 14px; stroke-width: 1.5; }
+
+    /* ─── Error ─── */
+    .adm-error {
+      display: flex; align-items: center; gap: 8px;
+      margin: 12px 16px 0; padding: 10px 14px; border-radius: 10px;
+      background: rgba(196,67,42,0.07); color: var(--accent-danger);
+      font-size: 0.8125rem; border: 1px solid rgba(196,67,42,0.15);
+    }
+    .adm-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .adm-error.hidden { display: none; }
+
+    /* ─── Tabs ─── */
+    .adm-tabs {
+      display: flex; padding: 0 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .adm-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 14px 11px; border: none;
+      border-bottom: 2px solid transparent;
+      background: transparent; color: var(--text-muted);
+      font-family: inherit; font-size: 0.8125rem;
+      cursor: pointer; white-space: nowrap;
+      transition: color 150ms, border-color 150ms;
+      margin-bottom: -1px;
+    }
+    .adm-tab:hover { color: var(--text-secondary); }
+    .adm-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 500; }
+    .adm-tab svg { width: 13px; height: 13px; stroke-width: 1.5; }
+
+    /* ─── Main ─── */
+    .adm-main {
+      padding: 24px 16px 48px;
+      display: flex; flex-direction: column; gap: 20px;
+      max-width: 720px; margin: 0 auto; width: 100%;
+    }
+
+    /* ─── Stat grid ─── */
+    .adm-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (min-width: 640px) { .adm-stat-grid { grid-template-columns: repeat(4, 1fr); } }
+    .adm-stat-tile {
+      background: var(--bg-surface); border-radius: 12px;
+      padding: 14px 16px; display: flex; flex-direction: column; gap: 3px;
+    }
+    .adm-stat-label { font-size: 0.6875rem; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+    .adm-stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+    .adm-stat-value.positive { color: var(--accent-positive); }
+    .adm-stat-value.warning  { color: var(--accent-warning); }
+    .adm-stat-value.danger   { color: var(--accent-danger); }
+    .adm-stat-sub { font-size: 0.6875rem; color: var(--text-muted); }
+    .adm-spark { width: 100%; margin-top: 6px; display: block; }
+
+    /* ─── Block / section ─── */
+    .adm-block { display: flex; flex-direction: column; gap: 12px; }
+    .adm-section-label { font-size: 0.6875rem; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+    .adm-section-desc { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; margin-top: -6px; }
+    .adm-section-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+    /* ─── List ─── */
+    .adm-list { background: var(--bg-surface); border-radius: 12px; overflow: hidden; }
+    .adm-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
+    .adm-row.divided { border-bottom: 1px solid var(--border-subtle); }
+    .adm-row-primary { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
+    .adm-row-secondary { font-size: 0.6875rem; color: var(--text-muted); margin-top: 2px; }
+    .adm-row-meta { font-size: 0.6875rem; color: var(--text-faint); margin-left: auto; white-space: nowrap; }
+    .adm-row-count { font-size: 0.8125rem; color: var(--text-secondary); text-align: right; white-space: nowrap; flex-shrink: 0; }
+    .adm-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .adm-row-status { display: grid; grid-template-columns: 8px 1fr 1fr 36px 52px; align-items: center; gap: 10px; }
+
+    /* ─── Bar ─── */
+    .adm-bar-track { height: 4px; background: var(--border-subtle); border-radius: 2px; overflow: hidden; width: 100%; }
+    .adm-bar-fill { height: 100%; border-radius: 2px; background: var(--text-secondary); opacity: 0.55; transition: width 400ms ease; }
+    .adm-bar-mid { flex: 1; min-width: 40px; }
+
+    /* ─── Two col ─── */
+    .adm-two-col { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @media (min-width: 640px) { .adm-two-col { grid-template-columns: 1fr 1fr; } }
+
+    /* ─── Select ─── */
+    .adm-select {
+      background: var(--bg-surface); border: 1px solid var(--border-medium);
+      border-radius: 10px; color: var(--text-primary);
+      font-family: inherit; font-size: 0.8125rem;
+      padding: 8px 12px; cursor: pointer; outline: none; min-width: 200px;
+    }
+    .adm-select:focus { border-color: var(--text-muted); }
+
+    /* ─── Table ─── */
+    .adm-table-scroll { overflow-x: auto; border-radius: 12px; background: var(--bg-surface); }
+    .adm-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    .adm-table thead tr { border-bottom: 1px solid var(--border-subtle); }
+    .adm-table th { padding: 10px 14px; text-align: left; font-size: 0.6875rem; color: var(--text-faint); font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; white-space: nowrap; }
+    .adm-table td { padding: 10px 14px; color: var(--text-secondary); border-bottom: 1px solid var(--border-subtle); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+    .adm-table tbody tr:last-child td { border-bottom: none; }
+    .adm-table tbody tr:hover td { background: var(--bg-base); }
+    .adm-null { color: var(--text-faint); font-style: italic; }
+
+    /* ─── Pagination ─── */
+    .adm-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .adm-btn-secondary {
+      padding: 8px 14px; border-radius: 14px;
+      border: 1px solid var(--border-medium); background: var(--bg-surface);
+      color: var(--text-secondary); font-family: inherit; font-size: 0.8125rem;
+      cursor: pointer; transition: border-color 150ms;
+    }
+    .adm-btn-secondary:hover:not(:disabled) { border-color: var(--text-muted); }
+    .adm-btn-secondary:disabled { opacity: 0.35; cursor: default; }
+
+    /* ─── Misc ─── */
+    .adm-muted-text { font-size: 0.8125rem; color: var(--text-muted); }
+    .adm-info { display: flex; align-items: center; gap: 6px; font-size: 0.6875rem; color: var(--text-faint); }
+    .adm-info svg { width: 13px; height: 13px; stroke-width: 1.5; }
+    .adm-pct-pill { font-size: 0.8125rem; font-weight: 500; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; margin-left: auto; }
+
+    /* ─── Skeleton ─── */
+    @keyframes adm-pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .adm-skeleton-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (min-width: 640px) { .adm-skeleton-grid { grid-template-columns: repeat(4, 1fr); } }
+    .adm-skeleton { height: 90px; background: var(--bg-surface); border-radius: 12px; animation: adm-pulse 1.8s ease-in-out infinite; }
+
+    /* ─── Tab panels ─── */
+    .tab-panel { display: none; flex-direction: column; gap: 20px; }
+    .tab-panel.active { display: flex; }
+  </style>
+</head>
+<body>
+
+  <header class="adm-header">
+    <div class="adm-header-left">
+      <a href="/" class="adm-back" aria-label="Tillbaka">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <div>
+        <div class="adm-title">Admin</div>
+        <div class="adm-subtitle" id="headerSubtitle">Laddar…</div>
+      </div>
+    </div>
+    <button class="adm-refresh" id="refreshBtn" onclick="fetchAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Uppdatera
+    </button>
+  </header>
+
+  <div class="adm-error hidden" id="errorBanner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="errorText"></span>
+  </div>
+
+  <nav class="adm-tabs">
+    <button class="adm-tab active" data-tab="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Databas
+    </button>
+    <button class="adm-tab" data-tab="metrics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Värderingar
+    </button>
+    <button class="adm-tab" data-tab="tables">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+      Tabeller
+    </button>
+    <button class="adm-tab" data-tab="health">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Index
+    </button>
+  </nav>
+
+  <main class="adm-main">
+    <div id="skeletonLoader">
+      <div class="adm-skeleton-grid">
+        <div class="adm-skeleton"></div>
+        <div class="adm-skeleton"></div>
+        <div class="adm-skeleton"></div>
+        <div class="adm-skeleton"></div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab-panel" id="panel-overview">
+      <div class="adm-stat-grid" id="overviewStats"></div>
+      <div class="adm-block">
+        <span class="adm-section-label">TABELLER</span>
+        <div class="adm-list" id="tablesList"></div>
+      </div>
+      <div class="adm-info" id="pgVersion">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+        <span></span>
+      </div>
+    </div>
+
+    <!-- METRICS TAB -->
+    <div class="tab-panel" id="panel-metrics">
+      <div class="adm-stat-grid" id="metricsStats"></div>
+      <div class="adm-block">
+        <span class="adm-section-label">STATUS</span>
+        <div class="adm-list" id="statusList"></div>
+      </div>
+      <div class="adm-two-col">
+        <div class="adm-block">
+          <span class="adm-section-label">VARUMÄRKEN</span>
+          <div class="adm-list" id="brandsList"></div>
+        </div>
+        <div class="adm-block">
+          <span class="adm-section-label">KATEGORIER</span>
+          <div class="adm-list" id="categoriesList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLES TAB -->
+    <div class="tab-panel" id="panel-tables">
+      <div class="adm-block">
+        <div class="adm-section-header-row">
+          <span class="adm-section-label">TABLE BROWSER</span>
+          <select class="adm-select" id="tableSelect" onchange="loadTable()">
+            <option value="">Välj tabell</option>
+          </select>
+        </div>
+        <p class="adm-muted-text" id="tableInfo" style="display:none"></p>
+        <div id="tableScrollWrap" style="display:none">
+          <div class="adm-table-scroll">
+            <table class="adm-table">
+              <thead id="tableHead"></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="adm-pagination">
+            <button class="adm-btn-secondary" id="prevBtn" onclick="changePage(-1)" disabled>← Föregående</button>
+            <span class="adm-muted-text" id="pageLabel"></span>
+            <button class="adm-btn-secondary" id="nextBtn" onclick="changePage(1)">Nästa →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEALTH TAB -->
+    <div class="tab-panel" id="panel-health">
+      <div class="adm-block">
+        <span class="adm-section-label">INDEX-HÄLSA</span>
+        <p class="adm-section-desc">Tabeller med hög andel sekventiella skanningar kan sakna lämpliga index. Över 80% på stora tabeller är värt att undersöka.</p>
+        <div class="adm-list" id="indexHealthList"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API = "";  // same origin
+    const PAGE_SIZE = 25;
+
+    const STATUS_LABEL = {
+      ok: "Ok",
+      degraded: "Degraded",
+      error: "Error",
+      ambiguous_model: "Ambiguous model",
+      insufficient_evidence: "Insufficient evidence",
+      estimated_from_depreciation: "From depreciation",
+    };
+    const STATUS_COLOR = {
+      ok: "var(--accent-positive)",
+      degraded: "var(--accent-warning)",
+      error: "var(--accent-danger)",
+      ambiguous_model: "var(--text-muted)",
+      insufficient_evidence: "var(--text-faint)",
+      estimated_from_depreciation: "var(--text-muted)",
+    };
+
+    let overviewData = null;
+    let metricsData = null;
+    let tablePage = 0;
+    let tableTotal = 0;
+    let refreshTimer = null;
+
+    // ─── Utility ───
+
+    function fmt(n) { return (n ?? 0).toLocaleString("sv-SE"); }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function sparklineSvg(data, h = 32) {
+      if (!data || data.length < 2) return "";
+      const max = Math.max(...data, 1);
+      const w = 100;
+      const pts = data.map((v, i) =>
+        `${(i / (data.length - 1)) * w},${h - (v / max) * (h - 4) - 2}`
+      ).join(" ");
+      return `<svg viewBox="0 0 ${w} ${h}" class="adm-spark" style="height:${h}px">
+        <polyline points="${pts}" fill="none" stroke="var(--text-secondary)"
+          stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.4"/>
+      </svg>`;
+    }
+
+    function statTile(label, value, sub, spark, accentClass) {
+      return `<div class="adm-stat-tile">
+        <div class="adm-stat-label">${label}</div>
+        <div class="adm-stat-value${accentClass ? ' ' + accentClass : ''}">${value}</div>
+        ${sub ? `<div class="adm-stat-sub">${sub}</div>` : ''}
+        ${spark ? sparklineSvg(spark) : ''}
+      </div>`;
+    }
+
+    function barHtml(value, max, color) {
+      const pct = Math.max(2, (value / Math.max(max, 1)) * 100);
+      return `<div class="adm-bar-track"><div class="adm-bar-fill" style="width:${pct}%;background:${color || 'var(--text-secondary)'}"></div></div>`;
+    }
+
+    // ─── Tabs ───
+
+    document.querySelectorAll(".adm-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".adm-tab").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    // ─── Error banner ───
+
+    function showError(msg) {
+      const el = document.getElementById("errorBanner");
+      document.getElementById("errorText").textContent = msg;
+      el.classList.remove("hidden");
+    }
+
+    function hideError() {
+      document.getElementById("errorBanner").classList.add("hidden");
+    }
+
+    // ─── Fetch helpers ───
+
+    async function get(path) {
+      const r = await fetch(API + path);
+      if (!r.ok) throw new Error(`API svarade med fel (${r.status})`);
+      return r.json();
+    }
+
+    // ─── Render overview ───
+
+    function renderOverview(data) {
+      overviewData = data;
+
+      // Update header subtitle
+      document.getElementById("headerSubtitle").textContent =
+        `${data.db_name} · ${data.db_size_mb} MB · ${new Date().toLocaleTimeString("sv-SE")}`;
+
+      // Populate table select
+      const sel = document.getElementById("tableSelect");
+      while (sel.options.length > 1) sel.remove(1);
+      data.tables.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.name;
+        opt.textContent = `${t.name} — ${fmt(t.rows)} rader`;
+        sel.appendChild(opt);
+      });
+
+      // Stat tiles
+      const uptimeVal = data.uptime_hours != null ? `${Math.floor(data.uptime_hours)}h` : "—";
+      document.getElementById("overviewStats").innerHTML =
+        statTile("DATABASSTORLEK", `${data.db_size_mb} MB`, data.db_name) +
+        statTile("DRIFTTID", uptimeVal, "sedan senaste omstart") +
+        statTile("AKTIVA ANSLUTNINGAR", data.active_connections, `${data.total_connections} totalt`,
+          null, data.active_connections > 20 ? "warning" : null) +
+        statTile("TABELLER", data.tables.length, "i public schema");
+
+      // Tables list
+      const list = document.getElementById("tablesList");
+      list.innerHTML = "";
+      data.tables.forEach((t, i) => {
+        const row = el("div", "adm-row" + (i < data.tables.length - 1 ? " divided" : ""));
+        const info = el("div");
+        info.appendChild(el("div", "adm-row-primary", t.name));
+        info.appendChild(el("div", "adm-row-secondary", `${fmt(t.rows)} rader · ${t.size}`));
+        row.appendChild(info);
+        const meta = el("div", "adm-row-meta",
+          t.last_analyze ? new Date(t.last_analyze).toLocaleDateString("sv-SE") : "Aldrig analyserad"
+        );
+        row.appendChild(meta);
+        list.appendChild(row);
+      });
+
+      // PG version
+      const pgDiv = document.getElementById("pgVersion");
+      pgDiv.querySelector("span").textContent = data.pg_version;
+    }
+
+    // ─── Render metrics ───
+
+    function renderMetrics(data) {
+      metricsData = data;
+
+      const dailyCounts = data.daily_volume.map(d => d.count);
+      const hourlyCounts = data.hourly_volume.map(d => d.count);
+
+      const avgConf = data.avg_confidence;
+      let confClass = null;
+      if (avgConf != null) {
+        confClass = avgConf < 0.5 ? "danger" : avgConf < 0.7 ? "warning" : "positive";
+      }
+      const confStr = avgConf != null ? `${(avgConf * 100).toFixed(1)}%` : "—";
+
+      document.getElementById("metricsStats").innerHTML =
+        statTile("TOTALT", fmt(data.total_valuations), null, dailyCounts) +
+        statTile("SENASTE 24H", fmt(data.last_24h), null, hourlyCounts.slice(-24)) +
+        statTile("SENASTE 7 DAGAR", fmt(data.last_7d), null, dailyCounts.slice(-7)) +
+        statTile("GENOMSNITTLIG KONFIDENS", confStr, null, null, confClass);
+
+      // Status breakdown
+      const statusList = document.getElementById("statusList");
+      statusList.innerHTML = "";
+      data.status_breakdown.forEach((s, i) => {
+        const row = el("div", "adm-row adm-row-status" + (i < data.status_breakdown.length - 1 ? " divided" : ""));
+        const dot = el("span", "adm-dot");
+        dot.style.background = STATUS_COLOR[s.status] || "var(--text-faint)";
+        row.appendChild(dot);
+        row.appendChild(el("span", "adm-row-primary", STATUS_LABEL[s.status] || s.status));
+        const barWrap = el("div", "adm-bar-mid");
+        barWrap.innerHTML = barHtml(s.pct, 100, STATUS_COLOR[s.status]);
+        row.appendChild(barWrap);
+        row.appendChild(el("span", "adm-row-meta", `${s.pct}%`));
+        row.appendChild(el("span", "adm-row-count", fmt(s.count)));
+        statusList.appendChild(row);
+      });
+
+      // Brands
+      const maxBrand = Math.max(...data.top_brands.map(b => b.count), 1);
+      const brandsList = document.getElementById("brandsList");
+      brandsList.innerHTML = "";
+      data.top_brands.forEach((b, i) => {
+        const row = el("div", "adm-row" + (i < data.top_brands.length - 1 ? " divided" : ""));
+        row.appendChild(el("span", "adm-row-primary", b.brand));
+        const barWrap = el("div", "adm-bar-mid");
+        barWrap.innerHTML = barHtml(b.count, maxBrand);
+        row.appendChild(barWrap);
+        row.appendChild(el("span", "adm-row-count", fmt(b.count)));
+        brandsList.appendChild(row);
+      });
+
+      // Categories
+      const maxCat = Math.max(...data.top_categories.map(c => c.count), 1);
+      const catList = document.getElementById("categoriesList");
+      catList.innerHTML = "";
+      data.top_categories.forEach((c, i) => {
+        const row = el("div", "adm-row" + (i < data.top_categories.length - 1 ? " divided" : ""));
+        row.appendChild(el("span", "adm-row-primary", c.category));
+        const barWrap = el("div", "adm-bar-mid");
+        barWrap.innerHTML = barHtml(c.count, maxCat, "var(--text-muted)");
+        row.appendChild(barWrap);
+        row.appendChild(el("span", "adm-row-count", fmt(c.count)));
+        catList.appendChild(row);
+      });
+    }
+
+    // ─── Render index health ───
+
+    function renderIndexHealth(data) {
+      const list = document.getElementById("indexHealthList");
+      list.innerHTML = "";
+      if (!data.length) {
+        list.appendChild(el("div", "adm-row adm-muted-text", "Inga data tillgängliga."));
+        return;
+      }
+      data.forEach((r, i) => {
+        const row = el("div", "adm-row" + (i < data.length - 1 ? " divided" : ""));
+        const info = el("div");
+        info.appendChild(el("div", "adm-row-primary", r.table_name));
+        info.appendChild(el("div", "adm-row-secondary",
+          `${fmt(r.live_rows)} rader · seq ${fmt(r.seq_scan)} · idx ${fmt(r.idx_scan)}`
+        ));
+        row.appendChild(info);
+        const pill = el("span", "adm-pct-pill", `${r.seq_scan_pct}%`);
+        if (r.seq_scan_pct > 80) {
+          pill.style.color = "var(--accent-danger)";
+          pill.style.background = "rgba(196,67,42,0.08)";
+        } else if (r.seq_scan_pct > 50) {
+          pill.style.color = "var(--accent-warning)";
+          pill.style.background = "rgba(212,160,23,0.10)";
+        } else {
+          pill.style.color = "var(--accent-positive)";
+          pill.style.background = "rgba(52,168,115,0.10)";
+        }
+        row.appendChild(pill);
+        list.appendChild(row);
+      });
+    }
+
+    // ─── Table browser ───
+
+    async function loadTable(resetPage) {
+      const name = document.getElementById("tableSelect").value;
+      if (!name) return;
+      if (resetPage) tablePage = 0;
+
+      const wrap = document.getElementById("tableScrollWrap");
+      const info = document.getElementById("tableInfo");
+
+      try {
+        const data = await get(`/admin/table/${name}?limit=${PAGE_SIZE}&offset=${tablePage * PAGE_SIZE}`);
+        tableTotal = data.total;
+        const totalPages = Math.ceil(tableTotal / PAGE_SIZE);
+
+        info.textContent = `${fmt(tableTotal)} rader · sida ${tablePage + 1} av ${totalPages}`;
+        info.style.display = "block";
+
+        // Build table
+        const head = document.getElementById("tableHead");
+        head.innerHTML = "<tr>" + data.columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
+
+        const body = document.getElementById("tableBody");
+        body.innerHTML = data.rows.map(row =>
+          "<tr>" + row.map(cell =>
+            cell === null
+              ? `<td><span class="adm-null">null</span></td>`
+              : `<td>${String(cell)}</td>`
+          ).join("") + "</tr>"
+        ).join("");
+
+        document.getElementById("prevBtn").disabled = tablePage === 0;
+        document.getElementById("nextBtn").disabled = tablePage >= totalPages - 1;
+        document.getElementById("pageLabel").textContent = `${tablePage + 1} / ${totalPages}`;
+
+        wrap.style.display = "block";
+      } catch (e) {
+        info.textContent = "Kunde inte ladda tabell: " + e.message;
+        info.style.display = "block";
+      }
+    }
+
+    function changePage(dir) {
+      tablePage += dir;
+      loadTable();
+    }
+
+    // ─── Main fetch ───
+
+    async function fetchAll() {
+      hideError();
+      try {
+        const [ov, m, ih] = await Promise.all([
+          get("/admin/overview"),
+          get("/admin/metrics"),
+          get("/admin/index-health"),
+        ]);
+        document.getElementById("skeletonLoader").style.display = "none";
+        document.querySelectorAll(".tab-panel").forEach(p => {
+          if (p.id === "panel-" + document.querySelector(".adm-tab.active").dataset.tab) {
+            p.classList.add("active");
+          }
+        });
+        renderOverview(ov);
+        renderMetrics(m);
+        renderIndexHealth(ih);
+      } catch (e) {
+        document.getElementById("skeletonLoader").style.display = "none";
+        showError(e.message || "Kunde inte nå servern");
+      }
+    }
+
+    // Initial load + auto-refresh
+    fetchAll();
+    refreshTimer = setInterval(fetchAll, 30_000);
+  </script>
+</body>
+</html>

@@ -16,7 +16,8 @@ Local MVP for estimating the second-hand value of consumer tech products from ph
 image upload → api/value.py → value_engine.py (orchestrates) → vision_service.py → market_data_service.py + new_price_service.py (parallel) → comparable_scoring.py → pricing_service.py → api/value.py (enrich_envelope) → response
 
 ## File Map
-backend/app/main.py — FastAPI app, CORS, serves frontend/index.html, /health endpoint, DB init on startup
+backend/app/main.py — FastAPI app, CORS, serves frontend/index.html + frontend/admin.html, /health endpoint, DB init on startup
+backend/app/routers/admin.py — read-only admin API: DB overview, valuation metrics, table browser, index health, slow queries
 backend/app/api/value.py — POST /value + POST /feedback endpoints; saves every valuation to DB via BackgroundTasks
 backend/app/db/__init__.py — empty
 backend/app/db/database.py — async SQLAlchemy engine, session factory, init_db()
@@ -46,7 +47,8 @@ backend/app/schemas/market_comparable.py — market comparable schema
 backend/app/utils/cache.py — simple in-memory TTL cache (1h default); used by blocket_client + serper_new_price_client
 backend/app/utils/error_reporting.py — structured JSON error logging to logs/errors.jsonl
 backend/app/utils/normalization.py — text normalization utilities
-frontend/index.html — single-page UI in Swedish, image upload, result display
+frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
+frontend/admin.html — vanilla JS admin dashboard; tabs: DB overview, valuations metrics, table browser, index health
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
@@ -63,6 +65,12 @@ automation/history/IMPROVEMENTS.md — improvement history
 POST /value — JSON body: `{image?, images?, filename?, brand?, model?}`; returns ValueEnvelope JSON (includes valuation_id)
 POST /feedback — JSON body: `{valuation_id, feedback, corrected_product?}`; saves user feedback
 GET / — serves frontend/index.html
+GET /admin — serves frontend/admin.html
+GET /admin/overview — DB size, version, uptime, connections, table list
+GET /admin/metrics — valuation counts, confidence, status/brand/category breakdowns
+GET /admin/table/{name} — paginated rows for any public table (25/page)
+GET /admin/index-health — seq scan ratios to spot missing indexes
+GET /admin/slow-queries — currently running queries >500ms
 GET /health — returns "API running"
 
 ## Env Vars
@@ -85,7 +93,7 @@ GET /health — returns "API running"
 
 ## Response States
 - ok — enough evidence, shows used-value range
-- ambiguous_model — confidence < 0.72 or needs more photos, returns requested angles
+- ambiguous_model — confidence < 0.55 or hard ambiguity signal, returns requested angles
 - insufficient_evidence — product identified but < 3 relevant comparables or low confidence
 - degraded — upstream API failure (vision, Tradera); SerpAPI failure is silent (not a degraded trigger)
 - error — request failed (bad upload, decode failure, unexpected exception)
@@ -97,6 +105,11 @@ GET /health — returns "API running"
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — fix: image-based valuations always returned ambiguous_model; root cause: MULTIPLE_ALTERNATIVES_CONFIDENCE_CAP (0.74) is structurally always below AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD (0.90), so candidate_models always triggered hard-block; fix: demoted multiple_plausible_models from hard_block_reasons to soft warning; only missing_brand_or_model now hard-blocks
+2026-03-25 — admin dashboard: GET /admin serves vanilla JS admin.html; admin router with DB overview, valuation metrics, table browser, index health, slow queries; Admin nav button added to main header
+2026-03-24 — frontend fixes: double product name dedup (WH-1000XM + WH-1000XM4 → WH-1000XM4); comparable status field (status=completed → Såld); quick comparables list now visible in main view (no need to expand "Se detaljer"); ended_at time-ago shown per comparable
+2026-03-24 — pipeline fixes: AVIF image support; color word stripping before Blocket query; MIN_SOLD_COMPARABLES=0; confidence floor 0.55; needs_more_images demoted to warning; Blocket/Tradera comparables no longer classified as "related" in frontend; category passed through manual override
+2026-03-24 — frontend rewrite: premium Klarna-style design system; warm off-white tokens; Inter font; Lucide icons throughout; upload, scanning, and result screens redesigned; quick view with text-hero estimate, combined info line, retention bar; advanced view with dot plot, comparable listings, reasoning, feedback, next steps; ambiguous/insufficient/error states redesigned; no blue, no emoji; all JS logic preserved unchanged
 2026-03-24 — zero-SerpAPI pipeline: blocket-api package integrated as primary used-market source; Serper.dev as primary new-price source; SerpAPI demoted to optional fallback for both; prisjakt_client.py stub documents 403 block; in-memory TTL cache added
 2026-03-24 — bug sweep (14 issues): removed google_shopping from used-market pipeline; removed fabricated price history; vision sends all images in one joint request; degraded status suppresses estimates; preliminary estimate no longer uses single_source_insufficient anchor; word-boundary fix for locked/unlocked; removed client-side VITE_API_KEY auth; CORS allow_credentials fixed; variant-aware wrong-model detection (iPhone 13 Pro); EXIF strip fails closed; manual override no longer sets category=manual_override; close.py blocks on TBD golden tests + parses bullet-prefixed Learning fields; escape hatch hidden when no estimate exists
 2026-03-24 — data flywheel: PostgreSQL + asyncpg + SQLAlchemy async; Valuation + PriceSnapshot models; save every result via BackgroundTasks; POST /feedback endpoint; Alembic initial migration

@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from backend.app.api.value import router as value_router
 from backend.app.core.config import settings
 from backend.app.db.database import init_db
+from backend.app.routers.admin import admin_router
 
 app = FastAPI(title="valuation-mvp")
 app.state.settings = settings
@@ -20,6 +21,7 @@ app.state.is_mock_mode = settings.is_mock_mode
 async def startup():
     await init_db()
 FRONTEND_INDEX = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+FRONTEND_ADMIN = Path(__file__).resolve().parents[2] / "frontend" / "admin.html"
 
 # Keep local development simple when opening the HTML file directly.
 app.add_middleware(
@@ -41,4 +43,10 @@ def health_check():
     return "API running"
 
 
+@app.get("/admin", response_class=FileResponse)
+def admin_ui():
+    return FileResponse(FRONTEND_ADMIN)
+
+
 app.include_router(value_router)
+app.include_router(admin_router)
