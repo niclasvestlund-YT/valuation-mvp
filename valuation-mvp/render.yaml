@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: valuation-preprod
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SERPER_DEV_API_KEY
+        sync: false
+      - key: TRADERA_APP_ID
+        sync: false
+      - key: TRADERA_APP_KEY
+        sync: false
+      - key: SEARCH_PROVIDER
+        value: serper
+      - key: PORT
+        value: 8000

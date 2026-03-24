@@ -1,0 +1,13 @@
+{
+  "id": "task_001_sony_wh1000x_distinction",
+  "title": "Improve Sony WH-1000XM4 vs WH-1000XM5 distinction without breaking API shape.",
+  "goal": "Improve Sony WH-1000XM4 vs WH-1000XM5 distinction without breaking API shape.",
+  "constraints": [
+    "Preserve current API shape unless explicitly requested",
+    "Prefer small reversible changes",
+    "Protect trust over coverage",
+    "Keep debug_summary behavior intact"
+  ],
+  "north_star_path": "automation/product/NORTH_STAR.md",
+  "golden_tests_path": "automation/product/GOLDEN_TEST_CASES.md"
+}

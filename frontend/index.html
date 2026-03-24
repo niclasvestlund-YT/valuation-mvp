@@ -1,0 +1,2307 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>valuation-mvp | Begagnatvärde för teknik</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #f4f6f8;
+        color: #1f2933;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin-top: 0;
+      }
+
+      p {
+        margin-top: 0;
+        color: #52606d;
+      }
+
+      .card {
+        background: #ffffff;
+        border: 1px solid #d9e2ec;
+        border-radius: 14px;
+        padding: 20px;
+        margin-top: 20px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 16px;
+      }
+
+      input[type="file"],
+      input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #bcccdc;
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      button {
+        margin-top: 16px;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 10px;
+        background: #1565c0;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #334e68;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.7;
+      }
+
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .preview-item {
+        background: #f8fafc;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        padding: 8px;
+      }
+
+      .preview-item img {
+        display: block;
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #e4e7eb;
+      }
+
+      .preview-item span {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        word-break: break-word;
+      }
+
+      .result-empty {
+        color: #7b8794;
+      }
+
+      .status-banner {
+        border-radius: 12px;
+        padding: 16px 18px;
+        border: 1px solid transparent;
+      }
+
+      .status-ok {
+        background: #e8f7ee;
+        border-color: #b7e3c6;
+        color: #0f5132;
+      }
+
+      .status-ambiguous {
+        background: #fff4d8;
+        border-color: #f0d58b;
+        color: #7c5700;
+      }
+
+      .status-insufficient {
+        background: #f5f7fa;
+        border-color: #d9e2ec;
+        color: #334e68;
+      }
+
+      .status-degraded {
+        background: #fff1f0;
+        border-color: #f2b8b5;
+        color: #8a1f17;
+      }
+
+      .status-error {
+        background: #fde8e8;
+        border-color: #ef9a9a;
+        color: #7a1010;
+      }
+
+      .status-title {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .status-message {
+        margin-top: 6px;
+        color: inherit;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .product-name {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.15;
+      }
+
+      .result-layout {
+        display: grid;
+        gap: 18px;
+      }
+
+      .section-block {
+        display: grid;
+        gap: 10px;
+      }
+
+      .section-title {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .section-copy {
+        color: #52606d;
+        line-height: 1.6;
+      }
+
+      .range-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+      }
+
+      .range-card {
+        background: #f8fafc;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .range-card.primary {
+        background: #eef6ff;
+        border-color: #9ec5f8;
+      }
+
+      .range-label {
+        font-size: 13px;
+        color: #7b8794;
+      }
+
+      .range-value {
+        margin-top: 6px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .stat-card {
+        background: #f8fafc;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        padding: 14px;
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: #7b8794;
+      }
+
+      .stat-value {
+        margin-top: 6px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .confidence-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .confidence-high {
+        background: #d9f2e3;
+        color: #0b6b34;
+      }
+
+      .confidence-medium {
+        background: #fff2d6;
+        color: #8d5d00;
+      }
+
+      .confidence-low {
+        background: #fde8e8;
+        color: #a61b1b;
+      }
+
+      .source-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .candidate-list,
+      .angle-list,
+      .warning-list,
+      .reason-list,
+      .notes-list {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid #d9e2ec;
+        font-size: 14px;
+      }
+
+      .source-card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        background: #ffffff;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        padding: 14px;
+        transition: transform 0.12s ease, border-color 0.12s ease;
+      }
+
+      .source-card:hover {
+        transform: translateY(-1px);
+        border-color: #1565c0;
+      }
+
+      .source-title {
+        font-weight: 700;
+      }
+
+      .source-meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #7b8794;
+      }
+
+      .manual-form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .detail-card {
+        background: #f8fafc;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        padding: 14px;
+      }
+
+      .detail-card strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .summary-card {
+        display: grid;
+        gap: 16px;
+        padding: 20px;
+        border: 1px solid #d9e2ec;
+        border-radius: 16px;
+      }
+
+      .summary-card[data-status="ok"] {
+        background: linear-gradient(135deg, #eef9f1 0%, #ffffff 58%);
+      }
+
+      .summary-card[data-status="ambiguous_model"] {
+        background: linear-gradient(135deg, #fff7e6 0%, #ffffff 58%);
+      }
+
+      .summary-card[data-status="insufficient_evidence"] {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 58%);
+      }
+
+      .summary-card[data-status="degraded"],
+      .summary-card[data-status="error"] {
+        background: linear-gradient(135deg, #fff4f2 0%, #ffffff 58%);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .summary-panel {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #d9e2ec;
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .summary-side {
+        display: grid;
+        gap: 12px;
+      }
+
+      .summary-eyebrow {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #7b8794;
+      }
+
+      .summary-main-value {
+        margin-top: 8px;
+        font-size: 34px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .summary-secondary-value {
+        margin-top: 8px;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .summary-support {
+        margin: 8px 0 0;
+        color: #52606d;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+
+      .summary-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 1px solid #d9e2ec;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .summary-note {
+        display: grid;
+        gap: 10px;
+        padding: 16px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #d9e2ec;
+      }
+
+      .summary-note-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .summary-note-text {
+        color: #52606d;
+        line-height: 1.6;
+      }
+
+      .summary-note .tag-list {
+        gap: 8px;
+      }
+
+      .action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .copy-status {
+        font-size: 13px;
+        color: #52606d;
+      }
+
+      .dev-error-panel {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid #d9e2ec;
+        border-radius: 14px;
+        background: #f8fafc;
+      }
+
+      .dev-error-panel .action-row button {
+        margin-top: 0;
+        flex: 1 1 180px;
+      }
+
+      .dev-technical-panel {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid #d9e2ec;
+        background: #ffffff;
+      }
+
+      .dev-path-list {
+        margin: 0;
+        padding-left: 20px;
+        color: #52606d;
+      }
+
+      .collapsible {
+        background: #ffffff;
+        border: 1px solid #d9e2ec;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .collapsible summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .collapsible summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .collapsible-meta {
+        font-size: 13px;
+        color: #7b8794;
+        font-weight: 400;
+      }
+
+      .collapsible-content {
+        display: grid;
+        gap: 16px;
+        padding: 0 16px 16px;
+        border-top: 1px solid #e4e7eb;
+      }
+
+      .manual-collapsible .collapsible-content {
+        padding-top: 16px;
+      }
+
+      .manual-note {
+        margin-bottom: 0;
+      }
+
+      .muted {
+        color: #7b8794;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 20px 12px 36px;
+        }
+
+        .card {
+          padding: 16px;
+          margin-top: 16px;
+        }
+
+        .status-banner,
+        .summary-card {
+          padding: 16px;
+        }
+
+        .product-name {
+          font-size: 26px;
+        }
+
+        .summary-grid,
+        .detail-grid,
+        .source-grid,
+        .range-grid,
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .summary-main-value {
+          font-size: 30px;
+        }
+
+        .summary-secondary-value,
+        .range-value,
+        .stat-value {
+          font-size: 24px;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card hero">
+        <div>
+          <h1>valuation-mvp</h1>
+          <p>Ladda upp bilder för att uppskatta andrahandsvärdet på teknik och hjälpa oss identifiera rätt produkt.</p>
+        </div>
+
+        <div>
+          <label for="imageInput">Produktbilder</label>
+          <input id="imageInput" type="file" accept="image/*" multiple />
+          <button id="analyzeButton" type="button">Analysera begagnatvärde</button>
+        </div>
+
+        <div id="previewGrid" class="preview-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2>Begagnatvärde</h2>
+        <div id="result">
+          <div class="result-empty">Ingen begagnatvärdering ännu.</div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const imageInput = document.getElementById("imageInput");
+      const analyzeButton = document.getElementById("analyzeButton");
+      const previewGrid = document.getElementById("previewGrid");
+      const result = document.getElementById("result");
+
+      const sourceLinks = {
+        "OpenAI Responses API": {
+          href: "https://developers.openai.com/api/reference/responses",
+          meta: "Produktidentifiering",
+        },
+        "OpenAI Vision API": {
+          href: "https://developers.openai.com/api/docs/guides/images-vision",
+          meta: "Bildanalys",
+        },
+        "Manual override": {
+          href: "#manual-correction",
+          meta: "Manuell korrigering",
+        },
+        "Mock vision fallback": {
+          href: "#manual-correction",
+          meta: "Fallback",
+        },
+        "Mock vision fallback (missing OPENAI_API_KEY)": {
+          href: "#manual-correction",
+          meta: "Ingen API-nyckel",
+        },
+        "Mock vision fallback (no usable image data)": {
+          href: "#manual-correction",
+          meta: "Ingen bilddata",
+        },
+        "Mock vision fallback (OpenAI API error)": {
+          href: "https://developers.openai.com/api/docs/guides/images-vision",
+          meta: "API-fallback",
+        },
+        "Mock marketplace data": {
+          href: "https://www.tradera.com/",
+          meta: "Marknadsreferens",
+        },
+        "Mock Google Shopping": {
+          href: "https://shopping.google.com/",
+          meta: "Nypriskontext",
+        },
+        Tradera: {
+          href: "https://www.tradera.com/",
+          meta: "Andrahandsjämförelse",
+        },
+        Blocket: {
+          href: "https://www.blocket.se/",
+          meta: "Andrahandsjämförelse",
+        },
+        blocket_serpapi: {
+          href: "https://www.blocket.se/",
+          meta: "Andrahandsjämförelse",
+        },
+        tradera_serpapi: {
+          href: "https://www.tradera.com/",
+          meta: "Andrahandsjämförelse",
+        },
+        "SerpApi Google Shopping": {
+          href: "https://serpapi.com/google-shopping-api",
+          meta: "Nypriskontext",
+        },
+      };
+      const INTERNAL_SOURCES = new Set([
+        "OpenAI Responses API",
+        "OpenAI Vision API",
+        "Manual override",
+        "Mock vision service",
+        "Mock vision fallback",
+        "Mock vision fallback (missing OPENAI_API_KEY)",
+        "Mock vision fallback (no usable image data)",
+        "Mock vision fallback (OpenAI API error)",
+      ]);
+
+      function getApiUrl() {
+        if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+          return "/value";
+        }
+
+        return "http://127.0.0.1:8000/value";
+      }
+
+      function formatCurrency(value, currency = "SEK") {
+        if (value === null || value === undefined || Number.isNaN(Number(value))) {
+          return "Okänt";
+        }
+
+        const rounded = Math.round(Number(value));
+
+        if (currency === "SEK") {
+          return `${new Intl.NumberFormat("sv-SE").format(rounded)} kr`;
+        }
+
+        try {
+          return new Intl.NumberFormat("sv-SE", {
+            style: "currency",
+            currency,
+            maximumFractionDigits: 0,
+          }).format(rounded);
+        } catch (error) {
+          return `${new Intl.NumberFormat("sv-SE").format(rounded)} ${currency}`;
+        }
+      }
+
+      function getConfidenceLabel(confidence) {
+        if (confidence === null || confidence === undefined) {
+          return { label: "Okänd", className: "confidence-medium" };
+        }
+
+        if (confidence >= 0.8) {
+          return { label: "Hög", className: "confidence-high" };
+        }
+
+        if (confidence >= 0.6) {
+          return { label: "Medel", className: "confidence-medium" };
+        }
+
+        return { label: "Låg", className: "confidence-low" };
+      }
+
+      function getConfidenceText(confidence) {
+        const label = getConfidenceLabel(confidence);
+        if (confidence === null || confidence === undefined) {
+          return label.label;
+        }
+
+        return `${label.label} (${confidence.toFixed(2)})`;
+      }
+
+      function normalizeKey(value) {
+        return String(value || "").toLowerCase().replace(/[-_\s]+/g, " ").trim();
+      }
+
+      function getDetectedProductName(data) {
+        const parts = [];
+        const seen = new Set();
+
+        [data.brand, data.line, data.model, data.variant].forEach((part) => {
+          if (!part) return;
+          const key = normalizeKey(part);
+          if (!key || seen.has(key)) return;
+
+          if (parts.length) {
+            const combinedKey = normalizeKey(parts.join(" "));
+            if (combinedKey.includes(key)) return;
+            if (key.includes(combinedKey)) {
+              parts.length = 0;
+              seen.clear();
+            }
+          }
+
+          parts.push(part);
+          seen.add(key);
+        });
+
+        return parts.join(" ").trim();
+      }
+
+      function getStatusClass(status) {
+        if (status === "ok") return "status-ok";
+        if (status === "ambiguous_model") return "status-ambiguous";
+        if (status === "insufficient_evidence") return "status-insufficient";
+        if (status === "degraded") return "status-degraded";
+        return "status-error";
+      }
+
+      function buildClientErrorEnvelope({
+        message,
+        technicalMessage = null,
+        debugId = "client_request_failure",
+        errorStage = "response_build",
+        status = "error",
+      }) {
+        const userMessage = message || "Begäran kunde inte slutföras.";
+        return {
+          status,
+          status_title: status === "degraded" ? "Tillfälligt systemproblem" : "Kunde inte värdera enheten",
+          status_message: userMessage,
+          user_status_title: status === "degraded" ? "Tillfälligt problem i tjänsten" : "Begäran kunde inte behandlas",
+          user_explanation: userMessage,
+          recommended_action: "Försök igen om en liten stund eller skicka debug-ID till Codex.",
+          error_stage: errorStage,
+          user_message: userMessage,
+          technical_message: technicalMessage,
+          data: null,
+          warnings: technicalMessage ? [technicalMessage] : [],
+          reasons: ["client_request_failure"],
+          reason_details: ["Begäran kunde inte slutföras som förväntat."],
+          debug_id: debugId,
+        };
+      }
+
+      function createStatusBanner(envelope) {
+        const banner = document.createElement("div");
+        const title = document.createElement("div");
+        const message = document.createElement("div");
+
+        banner.className = `status-banner ${getStatusClass(envelope.status)}`;
+        title.className = "status-title";
+        message.className = "status-message";
+        title.textContent = envelope.user_status_title || envelope.status_title || "Resultat";
+        message.textContent = envelope.user_explanation || envelope.status_message || "";
+        banner.appendChild(title);
+        banner.appendChild(message);
+        return banner;
+      }
+
+      function renderPreviews(files) {
+        previewGrid.innerHTML = "";
+
+        files.forEach((file) => {
+          const item = document.createElement("div");
+          const image = document.createElement("img");
+          const label = document.createElement("span");
+          const imageUrl = URL.createObjectURL(file);
+
+          item.className = "preview-item";
+          image.src = imageUrl;
+          image.alt = file.name;
+          image.onload = () => URL.revokeObjectURL(imageUrl);
+          label.textContent = file.name;
+
+          item.appendChild(image);
+          item.appendChild(label);
+          previewGrid.appendChild(item);
+        });
+      }
+
+      function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error(`Kunde inte läsa ${file.name}`));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function buildImagePayloads() {
+        const files = Array.from(imageInput.files);
+        const images = await Promise.all(files.map(fileToDataUrl));
+
+        return {
+          files,
+          images,
+        };
+      }
+
+      async function requestValuation(overrides = {}) {
+        const { files, images } = await buildImagePayloads();
+
+        const response = await fetch(getApiUrl(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filename: files[0] ? files[0].name : null,
+            images,
+            brand: overrides.brand || null,
+            model: overrides.model || null,
+          }),
+        });
+
+        if (!response.ok) {
+          let payload = null;
+
+          try {
+            payload = await response.json();
+          } catch (error) {
+            payload = null;
+          }
+
+          if (payload?.status) {
+            const error = new Error(payload.user_message || payload.status_message || "Begäran misslyckades");
+            error.envelope = payload;
+            throw error;
+          }
+
+          const detail = payload?.detail;
+          const technicalMessage =
+            typeof detail === "string"
+              ? detail
+              : detail?.message || (payload ? JSON.stringify(payload) : "Inget extra felsvar kunde läsas.");
+          const error = new Error(payload?.user_message || detail?.message || "Begäran misslyckades");
+          error.envelope = buildClientErrorEnvelope({
+            message: error.message,
+            technicalMessage,
+            debugId: payload?.debug_id || "client_http_failure",
+            errorStage: payload?.error_stage || "response_build",
+          });
+          throw error;
+        }
+
+        return response.json();
+      }
+
+      function formatValuationMethod(method) {
+        if (!method) {
+          return "Ej angiven";
+        }
+
+        const mapping = {
+          relevance_weighted_median_with_robust_outlier_filter:
+            "Median av jämförbara annonser med avvikarfilter",
+          relevance_weighted_median_with_robust_outlier_filter_and_new_price_constraint:
+            "Median av jämförbara annonser med avvikarfilter och nypriskontext",
+        };
+
+        return mapping[method] || method.replaceAll("_", " ");
+      }
+
+      function createSectionTitle(text) {
+        const heading = document.createElement("h3");
+        heading.className = "section-title";
+        heading.textContent = text;
+        return heading;
+      }
+
+      function createSectionCopy(text) {
+        const paragraph = document.createElement("p");
+        paragraph.className = "section-copy";
+        paragraph.textContent = text;
+        return paragraph;
+      }
+
+      function createMetricCard(label, value) {
+        const card = document.createElement("div");
+        const strong = document.createElement("strong");
+        const text = document.createElement("div");
+
+        card.className = "detail-card";
+        strong.textContent = label;
+        text.textContent = value;
+        card.appendChild(strong);
+        card.appendChild(text);
+        return card;
+      }
+
+      function createListSection(title, items, className = "notes-list") {
+        if (!items || !items.length) {
+          return null;
+        }
+
+        const section = document.createElement("section");
+        const heading = createSectionTitle(title);
+        const list = document.createElement("ul");
+
+        section.className = "section-block";
+        list.className = className;
+
+        items.forEach((itemText) => {
+          const item = document.createElement("li");
+          item.textContent = itemText;
+          list.appendChild(item);
+        });
+
+        section.appendChild(heading);
+        section.appendChild(list);
+        return section;
+      }
+
+      function isDevelopmentMode() {
+        const params = new URLSearchParams(window.location.search);
+        const host = window.location.hostname;
+        if (params.get("dev") === "1") {
+          return true;
+        }
+        return window.location.protocol === "file:" || host === "localhost" || host === "127.0.0.1";
+      }
+
+      async function copyTextToClipboard(text) {
+        if (!text) {
+          throw new Error("Inget innehåll att kopiera.");
+        }
+
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "readonly");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+
+      function createTechnicalDetailsContent(envelope, { showIntro = true } = {}) {
+        if (!envelope?.error_stage && !envelope?.technical_message && !envelope?.debug_id) {
+          return null;
+        }
+        const block = document.createElement("div");
+        const grid = document.createElement("div");
+
+        block.className = "section-block";
+        grid.className = "detail-grid";
+
+        if (showIntro) {
+          const intro = document.createElement("p");
+          intro.className = "section-copy";
+          intro.textContent = "Det här hjälper vid felsökning eller om du vill skicka felet vidare till Codex.";
+          block.appendChild(intro);
+        }
+
+        if (envelope.error_stage) {
+          grid.appendChild(createMetricCard("Felssteg", envelope.error_stage));
+        }
+        if (envelope.status) {
+          grid.appendChild(createMetricCard("Status", envelope.status));
+        }
+        if (envelope.debug_id) {
+          grid.appendChild(createMetricCard("Debug ID", envelope.debug_id));
+        }
+
+        if (grid.childNodes.length) {
+          block.appendChild(grid);
+        }
+
+        if (envelope.technical_message) {
+          block.appendChild(createSectionCopy(envelope.technical_message));
+        }
+
+        return block;
+      }
+
+      function createTechnicalDetailsSection(envelope) {
+        const technicalContent = createTechnicalDetailsContent(envelope);
+        if (!technicalContent) {
+          return null;
+        }
+
+        const { details, content } = createCollapsibleSection(
+          "Tekniska detaljer",
+          envelope.debug_id ? `Debug ID ${envelope.debug_id}` : "För felsökning"
+        );
+        content.appendChild(technicalContent);
+        return details;
+      }
+
+      function createDevErrorActionPanel(envelope) {
+        const devError = envelope?.dev_error;
+        if (!isDevelopmentMode() || !devError) {
+          return null;
+        }
+
+        const section = document.createElement("section");
+        const metaGrid = document.createElement("div");
+        const actionRow = document.createElement("div");
+        const feedback = document.createElement("div");
+        const artifactNote = document.createElement("p");
+        const technicalPanel = document.createElement("div");
+        const fixButton = document.createElement("button");
+        const reportButton = document.createElement("button");
+        const detailsButton = document.createElement("button");
+
+        section.className = "dev-error-panel";
+        section.appendChild(createSectionTitle("Fixa felet snabbare"));
+        section.appendChild(
+          createSectionCopy(
+            envelope.user_message || envelope.user_explanation || "Något gick fel i värderingsflödet."
+          )
+        );
+
+        metaGrid.className = "detail-grid";
+        if (envelope.error_stage) {
+          metaGrid.appendChild(createMetricCard("Felssteg", envelope.error_stage));
+        }
+        if (envelope.debug_id) {
+          metaGrid.appendChild(createMetricCard("Debug ID", envelope.debug_id));
+        }
+        metaGrid.appendChild(createMetricCard("Nästa steg", "Kopiera fix-prompt eller felrapport till Codex"));
+        section.appendChild(metaGrid);
+
+        actionRow.className = "action-row";
+
+        fixButton.type = "button";
+        fixButton.textContent = "Fix this";
+        fixButton.addEventListener("click", async () => {
+          try {
+            await copyTextToClipboard(devError.fix_prompt_markdown);
+            feedback.textContent = `Fix-prompt kopierad från ${devError.fix_prompt_path}.`;
+          } catch (error) {
+            feedback.textContent = `Kunde inte kopiera fix-prompten: ${error.message}`;
+          }
+        });
+
+        reportButton.type = "button";
+        reportButton.className = "secondary";
+        reportButton.textContent = "Copy error report";
+        reportButton.addEventListener("click", async () => {
+          try {
+            await copyTextToClipboard(devError.report_markdown);
+            feedback.textContent = `Felrapport kopierad från ${devError.report_path}.`;
+          } catch (error) {
+            feedback.textContent = `Kunde inte kopiera felrapporten: ${error.message}`;
+          }
+        });
+
+        detailsButton.type = "button";
+        detailsButton.className = "secondary";
+        detailsButton.textContent = "Show technical details";
+
+        technicalPanel.className = "dev-technical-panel";
+        technicalPanel.hidden = true;
+        detailsButton.addEventListener("click", () => {
+          technicalPanel.hidden = !technicalPanel.hidden;
+          detailsButton.textContent = technicalPanel.hidden
+            ? "Show technical details"
+            : "Hide technical details";
+        });
+
+        actionRow.appendChild(fixButton);
+        actionRow.appendChild(reportButton);
+        actionRow.appendChild(detailsButton);
+        section.appendChild(actionRow);
+
+        feedback.className = "copy-status";
+        feedback.textContent = `Senaste artefakter sparas i ${devError.fix_prompt_path} och ${devError.report_path}.`;
+        section.appendChild(feedback);
+
+        artifactNote.className = "section-copy";
+        artifactNote.textContent = "Fix-prompten är redan formulerad för Codex och innehåller det viktigaste från felet utan att du behöver skriva om det själv.";
+        section.appendChild(artifactNote);
+
+        const technicalContent = createTechnicalDetailsContent(envelope, { showIntro: false });
+        if (technicalContent) {
+          technicalPanel.appendChild(technicalContent);
+        }
+
+        if (devError.suggested_investigation) {
+          technicalPanel.appendChild(
+            createSectionCopy(`Trolig första kontroll: ${devError.suggested_investigation}`)
+          );
+        }
+
+        if (devError.relevant_filenames?.length) {
+          const fileTitle = document.createElement("strong");
+          const fileList = document.createElement("ul");
+          fileTitle.textContent = "Troliga filer att börja med";
+          fileList.className = "dev-path-list";
+          devError.relevant_filenames.forEach((filename) => {
+            const item = document.createElement("li");
+            item.textContent = filename;
+            fileList.appendChild(item);
+          });
+          technicalPanel.appendChild(fileTitle);
+          technicalPanel.appendChild(fileList);
+        }
+
+        section.appendChild(technicalPanel);
+        return section;
+      }
+
+      function createTagSection(title, items) {
+        if (!items || !items.length) {
+          return null;
+        }
+
+        const section = document.createElement("section");
+        const heading = createSectionTitle(title);
+        const list = document.createElement("div");
+
+        section.className = "section-block";
+        list.className = "tag-list";
+
+        items.forEach((itemText) => {
+          const tag = document.createElement("span");
+          tag.className = "tag";
+          tag.textContent = itemText;
+          list.appendChild(tag);
+        });
+
+        section.appendChild(heading);
+        section.appendChild(list);
+        return section;
+      }
+
+      function createSourceCard(entry) {
+        const fallback = sourceLinks[entry.title] || sourceLinks[entry.source] || {
+          href: "#",
+          meta: "Källa",
+        };
+        const resolvedHref = entry.href || (fallback.href && fallback.href !== "#" ? fallback.href : null);
+        const card = document.createElement(resolvedHref ? "a" : "div");
+        const title = document.createElement("div");
+        const meta = document.createElement("div");
+
+        card.className = "source-card";
+        if (resolvedHref) {
+          card.href = resolvedHref;
+          card.target = "_blank";
+          card.rel = "noreferrer";
+        }
+        title.className = "source-title";
+        meta.className = "source-meta";
+
+        title.textContent = entry.title || entry.source || "Källa";
+        meta.textContent = entry.meta || fallback.meta;
+
+        card.appendChild(title);
+        card.appendChild(meta);
+        return card;
+      }
+
+      function getSourceNameFromUrl(url) {
+        if (!url) return null;
+
+        try {
+          return new URL(url).hostname.replace(/^www\./, "");
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function getDisplaySourceName(source) {
+        const mapping = {
+          Tradera: "Tradera",
+          tradera_serpapi: "Tradera",
+          Blocket: "Blocket",
+          blocket_serpapi: "Blocket",
+          "SerpApi Google Shopping": "Google Shopping",
+        };
+
+        return mapping[source] || source || "Marknadsplats";
+      }
+
+      function getFallbackMetadata(comparable) {
+        return comparable?.raw?._fallback_metadata || {};
+      }
+
+      function getComparableClassification(comparable) {
+        if (isAccessoryLikeComparable(comparable)) {
+          return "accessories";
+        }
+
+        if (isBundleLikeComparable(comparable)) {
+          return "bundles";
+        }
+
+        const metadata = getFallbackMetadata(comparable);
+        const sourceQuality = metadata.source_quality || "";
+        const exactnessConfidence = Number(metadata.exactness_confidence || 0);
+
+        if (sourceQuality === "fallback_low_exactness" || exactnessConfidence < 0.65) {
+          return "related";
+        }
+
+        return "main";
+      }
+
+      function getCheapestNewPriceSource(newPrice) {
+        const sources = newPrice?.sources || [];
+        const pricedSources = sources
+          .map((source) => ({
+            ...source,
+            numericPrice: Number(source?.price),
+          }))
+          .filter((source) => Number.isFinite(source.numericPrice) && source.numericPrice > 0);
+
+        if (!pricedSources.length) {
+          return null;
+        }
+
+        return pricedSources.sort((left, right) => left.numericPrice - right.numericPrice)[0];
+      }
+
+      function getComparableDisplayPriority(comparable, data) {
+        const title = normalizeKey(comparable?.title || "");
+        const model = normalizeKey(data?.model || "");
+        const line = normalizeKey(data?.line || "");
+        const variant = normalizeKey(data?.variant || "");
+        const metadata = getFallbackMetadata(comparable);
+        const exactnessConfidence = Number(metadata.exactness_confidence || 0);
+        const isSold = comparable?.listing_type === "sold" || comparable?.status === "completed";
+        const hasExactModel = model && title.includes(model);
+        const hasLine = line && title.includes(line);
+        const hasVariant = variant && title.includes(variant);
+
+        let priority = 0;
+        if (hasExactModel) priority += 60;
+        if (hasLine) priority += 18;
+        if (hasVariant) priority += 10;
+        if (isSold) priority += 16;
+        priority += Math.round(exactnessConfidence * 20);
+
+        return priority;
+      }
+
+      function collectSourceGroups(data, debugSummary) {
+        const groups = {
+          newPriceEntries: [],
+          mainComparableEntries: [],
+          bundleComparableEntries: [],
+          accessoryComparableEntries: [],
+          relatedComparableEntries: [],
+          otherEntries: [],
+          filteredNoise: [],
+        };
+        const seen = new Set();
+        const newPriceSources = data?.market_data?.new_price?.sources || [];
+        const comparables = [...(data?.market_data?.comparables || [])].sort((left, right) => {
+          const scoreDelta = getComparableDisplayPriority(right, data) - getComparableDisplayPriority(left, data);
+          if (scoreDelta !== 0) {
+            return scoreDelta;
+          }
+
+          return Number(right?.price || 0) - Number(left?.price || 0);
+        });
+
+        [...newPriceSources]
+          .sort((left, right) => Number(left?.price || Infinity) - Number(right?.price || Infinity))
+          .slice(0, 4)
+          .forEach((source) => {
+          const key = `${source.source || ""}:${source.url || ""}:${source.price || ""}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          groups.newPriceEntries.push({
+            title: source.source || getSourceNameFromUrl(source.url) || "Butik",
+            meta: `${source.price ? formatCurrency(source.price, source.currency || "SEK") : "Pris saknas"} · Nypriskontext`,
+            href: source.url || null,
+          });
+          });
+
+        comparables.forEach((comparable) => {
+          const key = `${comparable.source || ""}:${comparable.url || ""}:${comparable.listing_id || ""}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          const hasBids = String(comparable.raw?.HasBids || "").toLowerCase() === "true"
+            || Number(comparable.raw?.BidCount || 0) > 0;
+          const statusLabel = comparable.listing_type === "sold"
+            ? "Såld annons"
+            : hasBids
+              ? "Budgivning"
+              : "Aktiv annons";
+          const entry = {
+            title: comparable.title || comparable.source || "Marknadsplats",
+            meta: `${getDisplaySourceName(comparable.source)} · ${statusLabel} · ${formatCurrency(comparable.price, comparable.currency || "SEK")}`,
+            href: comparable.url || null,
+          };
+          const classification = getComparableClassification(comparable);
+          if (classification === "main") {
+            groups.mainComparableEntries.push(entry);
+          } else if (classification === "bundles") {
+            groups.bundleComparableEntries.push(entry);
+          } else if (classification === "accessories") {
+            groups.accessoryComparableEntries.push(entry);
+          } else {
+            groups.relatedComparableEntries.push(entry);
+          }
+        });
+
+        (data?.sources || []).forEach((source) => {
+          if (INTERNAL_SOURCES.has(source)) return;
+          const key = `fallback:${source}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          const fallback = sourceLinks[source] || { meta: "Källa", href: null };
+          groups.otherEntries.push({
+            title: source,
+            meta: fallback.meta,
+            href: fallback.href && fallback.href !== "#" ? fallback.href : null,
+          });
+        });
+
+        [
+          ...(debugSummary?.top_rejection_reasons || []),
+          ...(debugSummary?.top_downgrade_reasons || []),
+        ].slice(0, 4).forEach((item) => {
+          groups.filteredNoise.push(item);
+        });
+
+        return groups;
+      }
+
+      function getNewPriceContext(data, status) {
+        const newPrice = data?.market_data?.new_price;
+        const sourceCount = Number(newPrice?.source_count || newPrice?.sources?.length || 0);
+        const value = newPrice?.estimated_new_price;
+        const currency = newPrice?.currency || data?.market_data?.currency || "SEK";
+        const cheapestSource = getCheapestNewPriceSource(newPrice);
+
+        if (value === null || value === undefined) {
+          if (status === "ambiguous_model" && !data?.market_data) {
+            return {
+              value: "Inte hämtat än",
+              meta: "Vi väntar med nypriset tills vi är säkrare på exakt modell.",
+            };
+          }
+
+          if (status === "degraded") {
+            return {
+              value: "Tillfälligt otillgängligt",
+              meta: "Nypriset kunde inte hämtas i det här försöket.",
+            };
+          }
+
+          if (cheapestSource) {
+            return {
+              value: `Från ${formatCurrency(cheapestSource.numericPrice, cheapestSource.currency || currency)}`,
+              meta: sourceCount === 1
+                ? "En butiksträff ger nypriskontext, men underlaget är för svagt för ett fullt nypris."
+                : `Lägsta butiksträff av ${sourceCount} möjliga nypriskällor.`,
+            };
+          }
+
+          return {
+            value: "Hittades inte",
+            meta: sourceCount
+              ? `Vi hittade ${sourceCount} butiksträffar, men underlaget var för svagt för ett tryggt nypris.`
+              : "Visas bara när vi hittar trovärdiga butiksträffar.",
+          };
+        }
+
+        return {
+          value: formatCurrency(value, currency),
+          meta: sourceCount
+            ? `Stödkontext från ${sourceCount} butik${sourceCount === 1 ? "" : "er"}`
+            : "Nypriskontext",
+        };
+      }
+
+      function buildUsedValueSummary(envelope) {
+        const { status, data, debug_summary: debugSummary } = envelope;
+        const valuation = data?.valuation;
+        const preliminaryEstimate = data?.preliminary_estimate;
+        const fetched = debugSummary?.total_comparables_fetched;
+        const relevant = debugSummary?.relevant_comparables_kept;
+        const sold = debugSummary?.sold_comparables_kept;
+
+        if (status === "ok" && valuation) {
+          return {
+            title: "Uppskattat begagnatvärde",
+            value: formatCurrency(valuation.fair_estimate, valuation.currency),
+            meta: `Låg ${formatCurrency(valuation.low_estimate, valuation.currency)} · Hög ${formatCurrency(valuation.high_estimate, valuation.currency)}`,
+          };
+        }
+
+        if (status === "ambiguous_model") {
+          return {
+            title: "Begagnatvärde",
+            value: "Behöver bättre produktbilder",
+            meta: "Vi väntar med begagnatvärdet tills vi är säkrare på exakt modell.",
+          };
+        }
+
+        if (status === "insufficient_evidence") {
+          if (preliminaryEstimate) {
+            return {
+              title: "Grov uppskattning",
+              value: `~ ${formatCurrency(preliminaryEstimate.estimate, preliminaryEstimate.currency)}`,
+              meta: preliminaryEstimate.basis_summary,
+            };
+          }
+
+          if (fetched && (relevant ?? 0) === 0) {
+            return {
+              title: "Begagnatvärde",
+              value: "För svagt marknadsunderlag",
+              meta: `Vi hittade ${fetched} annonser, men ingen var tillräckligt nära rätt modell.`,
+            };
+          }
+
+          if (fetched && relevant !== null && relevant !== undefined) {
+            return {
+              title: "Begagnatvärde",
+              value: "För svagt marknadsunderlag",
+              meta: `Vi hittade ${fetched} annonser, men bara ${relevant} var tillräckligt relevanta${sold !== null && sold !== undefined ? ` och ${sold} var sålda` : ""}.`,
+            };
+          }
+
+          return {
+            title: "Begagnatvärde",
+            value: "För svagt marknadsunderlag",
+            meta: "Vi visar hellre inget värde än ett missvisande intervall.",
+          };
+        }
+
+        if (status === "degraded") {
+          return {
+            title: "Begagnatvärde",
+            value: "Tillfälligt avbrott",
+            meta: "Det här är ett systemproblem, inte ett värderingsresultat.",
+          };
+        }
+
+        return {
+          title: "Begagnatvärde",
+          value: "Kunde inte visas",
+          meta: "Försök gärna igen med samma bilder om en liten stund.",
+        };
+      }
+
+      function getSummaryNote(envelope) {
+        const { status, data, debug_summary: debugSummary } = envelope;
+        const userTitle = envelope.user_status_title;
+        const userExplanation = envelope.user_explanation;
+        const recommendedAction = envelope.recommended_action;
+
+        if (status === "ok") {
+          return {
+            title: "Vad du ser här",
+            text: data?.valuation?.evidence_summary || "Begagnatvärdet bygger på de mest relevanta andrahandsannonserna vi hittade.",
+          };
+        }
+
+        if (status === "ambiguous_model") {
+          return {
+            title: userTitle || "Vad du kan göra nu",
+            text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
+            tags: data?.requested_additional_angles || [],
+          };
+        }
+
+        if (status === "insufficient_evidence") {
+          return {
+            title: userTitle || "Varför inget begagnatvärde visas",
+            text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
+          };
+        }
+
+        if (status === "degraded") {
+          return {
+            title: userTitle || "Vad du kan göra nu",
+            text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
+          };
+        }
+
+        return {
+          title: userTitle || "Vad du kan göra nu",
+          text: [userExplanation, recommendedAction].filter(Boolean).join(" "),
+        };
+      }
+
+      function isAccessoryLikeComparable(comparable) {
+        const text = normalizeKey(`${comparable.title || ""} ${comparable.condition_hint || ""}`);
+        return [
+          "case",
+          "fodral",
+          "charger",
+          "laddare",
+          "cable",
+          "kabel",
+          "battery",
+          "batteri",
+          "mount",
+          "faste",
+          "fäste",
+          "strap",
+          "remote",
+          "cover",
+          "housing",
+          "adapter",
+        ].some((keyword) => text.includes(keyword));
+      }
+
+      function isBundleLikeComparable(comparable) {
+        const text = normalizeKey(comparable.title || "");
+        return [
+          "combo",
+          "bundle",
+          "paket",
+          "kit",
+          "adventure",
+          "creator",
+          "sandisk",
+          "mikrofon",
+          "microphone",
+          "selfie",
+          "selfie stick",
+          "battery",
+          "batteri",
+          "minneskort",
+          "micro sd",
+          "microsd",
+        ].some((keyword) => text.includes(keyword));
+      }
+
+      function getComparableSnapshot(data) {
+        const comparables = data?.market_data?.comparables || [];
+        const snapshot = {
+          total: comparables.length,
+          sold: 0,
+          active: 0,
+          bidding: 0,
+          accessoryLike: 0,
+          bundleLike: 0,
+        };
+
+        comparables.forEach((comparable) => {
+          if (comparable.listing_type === "sold" || comparable.status === "completed") {
+            snapshot.sold += 1;
+          } else {
+            snapshot.active += 1;
+          }
+
+          if (String(comparable.raw?.HasBids || "").toLowerCase() === "true" || Number(comparable.raw?.BidCount || 0) > 0) {
+            snapshot.bidding += 1;
+          }
+
+          if (isAccessoryLikeComparable(comparable)) {
+            snapshot.accessoryLike += 1;
+          }
+
+          if (isBundleLikeComparable(comparable)) {
+            snapshot.bundleLike += 1;
+          }
+        });
+
+        return snapshot;
+      }
+
+      function createCollapsibleSection(title, meta = "", open = false) {
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        const titleText = document.createElement("span");
+        const metaText = document.createElement("span");
+        const content = document.createElement("div");
+
+        details.className = "collapsible";
+        if (open) {
+          details.open = true;
+        }
+
+        titleText.textContent = title;
+        metaText.className = "collapsible-meta";
+        metaText.textContent = meta;
+        content.className = "collapsible-content";
+
+        summary.appendChild(titleText);
+        if (meta) {
+          summary.appendChild(metaText);
+        }
+
+        details.appendChild(summary);
+        details.appendChild(content);
+        return { details, content };
+      }
+
+      function createSummaryCard(envelope) {
+        const { status, data } = envelope;
+        const usedValue = buildUsedValueSummary(envelope);
+        const newPrice = getNewPriceContext(data, status);
+        const note = getSummaryNote(envelope);
+        const section = document.createElement("section");
+        const grid = document.createElement("div");
+        const productPanel = document.createElement("div");
+        const side = document.createElement("div");
+        const usedPanel = document.createElement("div");
+        const newPricePanel = document.createElement("div");
+        const chipRow = document.createElement("div");
+        const noteBlock = document.createElement("div");
+        const productEyebrow = document.createElement("div");
+        const productName = document.createElement("div");
+        const productSummary = document.createElement("p");
+        const confidencePill = document.createElement("span");
+        const confidence = getConfidenceLabel(data?.confidence);
+
+        section.className = "summary-card";
+        section.dataset.status = status;
+        grid.className = "summary-grid";
+        productPanel.className = "summary-panel";
+        side.className = "summary-side";
+        usedPanel.className = "summary-panel";
+        newPricePanel.className = "summary-panel";
+        chipRow.className = "summary-chip-row";
+        noteBlock.className = "summary-note";
+
+        productEyebrow.className = "summary-eyebrow";
+        productEyebrow.textContent = "Identifierad produkt";
+        productName.className = "product-name";
+        productName.textContent = data ? getDetectedProductName(data) || "Okänd produkt" : "Resultat";
+        productPanel.appendChild(productEyebrow);
+        productPanel.appendChild(productName);
+
+        if (data?.reasoning_summary) {
+          productSummary.className = "summary-support";
+          productSummary.textContent = data.reasoning_summary;
+          productPanel.appendChild(productSummary);
+        }
+
+        if (data) {
+          confidencePill.className = `confidence-pill ${confidence.className}`;
+          confidencePill.textContent = `Identifiering: ${confidence.label}`;
+          chipRow.appendChild(confidencePill);
+        }
+
+        if (data?.category) {
+          const categoryChip = document.createElement("span");
+          categoryChip.className = "summary-chip";
+          categoryChip.textContent = `Kategori: ${data.category}`;
+          chipRow.appendChild(categoryChip);
+        }
+
+        if (chipRow.childNodes.length) {
+          productPanel.appendChild(chipRow);
+        }
+
+        [
+          { panel: usedPanel, eyebrow: usedValue.title, value: usedValue.value, support: usedValue.meta, className: "summary-main-value" },
+          { panel: newPricePanel, eyebrow: "Nypris idag", value: newPrice.value, support: newPrice.meta, className: "summary-secondary-value" },
+        ].forEach((item) => {
+          const eyebrow = document.createElement("div");
+          const value = document.createElement("div");
+          const support = document.createElement("p");
+
+          eyebrow.className = "summary-eyebrow";
+          eyebrow.textContent = item.eyebrow;
+          value.className = item.className;
+          value.textContent = item.value;
+          support.className = "summary-support";
+          support.textContent = item.support;
+          item.panel.appendChild(eyebrow);
+          item.panel.appendChild(value);
+          item.panel.appendChild(support);
+        });
+
+        grid.appendChild(productPanel);
+        side.appendChild(usedPanel);
+        side.appendChild(newPricePanel);
+        grid.appendChild(side);
+        section.appendChild(grid);
+
+        if (note?.text) {
+          const title = document.createElement("div");
+          const text = document.createElement("div");
+
+          title.className = "summary-note-title";
+          title.textContent = note.title;
+          text.className = "summary-note-text";
+          text.textContent = note.text;
+          noteBlock.appendChild(title);
+          noteBlock.appendChild(text);
+
+          if (note.tags?.length) {
+            const list = document.createElement("div");
+            list.className = "tag-list";
+            note.tags.slice(0, 5).forEach((itemText) => {
+              const tag = document.createElement("span");
+              tag.className = "tag";
+              tag.textContent = itemText;
+              list.appendChild(tag);
+            });
+            noteBlock.appendChild(list);
+          }
+
+          section.appendChild(noteBlock);
+        }
+
+        return section;
+      }
+
+      function createMarketSnapshotSection(data, envelope) {
+        const snapshot = envelope.market_snapshot || {};
+        const fallbackSnapshot = getComparableSnapshot(data);
+        const fetched = snapshot.fetched_count ?? envelope.debug_summary?.total_comparables_fetched ?? fallbackSnapshot.total;
+        const relevant = snapshot.relevant_count ?? envelope.debug_summary?.relevant_comparables_kept;
+        const soldKept = snapshot.sold_count ?? envelope.debug_summary?.sold_comparables_kept;
+        const activeCount = snapshot.active_count ?? fallbackSnapshot.active;
+        const biddingCount = snapshot.bidding_count ?? fallbackSnapshot.bidding;
+        const accessoryLikeCount = snapshot.accessory_like_count ?? fallbackSnapshot.accessoryLike;
+        const bundleLikeCount = snapshot.bundle_like_count ?? fallbackSnapshot.bundleLike;
+
+        if (!fetched && !fallbackSnapshot.total && (relevant === null || relevant === undefined)) {
+          return null;
+        }
+
+        const { details, content } = createCollapsibleSection(
+          "Marknadsunderlag",
+          fetched ? `${fetched} hämtade annonser` : "Inget marknadsunderlag"
+        );
+        const intro = document.createElement("p");
+        const grid = document.createElement("div");
+
+        intro.className = "section-copy";
+        intro.textContent = "Här ser du hur annonsunderlaget såg ut innan allt vägdes ihop till ett tryggt begagnatvärde.";
+        grid.className = "detail-grid";
+        grid.appendChild(createMetricCard("Hämtade annonser", String(fetched || 0)));
+        if (soldKept !== null && soldKept !== undefined) {
+          grid.appendChild(createMetricCard("Sålda träffar", String(snapshot.sold_count ?? fallbackSnapshot.sold)));
+        }
+        if (relevant !== null && relevant !== undefined) {
+          grid.appendChild(createMetricCard("Relevanta kvar", String(relevant)));
+        }
+        if (activeCount) {
+          grid.appendChild(createMetricCard("Aktiva annonser", String(activeCount)));
+        }
+        if (biddingCount) {
+          grid.appendChild(createMetricCard("Budgivningar", String(biddingCount)));
+        }
+        if (accessoryLikeCount) {
+          grid.appendChild(createMetricCard("Tillbehörslika träffar", String(accessoryLikeCount)));
+        }
+        if (bundleLikeCount) {
+          grid.appendChild(createMetricCard("Paket / combo", String(bundleLikeCount)));
+        }
+
+        content.appendChild(intro);
+        content.appendChild(grid);
+        return details;
+      }
+
+      function createSourceSection(data, debugSummary) {
+        const sourceGroups = collectSourceGroups(data, debugSummary);
+        const totalCount =
+          sourceGroups.newPriceEntries.length +
+          sourceGroups.mainComparableEntries.length +
+          sourceGroups.bundleComparableEntries.length +
+          sourceGroups.accessoryComparableEntries.length +
+          sourceGroups.relatedComparableEntries.length +
+          sourceGroups.otherEntries.length;
+
+        if (!totalCount) {
+          return null;
+        }
+
+        const { details, content } = createCollapsibleSection(
+          "Källor och annonser",
+          `${totalCount} visade poster`
+        );
+
+        [
+          { title: "Nypriskällor", entries: sourceGroups.newPriceEntries },
+          { title: "Huvudträffar", entries: sourceGroups.mainComparableEntries },
+          { title: "Paket och combo-varianter", entries: sourceGroups.bundleComparableEntries },
+          { title: "Tillbehör och relaterat", entries: sourceGroups.accessoryComparableEntries },
+          { title: "Svagare eller bredare träffar", entries: sourceGroups.relatedComparableEntries },
+          { title: "Övriga källor", entries: sourceGroups.otherEntries },
+        ].forEach((group) => {
+          if (!group.entries.length) return;
+
+          const section = document.createElement("section");
+          const grid = document.createElement("div");
+          const subtitle = document.createElement("h4");
+          section.className = "section-block";
+          grid.className = "source-grid";
+          subtitle.className = "section-title";
+          subtitle.textContent = `${group.title} (${group.entries.length})`;
+          section.appendChild(subtitle);
+          group.entries.slice(0, group.title === "Huvudträffar" ? 6 : 4).forEach((entry) => {
+            grid.appendChild(createSourceCard(entry));
+          });
+          section.appendChild(grid);
+          content.appendChild(section);
+        });
+
+        const filteredNoiseSection = createListSection(
+          "Bortfiltrerat eller svagt brus",
+          sourceGroups.filteredNoise,
+          "reason-list"
+        );
+        if (filteredNoiseSection) {
+          content.appendChild(filteredNoiseSection);
+        }
+
+        return details;
+      }
+
+      function createManualCorrectionSection(data) {
+        const { details, content } = createCollapsibleSection(
+          "Fel modell? Justera manuellt",
+          "Ändra varumärke eller modell"
+        );
+        const note = document.createElement("p");
+        const form = document.createElement("div");
+        const brandField = document.createElement("input");
+        const modelField = document.createElement("input");
+        const button = document.createElement("button");
+
+        details.classList.add("manual-collapsible");
+        details.id = "manual-correction";
+        note.className = "manual-note";
+        note.textContent = "Justera brand eller modell om identifieringen blev fel, och kör värderingen igen.";
+        form.className = "manual-form";
+
+        brandField.type = "text";
+        brandField.placeholder = "Varumärke";
+        brandField.value = data.brand || "";
+
+        modelField.type = "text";
+        modelField.placeholder = "Modell";
+        modelField.value = data.model || "";
+
+        button.type = "button";
+        button.className = "secondary";
+        button.textContent = "Uppdatera identifiering";
+
+        button.addEventListener("click", async () => {
+          try {
+            button.disabled = true;
+            result.innerHTML = '<div class="result-empty">Analyserar uppdaterad identifiering...</div>';
+
+            const updated = await requestValuation({
+              brand: brandField.value.trim(),
+              model: modelField.value.trim(),
+            });
+
+            renderResult(updated);
+        } catch (error) {
+          renderResult(
+            error.envelope || buildClientErrorEnvelope({
+              message: error.message,
+              technicalMessage: error?.stack || null,
+            })
+          );
+        } finally {
+          button.disabled = false;
+        }
+        });
+
+        form.appendChild(brandField);
+        form.appendChild(modelField);
+        form.appendChild(button);
+        content.appendChild(note);
+        content.appendChild(form);
+
+        return details;
+      }
+
+      function renderOkState(wrapper, envelope) {
+        const { data, warnings, reason_details: reasonDetails } = envelope;
+        const valuation = data.valuation;
+        const rangeSection = document.createElement("section");
+        const rangeGrid = document.createElement("div");
+        const detailSection = document.createElement("section");
+        const detailGrid = document.createElement("div");
+        const breakdown = valuation.source_breakdown;
+
+        rangeSection.className = "section-block";
+        rangeGrid.className = "range-grid";
+        rangeSection.appendChild(createSectionTitle("Uppskattat begagnatvärde"));
+
+        [
+          { label: "Låg", value: valuation.low_estimate, primary: false },
+          { label: "Rimlig", value: valuation.fair_estimate, primary: true },
+          { label: "Hög", value: valuation.high_estimate, primary: false },
+        ].forEach((item) => {
+          const card = document.createElement("div");
+          const label = document.createElement("div");
+          const value = document.createElement("div");
+
+          card.className = `range-card${item.primary ? " primary" : ""}`;
+          label.className = "range-label";
+          value.className = "range-value";
+          label.textContent = item.label;
+          value.textContent = formatCurrency(item.value, valuation.currency);
+          card.appendChild(label);
+          card.appendChild(value);
+          rangeGrid.appendChild(card);
+        });
+
+        rangeSection.appendChild(rangeGrid);
+        wrapper.appendChild(rangeSection);
+
+        detailSection.className = "section-block";
+        detailGrid.className = "detail-grid";
+        detailSection.appendChild(createSectionTitle("Varför den här begagnatvärderingen känns rimlig"));
+
+        detailGrid.appendChild(createMetricCard("Tillförlitlighet", getConfidenceText(valuation.confidence)));
+        detailGrid.appendChild(createMetricCard("Jämförbara annonser", String(valuation.comparable_count)));
+        detailGrid.appendChild(createMetricCard("Sålda annonser", String(breakdown.sold_listings)));
+        detailGrid.appendChild(createMetricCard("Nypris som stödkontext", breakdown.used_new_price ? "Använt som stödkontext" : "Inte använt"));
+        detailSection.appendChild(detailGrid);
+        detailSection.appendChild(createSectionCopy(valuation.evidence_summary));
+        wrapper.appendChild(detailSection);
+
+        const breakdownSection = document.createElement("section");
+        const breakdownGrid = document.createElement("div");
+        breakdownSection.className = "section-block";
+        breakdownGrid.className = "detail-grid";
+        breakdownSection.appendChild(createSectionTitle("Underlag"));
+        breakdownGrid.appendChild(createMetricCard("Sålda", String(breakdown.sold_listings)));
+        breakdownGrid.appendChild(createMetricCard("Aktiva", String(breakdown.active_listings)));
+        breakdownGrid.appendChild(createMetricCard("Borttagna avvikare", String(breakdown.outliers_removed)));
+        breakdownGrid.appendChild(createMetricCard("Metod", formatValuationMethod(valuation.valuation_method)));
+        breakdownSection.appendChild(breakdownGrid);
+        wrapper.appendChild(breakdownSection);
+
+        const reasonsSection = createListSection("Noteringar", [...reasonDetails, ...warnings], "notes-list");
+        if (reasonsSection) {
+          wrapper.appendChild(reasonsSection);
+        }
+
+        const marketSnapshot = createMarketSnapshotSection(data, envelope);
+        if (marketSnapshot) {
+          wrapper.appendChild(marketSnapshot);
+        }
+
+        const sourceSection = createSourceSection(data, envelope.debug_summary);
+        if (sourceSection) {
+          wrapper.appendChild(sourceSection);
+        }
+
+        wrapper.appendChild(createManualCorrectionSection(data));
+      }
+
+      function renderAmbiguousState(wrapper, envelope) {
+        const { data, warnings, reason_details: reasonDetails } = envelope;
+        const detailGrid = document.createElement("div");
+        detailGrid.className = "detail-grid";
+        detailGrid.appendChild(createMetricCard("Identifieringssäkerhet", getConfidenceText(data.confidence)));
+        detailGrid.appendChild(createMetricCard("Trolig modell", data.model || "Oklar"));
+        wrapper.appendChild(detailGrid);
+
+        const whySection = createListSection("Varför vi behöver fler bilder", reasonDetails, "reason-list");
+        if (whySection) {
+          wrapper.appendChild(whySection);
+        }
+
+        const warningSection = createListSection("Det här hjälper oss vidare", warnings, "warning-list");
+        if (warningSection) {
+          wrapper.appendChild(warningSection);
+        }
+
+        const candidatesSection = createListSection(
+          "Möjliga modeller",
+          data.candidate_models || [],
+          "candidate-list"
+        );
+        if (candidatesSection) {
+          wrapper.appendChild(candidatesSection);
+        }
+
+        const anglesSection = createTagSection(
+          "Hjälpsamma extra vinklar",
+          data.requested_additional_angles || []
+        );
+        if (anglesSection) {
+          wrapper.appendChild(anglesSection);
+        }
+
+        const sourceSection = createSourceSection(data, envelope.debug_summary);
+        if (sourceSection) {
+          wrapper.appendChild(sourceSection);
+        }
+
+        wrapper.appendChild(createManualCorrectionSection(data));
+      }
+
+      function renderInsufficientEvidenceState(wrapper, envelope) {
+        const { data, warnings, reason_details: reasonDetails, debug_summary: debugSummary } = envelope;
+        const pricingEvidence = data.market_data?.pricing_evidence || {};
+        const preliminaryEstimate = data.preliminary_estimate;
+        const detailGrid = document.createElement("div");
+        detailGrid.className = "detail-grid";
+
+        detailGrid.appendChild(createMetricCard("Identifieringssäkerhet", getConfidenceText(data.confidence)));
+        if (debugSummary?.total_comparables_fetched !== null && debugSummary?.total_comparables_fetched !== undefined) {
+          detailGrid.appendChild(createMetricCard("Hämtade annonser", String(debugSummary.total_comparables_fetched)));
+        }
+        detailGrid.appendChild(createMetricCard("Relevanta jämförelser", String(pricingEvidence.comparable_count ?? 0)));
+        detailGrid.appendChild(createMetricCard("Sålda jämförelser", String(pricingEvidence.sold_comparable_count ?? 0)));
+        detailGrid.appendChild(
+          createMetricCard(
+            "Genomsnittlig relevans",
+            pricingEvidence.average_relevance !== undefined ? String(pricingEvidence.average_relevance) : "0"
+          )
+        );
+
+        const evidenceSection = document.createElement("section");
+        evidenceSection.className = "section-block";
+        evidenceSection.appendChild(createSectionTitle("Varför ingen begagnatvärdering visas"));
+        evidenceSection.appendChild(createSectionCopy("Produkten kan vara rätt identifierad, men underlaget från andrahandsmarknaden är för svagt för att visa ett trovärdigt värdeintervall."));
+        evidenceSection.appendChild(detailGrid);
+        wrapper.appendChild(evidenceSection);
+
+        const reasonSection = createListSection("Det som saknas i underlaget", reasonDetails, "reason-list");
+        if (reasonSection) {
+          wrapper.appendChild(reasonSection);
+        }
+
+        const warningSection = createListSection("Noteringar", warnings, "warning-list");
+        if (warningSection) {
+          wrapper.appendChild(warningSection);
+        }
+
+        if (preliminaryEstimate) {
+          const preliminarySection = document.createElement("section");
+          const preliminaryGrid = document.createElement("div");
+          preliminarySection.className = "section-block";
+          preliminaryGrid.className = "detail-grid";
+          preliminarySection.appendChild(createSectionTitle("Grov uppskattning"));
+          preliminarySection.appendChild(createSectionCopy(preliminaryEstimate.basis_summary));
+          preliminaryGrid.appendChild(createMetricCard("Uppskattning", `~ ${formatCurrency(preliminaryEstimate.estimate, preliminaryEstimate.currency)}`));
+          preliminaryGrid.appendChild(createMetricCard("Tillförlitlighet", getConfidenceText(preliminaryEstimate.confidence)));
+          preliminaryGrid.appendChild(createMetricCard("Marknadssignaler", String(preliminaryEstimate.supporting_signal_count)));
+          if (preliminaryEstimate.new_price_anchor) {
+            preliminaryGrid.appendChild(createMetricCard("Nypriskontext", formatCurrency(preliminaryEstimate.new_price_anchor, preliminaryEstimate.currency)));
+          }
+          preliminarySection.appendChild(preliminaryGrid);
+          wrapper.appendChild(preliminarySection);
+        }
+
+        const marketSnapshot = createMarketSnapshotSection(data, envelope);
+        if (marketSnapshot) {
+          wrapper.appendChild(marketSnapshot);
+        }
+
+        const sourceSection = createSourceSection(data, envelope.debug_summary);
+        if (sourceSection) {
+          wrapper.appendChild(sourceSection);
+        }
+
+        wrapper.appendChild(createManualCorrectionSection(data));
+      }
+
+      function renderDegradedState(wrapper, envelope) {
+        const { warnings, reason_details: reasonDetails } = envelope;
+        const devPanel = createDevErrorActionPanel(envelope);
+
+        if (devPanel) {
+          wrapper.appendChild(devPanel);
+        }
+
+        const reasonSection = createListSection("Vad som hände", reasonDetails, "reason-list");
+        if (reasonSection) {
+          wrapper.appendChild(reasonSection);
+        }
+
+        const warningSection = createListSection("Systemnoteringar", warnings, "warning-list");
+        if (warningSection) {
+          wrapper.appendChild(warningSection);
+        }
+
+        const technicalSection = devPanel ? null : createTechnicalDetailsSection(envelope);
+        if (technicalSection) {
+          wrapper.appendChild(technicalSection);
+        }
+      }
+
+      function renderErrorState(wrapper, envelope) {
+        const { warnings, reason_details: reasonDetails } = envelope;
+        const devPanel = createDevErrorActionPanel(envelope);
+
+        if (devPanel) {
+          wrapper.appendChild(devPanel);
+        }
+
+        const reasonSection = createListSection("Felinformation", reasonDetails, "reason-list");
+        if (reasonSection) {
+          wrapper.appendChild(reasonSection);
+        }
+
+        const warningSection = createListSection("Begäransnoteringar", warnings, "warning-list");
+        if (warningSection) {
+          wrapper.appendChild(warningSection);
+        }
+
+        const technicalSection = devPanel ? null : createTechnicalDetailsSection(envelope);
+        if (technicalSection) {
+          wrapper.appendChild(technicalSection);
+        }
+      }
+
+      function renderDebugSummary(wrapper, envelope) {
+        const debugSummary = envelope.debug_summary;
+        if (!debugSummary) return;
+
+        const {
+          market_lookup_attempted: marketLookupAttempted,
+          total_comparables_fetched: totalFetched,
+          relevant_comparables_kept: relevantKept,
+          sold_comparables_kept: soldKept,
+          average_relevance: averageRelevance,
+          status_reasons: statusReasons,
+          top_rejection_reasons: topRejectionReasons,
+          top_downgrade_reasons: topDowngradeReasons,
+        } = debugSummary;
+
+        const hasMetrics =
+          totalFetched !== null ||
+          relevantKept !== null ||
+          soldKept !== null ||
+          averageRelevance !== null;
+        const hasReasons =
+          (statusReasons || []).length ||
+          (topRejectionReasons || []).length ||
+          (topDowngradeReasons || []).length;
+
+        if (!hasMetrics && !hasReasons) return;
+
+        const { details, content } = createCollapsibleSection(
+          "Kort underlagsförklaring",
+          "För lokal testning"
+        );
+
+        const summaryText = marketLookupAttempted
+          ? "Det här visar kort vad som hämtades och varför vissa annonser vägde mindre eller försvann."
+          : "Marknadsannonser hämtades inte ännu eftersom den exakta modellen inte var tillräckligt säker.";
+        content.appendChild(createSectionCopy(summaryText));
+
+        if (hasMetrics) {
+          const detailGrid = document.createElement("div");
+          detailGrid.className = "detail-grid";
+          detailGrid.appendChild(createMetricCard("Hämtade annonser", String(totalFetched ?? 0)));
+          if (relevantKept !== null && relevantKept !== undefined) {
+            detailGrid.appendChild(createMetricCard("Relevanta kvar", String(relevantKept)));
+          }
+          if (soldKept !== null && soldKept !== undefined) {
+            detailGrid.appendChild(createMetricCard("Sålda kvar", String(soldKept)));
+          }
+          if (averageRelevance !== null && averageRelevance !== undefined) {
+            detailGrid.appendChild(createMetricCard("Snittrelevans", String(averageRelevance)));
+          }
+          content.appendChild(detailGrid);
+        }
+
+        const statusSection = createListSection("Statusorsaker", statusReasons || [], "reason-list");
+        if (statusSection) {
+          content.appendChild(statusSection);
+        }
+
+        const rejectionSection = createListSection("Vanliga bortfall", topRejectionReasons || [], "reason-list");
+        if (rejectionSection) {
+          content.appendChild(rejectionSection);
+        }
+
+        const downgradeSection = createListSection("Vanliga nedjusteringar", topDowngradeReasons || [], "reason-list");
+        if (downgradeSection) {
+          content.appendChild(downgradeSection);
+        }
+
+        wrapper.appendChild(details);
+      }
+
+      function renderResult(envelope) {
+        const { status, data, debug_id: debugId } = envelope;
+        const wrapper = document.createElement("div");
+        const debugText = document.createElement("div");
+
+        result.innerHTML = "";
+        wrapper.className = "result-layout";
+        wrapper.appendChild(createStatusBanner(envelope));
+
+        wrapper.appendChild(createSummaryCard(envelope));
+
+        if (status === "ok" && data?.valuation) {
+          renderOkState(wrapper, envelope);
+        } else if (status === "ambiguous_model" && data) {
+          renderAmbiguousState(wrapper, envelope);
+        } else if (status === "insufficient_evidence" && data) {
+          renderInsufficientEvidenceState(wrapper, envelope);
+        } else if (status === "degraded") {
+          renderDegradedState(wrapper, envelope);
+        } else {
+          renderErrorState(wrapper, envelope);
+        }
+
+        renderDebugSummary(wrapper, envelope);
+
+        const hideBottomDebugId =
+          (status === "degraded" || status === "error") &&
+          isDevelopmentMode() &&
+          Boolean(envelope.dev_error);
+        if (!hideBottomDebugId && debugId) {
+          debugText.className = "muted";
+          debugText.textContent = `Debug ID: ${debugId}`;
+          wrapper.appendChild(debugText);
+        }
+        result.appendChild(wrapper);
+      }
+
+      imageInput.addEventListener("change", () => {
+        renderPreviews(Array.from(imageInput.files));
+      });
+
+      analyzeButton.addEventListener("click", async () => {
+        try {
+          analyzeButton.disabled = true;
+          result.innerHTML = '<div class="result-empty">Analyserar andrahandsvärde...</div>';
+          const data = await requestValuation();
+          renderResult(data);
+        } catch (error) {
+          renderResult(
+            error.envelope || buildClientErrorEnvelope({
+              message: error.message,
+              technicalMessage: error?.stack || null,
+            })
+          );
+        } finally {
+          analyzeButton.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

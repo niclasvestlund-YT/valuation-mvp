@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+pydantic
+Pillow
+# Optional but recommended for iPhone HEIC/HEIF uploads.
+pillow-heif
+# Database
+asyncpg
+sqlalchemy[asyncio]
+alembic
+psycopg2-binary
+# Used market data
+blocket-api
