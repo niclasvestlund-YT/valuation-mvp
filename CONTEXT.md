@@ -68,6 +68,7 @@ automation/history/DECISIONS.md — architecture decision log
 automation/history/IMPROVEMENTS.md — improvement history
 TASKS.md — prioriterad uppgiftslista (3 nivåer)
 KVALL_RAPPORT.md — kvällsrapport 2026-03-25 med alla fynd
+DB_GIT_REVIEW.md — database schema + git workflow review with prioritized fixes
 .claude/settings.json — Claude Code permissions (block push main, rm -rf)
 
 ## Endpoints
@@ -111,10 +112,14 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 - `_persist_valuation` dict-parsing (api/value.py:342-378) lacks try/except — can crash silently in BackgroundTask
-- No GitHub remote configured — project is local-only, no off-machine backup
 - Local PostgreSQL not installed — DB save silently fails (all writes return None)
+- admin.py:160,212 queries `confidence_score` but column is `confidence` — metrics tab crashes
+- admin.py opens raw asyncpg connections per query, bypasses SQLAlchemy pool
+- No indexes on valuations.status, .brand, .category — admin GROUP BY does full scans
+- database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-25 — docs: DB + Git review; found confidence_score bug, missing indexes, pool bypass, dual-path create_all
 2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
 2026-03-25 — docs: OVERNIGHT_SUMMARY.md written; v0.2.0 tagged; 66 tests passing, 8 commits this session
 2026-03-25 — feat: Railway deployment; railway.toml (nixpacks, healthcheck /health), Procfile, DEPLOY.md with env vars and migration steps
@@ -132,7 +137,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-24 — zero-SerpAPI pipeline: blocket-api package integrated as primary used-market source; Serper.dev as primary new-price source; SerpAPI demoted to optional fallback for both; prisjakt_client.py stub documents 403 block; in-memory TTL cache added
 2026-03-24 — bug sweep (14 issues): removed google_shopping from used-market pipeline; removed fabricated price history; vision sends all images in one joint request; degraded status suppresses estimates; preliminary estimate no longer uses single_source_insufficient anchor; word-boundary fix for locked/unlocked; removed client-side VITE_API_KEY auth; CORS allow_credentials fixed; variant-aware wrong-model detection (iPhone 13 Pro); EXIF strip fails closed; manual override no longer sets category=manual_override; close.py blocks on TBD golden tests + parses bullet-prefixed Learning fields; escape hatch hidden when no estimate exists
 2026-03-24 — data flywheel: PostgreSQL + asyncpg + SQLAlchemy async; Valuation + PriceSnapshot models; save every result via BackgroundTasks; POST /feedback endpoint; Alembic initial migration
-2026-03-23 — added CLAUDE.md, CONTEXT.md, Makefile
 
 ## Next Up
 [Empty — add manually]
