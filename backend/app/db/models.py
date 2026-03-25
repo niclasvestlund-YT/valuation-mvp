@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .database import Base
@@ -11,7 +11,12 @@ class Valuation(Base):
     __tablename__ = "valuations"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+        index=True,
+    )
 
     # Product identification
     product_name = Column(String, index=True)        # "Sony WH-1000XM4"
@@ -43,7 +48,7 @@ class Valuation(Base):
     corrected_product = Column(String, nullable=True)
 
     # Correction tracking
-    is_correction = Column(Boolean, default=False)
+    is_correction = Column(Boolean, default=False, server_default="false")
     original_valuation_id = Column(String, ForeignKey("valuations.id"), nullable=True)
 
 
@@ -51,7 +56,11 @@ class PriceSnapshot(Base):
     __tablename__ = "price_snapshots"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+    )
 
     product_identifier = Column(String, index=True)
     estimated_value = Column(Integer, nullable=True)
@@ -61,7 +70,7 @@ class PriceSnapshot(Base):
     num_comparables = Column(Integer)
     sources_json = Column(JSONB)
     snapshot_date = Column(String, index=True)       # "2026-03-24"
-    source = Column(String, default="user_scan")     # "user_scan" or "cron_worker"
+    source = Column(String, default="user_scan", server_default="user_scan")
 
     __table_args__ = (
         Index("ix_price_snapshots_product_date", "product_identifier", "snapshot_date"),

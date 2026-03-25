@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,7 +16,7 @@ from starlette.responses import Response
 from backend.app.api.value import router as value_router
 from backend.app.core.config import settings
 from backend.app.core.version import VERSION
-from backend.app.db.database import init_db
+from backend.app.db.database import dispose_engine, init_db
 from backend.app.middleware.request_id import RequestIdMiddleware
 from backend.app.routers.admin import admin_router
 from backend.app.utils.logger import get_logger, _configure_root
@@ -37,7 +38,27 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 _configure_root()
 logger = get_logger(__name__)
 
-app = FastAPI(title="valuation-mvp")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown logic.
+
+    - Startup: verify DB connectivity
+    - Shutdown: dispose connection pool to avoid leaked connections
+    """
+    logger.info("starting up valuation-mvp", extra={
+        "mock_mode": settings.is_mock_mode,
+        "has_openai": bool(settings.openai_api_key),
+        "has_tradera": settings.has_tradera_credentials,
+        "has_serper": settings.has_serper_credentials,
+        "has_serpapi": settings.has_serpapi_credentials,
+    })
+    await init_db()
+    yield
+    await dispose_engine()
+
+
+app = FastAPI(title="valuation-mvp", lifespan=lifespan)
 app.state.settings = settings
 app.state.is_mock_mode = settings.is_mock_mode
 
@@ -58,18 +79,6 @@ app.add_middleware(
 
 FRONTEND_INDEX = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
 FRONTEND_ADMIN = Path(__file__).resolve().parents[2] / "frontend" / "admin.html"
-
-
-@app.on_event("startup")
-async def startup():
-    logger.info("starting up valuation-mvp", extra={
-        "mock_mode": settings.is_mock_mode,
-        "has_openai": bool(settings.openai_api_key),
-        "has_tradera": settings.has_tradera_credentials,
-        "has_serper": settings.has_serper_credentials,
-        "has_serpapi": settings.has_serpapi_credentials,
-    })
-    await init_db()
 
 
 @app.get("/", response_class=FileResponse)

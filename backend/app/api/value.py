@@ -1,6 +1,6 @@
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Body
@@ -392,7 +392,7 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
                 "new_price": db_data["new_price"],
                 "num_comparables": db_data["num_comparables_used"],
                 "sources_json": db_data["sources_json"],
-                "snapshot_date": datetime.utcnow().strftime("%Y-%m-%d"),
+                "snapshot_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             })
     except Exception as exc:
         logger.error("persist_valuation.failed", extra={
@@ -495,14 +495,15 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
 
     result["valuation_id"] = valuation_id
     elapsed_ms = int((time.monotonic() - t0) * 1000)
-    result["_condition"] = request.condition
-    result["_response_time_ms"] = elapsed_ms
     logger.info("request.value.complete", extra={
         "valuation_id": valuation_id,
         "status": result.get("status"),
         "response_time_ms": elapsed_ms,
     })
-    background_tasks.add_task(_persist_valuation, result, valuation_id)
+
+    # Pass DB-only metadata separately — don't leak internal fields in the API response
+    persist_payload = {**result, "_condition": request.condition, "_response_time_ms": elapsed_ms}
+    background_tasks.add_task(_persist_valuation, persist_payload, valuation_id)
     return result
 
 
@@ -514,5 +515,7 @@ class FeedbackRequest(BaseModel):
 
 @router.post("/feedback")
 async def submit_feedback(payload: FeedbackRequest):
-    await save_feedback(payload.valuation_id, payload.feedback, payload.corrected_product)
+    saved = await save_feedback(payload.valuation_id, payload.feedback, payload.corrected_product)
+    if not saved:
+        return {"ok": False, "detail": "Valuation not found or database unavailable"}
     return {"ok": True}

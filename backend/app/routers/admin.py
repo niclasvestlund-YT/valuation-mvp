@@ -8,6 +8,7 @@ Mounted at /admin in main.py.
 from __future__ import annotations
 
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -18,6 +19,16 @@ from sqlalchemy import text
 from backend.app.db.database import async_session
 
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "").strip()
+
+# Strict identifier pattern: only lowercase letters, digits, underscores
+_SAFE_IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
+
+
+def _validate_identifier(name: str) -> str:
+    """Reject any identifier that isn't a simple lowercase SQL name."""
+    if not _SAFE_IDENTIFIER.match(name):
+        raise HTTPException(status_code=400, detail=f"Invalid identifier: {name!r}")
+    return name
 
 
 async def verify_admin_key(x_admin_key: str = Header(default="")) -> None:
@@ -35,25 +46,17 @@ admin_router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(
 # DB helpers — use SQLAlchemy connection pool instead of raw asyncpg
 # ---------------------------------------------------------------------------
 
-async def _fetch(sql: str, *args: Any) -> list[dict]:
+async def _fetch(sql: str, params: dict | None = None) -> list[dict]:
     async with async_session() as session:
-        result = await session.execute(text(sql), _positional_to_named(sql, args))
+        result = await session.execute(text(sql), params or {})
         return [dict(row._mapping) for row in result.fetchall()]
 
 
-async def _fetchval(sql: str, *args: Any) -> Any:
+async def _fetchval(sql: str, params: dict | None = None) -> Any:
     async with async_session() as session:
-        result = await session.execute(text(sql), _positional_to_named(sql, args))
+        result = await session.execute(text(sql), params or {})
         row = result.fetchone()
         return row[0] if row else None
-
-
-def _positional_to_named(sql: str, args: tuple) -> dict:
-    """Convert $1, $2 positional params to :p1, :p2 named params for SQLAlchemy text()."""
-    params = {}
-    for i, val in enumerate(args, 1):
-        params[f"p{i}"] = val
-    return params
 
 
 # ---------------------------------------------------------------------------
@@ -163,10 +166,10 @@ async def valuation_metrics():
 
         total = await _fetchval("SELECT COUNT(*) FROM valuations") or 0
         last_24h = await _fetchval(
-            "SELECT COUNT(*) FROM valuations WHERE created_at >= :p1", day_ago
+            "SELECT COUNT(*) FROM valuations WHERE created_at >= :since", {"since": day_ago}
         ) or 0
         last_7d = await _fetchval(
-            "SELECT COUNT(*) FROM valuations WHERE created_at >= :p1", week_ago
+            "SELECT COUNT(*) FROM valuations WHERE created_at >= :since", {"since": week_ago}
         ) or 0
         avg_conf = await _fetchval(
             "SELECT ROUND(AVG(confidence)::numeric, 3) FROM valuations WHERE confidence IS NOT NULL"
@@ -262,7 +265,19 @@ async def browse_table(
     order_by: str = Query("id"),
     order_dir: str = Query("DESC"),
 ):
-    """Browse any table with pagination. Returns columns + rows."""
+    """Browse any table with pagination. Returns columns + rows.
+
+    SQL-injection defense:
+    1. table_name is validated against information_schema (whitelist)
+    2. order_by is validated against actual column names (whitelist)
+    3. Both identifiers are regex-validated via _validate_identifier()
+    4. direction is hardcoded to DESC/ASC
+    5. limit and offset are bound params, not interpolated
+    """
+    # Regex-validate identifiers BEFORE any SQL use
+    _validate_identifier(table_name)
+    _validate_identifier(order_by)
+
     allowed = await _fetch(
         "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
     )
@@ -271,20 +286,22 @@ async def browse_table(
         raise HTTPException(status_code=404, detail="Table not found")
 
     cols = await _fetch(
-        "SELECT column_name FROM information_schema.columns WHERE table_name = :p1 AND table_schema = 'public'",
-        table_name,
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE table_name = :tbl AND table_schema = 'public'",
+        {"tbl": table_name},
     )
     col_names = [r["column_name"] for r in cols]
     if order_by not in col_names:
         order_by = col_names[0] if col_names else "id"
 
     direction = "DESC" if order_dir.upper() == "DESC" else "ASC"
+
+    # table_name, order_by, direction are all validated above — safe to interpolate
     total = await _fetchval(f'SELECT COUNT(*) FROM "{table_name}"')
 
     rows = await _fetch(
-        f'SELECT * FROM "{table_name}" ORDER BY "{order_by}" {direction} LIMIT :p1 OFFSET :p2',
-        limit,
-        offset,
+        f'SELECT * FROM "{table_name}" ORDER BY "{order_by}" {direction} LIMIT :lim OFFSET :off',
+        {"lim": limit, "off": offset},
     )
 
     def _serialize(v: Any) -> Any:
@@ -309,12 +326,12 @@ async def slow_queries(min_ms: float = 500):
                 query,
                 state
             FROM pg_stat_activity
-            WHERE (now() - pg_stat_activity.query_start) > (:p1 * interval '1 millisecond')
+            WHERE (now() - pg_stat_activity.query_start) > (:min_ms * interval '1 millisecond')
               AND state != 'idle'
               AND datname = current_database()
             ORDER BY duration DESC
             """,
-            min_ms,
+            {"min_ms": min_ms},
         )
         return [
             {

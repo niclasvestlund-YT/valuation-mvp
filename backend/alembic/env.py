@@ -20,11 +20,18 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Allow DATABASE_URL env var to override alembic.ini (use sync psycopg2 URL for migrations)
-_db_url = os.getenv("DATABASE_URL", "").replace(
-    "postgresql+asyncpg://", "postgresql+psycopg2://"
-)
+_db_url = os.getenv("DATABASE_URL", "")
 if _db_url:
-    config.set_main_option("sqlalchemy.url", _db_url)
+    # Normalize any async driver to sync psycopg2 for Alembic
+    _sync_url = _db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    config.set_main_option("sqlalchemy.url", _sync_url)
+else:
+    import warnings
+    warnings.warn(
+        "DATABASE_URL not set — Alembic will use the fallback URL from alembic.ini. "
+        "Set DATABASE_URL in your .env for reliable migrations.",
+        stacklevel=1,
+    )
 
 
 def run_migrations_offline() -> None:
