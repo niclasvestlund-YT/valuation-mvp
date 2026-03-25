@@ -59,6 +59,7 @@ tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
 tests/test_pricing_service.py — pricing service tests
 tests/test_value_engine.py — end-to-end value engine tests
+tests/test_depreciation_rules.py — condition adjustments and category depreciation range tests
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -108,6 +109,7 @@ GET /health — returns JSON {"status": "ok", "version": "0.1.0"}
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — test: 17 new tests; depreciation rules, condition propagation, enrich_envelope states, scoring edge cases; total 66 tests passing
 2026-03-25 — refactor: remove dead code; market_service.get_prices() unused method removed
 2026-03-25 — feat: wire condition field end-to-end; ValueRequest.condition → value_item → calculate_valuation + build_preliminary_estimate → get_depreciation_range; affects pricing range and preliminary estimate
 2026-03-25 — feat: changelog system; CHANGELOG.md, version.py (VERSION=0.1.0), /health returns JSON with version, git tag v0.1.0

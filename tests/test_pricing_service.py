@@ -282,6 +282,71 @@ class PricingServiceTests(unittest.TestCase):
         self.assertGreaterEqual(result["valuation"]["fair_estimate"], 425)
         self.assertLessEqual(result["valuation"]["fair_estimate"], 440)
 
+    def test_poor_condition_produces_lower_estimate_than_excellent(self) -> None:
+        """condition="poor" shifts depreciation range down → lower clamped estimate."""
+        comparables = [
+            self.comparable("Apple iPhone 13 128GB sold", 420),
+            self.comparable("Apple iPhone 13 128GB sold", 425),
+            self.comparable("Apple iPhone 13 128GB sold", 430),
+            self.comparable("Apple iPhone 13 128GB sold", 435),
+        ]
+        new_price = {"estimated_new_price": 6000, "currency": "SEK"}
+
+        result_poor = self.service.calculate_valuation(
+            product_identification=self.identification(model="iPhone 13", confidence=0.94),
+            used_market_comparables=comparables,
+            new_price_estimate=new_price,
+            condition="poor",
+        )
+        result_excellent = self.service.calculate_valuation(
+            product_identification=self.identification(model="iPhone 13", confidence=0.94),
+            used_market_comparables=comparables,
+            new_price_estimate=new_price,
+            condition="excellent",
+        )
+
+        self.assertEqual(result_poor["status"], "ok")
+        self.assertEqual(result_excellent["status"], "ok")
+        self.assertLess(
+            result_poor["valuation"]["high_estimate"],
+            result_excellent["valuation"]["high_estimate"],
+        )
+
+    def test_exact_model_substring_in_listing_is_accepted(self) -> None:
+        """'iPhone 13 Pro' contains 'iPhone 13' — the scorer accepts it as a close match
+        (not hard-rejected), though it may still be downgraded by outlier filtering."""
+        score = score_comparable_relevance(
+            self.comparable("Apple iPhone 13 Pro sold", 550),
+            self.identification(model="iPhone 13"),
+        )
+
+        self.assertFalse(score.hard_reject)
+
+    def test_wrong_brand_listing_scores_zero(self) -> None:
+        score = score_comparable_relevance(
+            self.comparable("Samsung Galaxy S21 sold", 380),
+            self.identification(model="iPhone 13"),
+        )
+
+        self.assertEqual(score.score, 0.0)
+        self.assertIn("missing_exact_model_match", score.reasons)
+
+    def test_sold_and_active_exact_match_both_accepted(self) -> None:
+        """Both sold and active exact-match listings are accepted (not hard-rejected)."""
+        sold_score = score_comparable_relevance(
+            self.comparable("Apple iPhone 13 sold", 430, listing_type="sold"),
+            self.identification(model="iPhone 13"),
+        )
+        active_score = score_comparable_relevance(
+            self.comparable("Apple iPhone 13 active", 430, listing_type="active"),
+            self.identification(model="iPhone 13"),
+        )
+
+        self.assertFalse(sold_score.hard_reject)
+        self.assertFalse(active_score.hard_reject)
+        self.assertGreaterEqual(sold_score.score, 0.8)
+        self.assertGreaterEqual(active_score.score, 0.8)
+
 
 if __name__ == "__main__":
     unittest.main()

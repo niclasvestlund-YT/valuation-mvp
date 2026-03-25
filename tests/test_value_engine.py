@@ -469,6 +469,106 @@ class ValueEngineTests(unittest.TestCase):
         self.assertIsNone(result["data"]["price"])
         self.assertTrue(result["debug_summary"]["market_lookup_attempted"])
 
+    def test_condition_is_forwarded_to_pricing_service(self) -> None:
+        """condition= passed to value_item must reach calculate_valuation."""
+        received: list[str | None] = []
+
+        class CapturingPricingService:
+            def calculate_valuation(self, product_identification, used_market_comparables, new_price_estimate=None, condition=None):
+                received.append(condition)
+                return {
+                    "status": "insufficient_evidence",
+                    "valuation": None,
+                    "warnings": [],
+                    "reasons": ["not_enough_relevant_comparables"],
+                    "evidence": {"comparable_count": 0, "sold_comparable_count": 0, "active_comparable_count": 0, "average_relevance": 0.0, "outlier_ratio": 0.0},
+                }
+
+        engine = ValueEngine(
+            vision_service=StubVisionService(self.identification()),
+            market_service=StubMarketService(),
+            new_price_service=StubNewPriceService(),
+            pricing_service=CapturingPricingService(),
+        )
+
+        engine.value_item(images=["data:image/jpeg;base64,test"], condition="poor")
+
+        self.assertEqual(received, ["poor"])
+
+    def test_enrich_envelope_ok_status(self) -> None:
+        from backend.app.api.value import enrich_envelope
+
+        payload = enrich_envelope({
+            "status": "ok",
+            "data": {
+                "brand": "Apple",
+                "model": "iPhone 13",
+                "category": "smartphone",
+                "confidence": 0.94,
+                "valuation": {"fair_estimate": 430, "evidence_summary": "3 comparables."},
+                "market_data": None,
+                "sources": ["Tradera"],
+                "line": None, "variant": None, "candidate_models": [],
+                "reasoning_summary": None, "needs_more_images": False,
+                "requested_additional_angles": [], "price": 430, "preliminary_estimate": None,
+            },
+            "warnings": [],
+            "reasons": [],
+            "debug_id": "test_ok",
+        })
+
+        self.assertEqual(payload["status_title"], "Begagnatvärde uppskattat")
+        self.assertEqual(payload["user_status_title"], "Begagnatvärdet är klart")
+        self.assertTrue(payload["user_explanation"])
+
+    def test_enrich_envelope_ambiguous_status(self) -> None:
+        from backend.app.api.value import enrich_envelope
+
+        payload = enrich_envelope({
+            "status": "ambiguous_model",
+            "data": {
+                "brand": "Apple", "model": None, "category": "smartphone",
+                "confidence": 0.4, "valuation": None, "market_data": None, "sources": [],
+                "line": None, "variant": None, "candidate_models": [],
+                "reasoning_summary": None, "needs_more_images": True,
+                "requested_additional_angles": ["back", "front"], "price": None,
+            },
+            "warnings": [],
+            "reasons": ["missing_brand_or_model"],
+            "debug_id": "test_ambiguous",
+        })
+
+        self.assertEqual(payload["status_title"], "Fler bilder behövs")
+        self.assertIn("back", payload["recommended_action"])
+
+    def test_enrich_envelope_adds_reason_details(self) -> None:
+        from backend.app.api.value import enrich_envelope
+
+        payload = enrich_envelope({
+            "status": "insufficient_evidence",
+            "data": None,
+            "warnings": [],
+            "reasons": ["no_relevant_comparables", "cannot_value_from_new_price_only"],
+            "debug_id": "test_reasons",
+        })
+
+        self.assertEqual(len(payload["reason_details"]), 2)
+        self.assertTrue(all(payload["reason_details"]))
+
+    def test_enrich_envelope_deduplicates_reasons_and_warnings(self) -> None:
+        from backend.app.api.value import enrich_envelope
+
+        payload = enrich_envelope({
+            "status": "ok",
+            "data": None,
+            "warnings": ["duplicate warning", "duplicate warning", "unique warning"],
+            "reasons": ["dup_reason", "dup_reason"],
+            "debug_id": "test_dedup",
+        })
+
+        self.assertEqual(len(payload["warnings"]), 2)
+        self.assertEqual(len(payload["reasons"]), 1)
+
     def test_enrich_envelope_adds_user_facing_fields(self) -> None:
         from backend.app.api.value import enrich_envelope
 
