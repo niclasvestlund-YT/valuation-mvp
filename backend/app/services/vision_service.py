@@ -39,6 +39,16 @@ STRONG_TEXT_EVIDENCE_KEYWORDS = {
     "packaging",
     "box",
     "regulatory",
+    "branding",
+    "branded",
+    "writing",
+    "inscription",
+    "reads",
+    "says",
+    "visible on",
+    "printed on",
+    "stamped",
+    "embossed",
 }
 
 CONCRETE_EVIDENCE_KEYWORDS = STRONG_TEXT_EVIDENCE_KEYWORDS | {
@@ -117,9 +127,9 @@ def build_identification_prompt() -> str:
         - If there are multiple plausible alternative exact models, lower confidence and usually set needs_more_images to true.
 
         Field rules:
-        - brand: return if the brand logo or name is visible, OR if the visible model identifier unambiguously belongs to one manufacturer (e.g. "Osmo Action 5 Pro" → DJI, "WH-1000XM5" → Sony, "Galaxy S24" → Samsung, "AirPods" → Apple, "MacBook" → Apple). Otherwise null.
+        - brand: return if the brand logo or name is visible, OR if the visible model identifier unambiguously belongs to one manufacturer. Examples: "Osmo Action 5 Pro" → DJI, "Action 5 Pro" → DJI, "Action 4" → DJI, "Action 3" → DJI, "Osmo Action" → DJI, "Osmo Pocket" → DJI, "Osmo Mobile" → DJI, "Mini 4 Pro" → DJI, "WH-1000XM5" → Sony, "WF-1000XM5" → Sony, "Galaxy S24" → Samsung, "Galaxy Buds" → Samsung, "AirPods" → Apple, "MacBook" → Apple, "iPad" → Apple, "Surface Pro" → Microsoft, "Pixel 9" → Google. Otherwise null.
         - line: optional product family/series if supported, else null.
-        - model: return any model name, number, or identifier that is visibly printed, engraved, or labeled on the product, packaging, or screen. If "ACTION 5 PRO" is printed on the camera body, return "Osmo Action 5 Pro". If only partial text is readable (e.g. "Action 5"), use that. Only null if no identifying text is visible at all.
+        - model: return any model name, number, or identifier that is visibly printed, engraved, or labeled on the product, packaging, or screen. If "ACTION 5 PRO" is printed on the camera body, return "Osmo Action 5 Pro" (DJI brand). If "ACTION 4" or "ACTION 3" is visible, return the corresponding Osmo Action model. If only partial text is readable (e.g. "Action 5"), use that. Only null if no identifying text is visible at all.
         - category: broad product type such as smartphone, laptop, headphones, tablet, camera, console, smartwatch, router, accessory.
         - variant: storage, color, size, generation, connectivity, chipset, or trim only when supported by visible evidence.
         - candidate_models: plausible alternative exact models only, ranked best-first, and exclude the chosen primary model.

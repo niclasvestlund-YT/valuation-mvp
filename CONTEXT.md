@@ -120,6 +120,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-25 — fix: vision brand inference for DJI Action cameras; prompt now maps "Action 5 Pro" → DJI; expanded text evidence keywords (branding, reads, says, visible on, printed on, stamped, embossed); AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD lowered 0.90→0.80
 2026-03-25 — fix: 5 DB issues; confidence_score→confidence, _persist_valuation try/except, indexes on status/brand/category, admin.py→SQLAlchemy pool, condition+response_time_ms fields
 2026-03-25 — docs: DB + Git review; found confidence_score bug, missing indexes, pool bypass, dual-path create_all
 2026-03-25 — security: XSS fix, admin auth via X-Admin-Key, CORS restricted to ALLOWED_ORIGINS, bypassPermissions
