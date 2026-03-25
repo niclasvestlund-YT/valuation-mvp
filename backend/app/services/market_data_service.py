@@ -311,13 +311,25 @@ class MarketDataService:
         category: str | None = None,
     ) -> list[str]:
         model_tokens = tokenize_query_part(model)
+        normalized_model = normalize_query_text(model)
         fallback_queries: list[str] = []
 
-        if model_tokens:
-            fallback_queries.append(build_search_query(brand, model_tokens[0]))
-
-        if len(model_tokens) >= 2:
-            fallback_queries.append(build_search_query(*model_tokens[:2]))
+        # For Osmo action cameras, skip the first-token fallback ("DJI Osmo") — it is far
+        # too broad and floods results with unrelated DJI Osmo products (Pocket, Gimbal, 360).
+        # The alias query ("DJI Action 5 Pro") already runs before fallbacks, so we only
+        # add a generation-level fallback here.
+        is_osmo_action = "osmo" in normalized_model and "action" in normalized_model
+        if not is_osmo_action:
+            if model_tokens:
+                fallback_queries.append(build_search_query(brand, model_tokens[0]))
+            if len(model_tokens) >= 2:
+                fallback_queries.append(build_search_query(*model_tokens[:2]))
+        else:
+            # For Osmo Action: use brand + "action" + generation number as fallback
+            action_idx = next((i for i, t in enumerate(model_tokens) if t.lower() == "action"), None)
+            if action_idx is not None and action_idx + 1 < len(model_tokens):
+                gen_token = model_tokens[action_idx + 1]
+                fallback_queries.append(build_search_query(brand, "action", gen_token))
 
         fallback_queries.append(build_search_query(brand, category))
 

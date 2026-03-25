@@ -258,6 +258,26 @@ def score_comparable_relevance(comparable: dict, identification) -> ComparableSc
         # All model tokens present but in different order — treat as strong match
         score = 0.68
         reasons.append("exact_model_match")
+    elif "osmo" in model_tokens:
+        # Relaxed match: many sellers omit the "Osmo" prefix
+        # e.g. "DJI action 5 pro kamera" should match target "Osmo Action 5 Pro"
+        core_tokens = [t for t in model_tokens if t != "osmo"]
+        if len(core_tokens) >= 3 and all(t in title_token_set for t in core_tokens):
+            score = 0.65
+            reasons.append("exact_model_match")
+        else:
+            score = 0.0
+            if brand and brand in title:
+                score += 0.12
+                reasons.append("brand_match")
+            if line and line in title:
+                score += 0.14
+                reasons.append("line_match")
+            if variant and variant in title:
+                score += 0.05
+                reasons.append("variant_match")
+            if model:
+                reasons.append("missing_exact_model_match")
     else:
         score = 0.0
         if brand and brand in title:
