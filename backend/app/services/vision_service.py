@@ -24,6 +24,27 @@ GENERIC_SINGLE_IMAGE_CONFIDENCE_CAP = 0.69
 MULTIPLE_ALTERNATIVES_CONFIDENCE_CAP = 0.74
 MISSING_CONCRETE_EVIDENCE_CAP = 0.69
 
+BRAND_CANONICAL = {
+    "dji": "DJI",
+    "sony": "Sony",
+    "apple": "Apple",
+    "samsung": "Samsung",
+    "google": "Google",
+    "microsoft": "Microsoft",
+    "lg": "LG",
+    "hp": "HP",
+    "asus": "ASUS",
+    "jbl": "JBL",
+    "bose": "Bose",
+    "lenovo": "Lenovo",
+    "dell": "Dell",
+    "huawei": "Huawei",
+    "xiaomi": "Xiaomi",
+    "oneplus": "OnePlus",
+    "gopro": "GoPro",
+    "nintendo": "Nintendo",
+}
+
 STRONG_TEXT_EVIDENCE_KEYWORDS = {
     "text",
     "label",
@@ -400,6 +421,7 @@ class VisionService:
         return {
             "model": self.model,
             "input": [{"role": "user", "content": content}],
+            "temperature": 0,
             "max_output_tokens": 500,
             "text": {
                 "format": {
@@ -610,7 +632,7 @@ class VisionService:
         identification: ProductIdentification,
         image_count: int,
     ) -> ProductIdentification:
-        brand = clean_optional_text(identification.brand)
+        brand = BRAND_CANONICAL.get((clean_optional_text(identification.brand) or "").lower(), clean_optional_text(identification.brand))
         line = clean_optional_text(identification.line)
         model = clean_optional_text(identification.model)
         category = clean_optional_text(identification.category)

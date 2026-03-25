@@ -10,16 +10,16 @@
 
 ## 🔴 Ikväll — Kritiskt (gör först)
 
-- [ ] Wrappa `_persist_valuation` dict-parsing i try/except så oväntade nycklar aldrig crashar bakgrundsuppgiften
+- [x] Wrappa `_persist_valuation` dict-parsing i try/except så oväntade nycklar aldrig crashar bakgrundsuppgiften
 - [ ] Sätt upp lokal PostgreSQL så DB-save fungerar
 - [ ] Fixa GitHub-remote auth och pusha projektet
 - [x] Rate limiting på POST /value — installera `slowapi`, 10 req/min per IP *(backend/app/main.py)*
-- [ ] API-nyckelskydd på /admin *(backend/app/api/admin.py, .env: ADMIN_SECRET_KEY)*
+- [x] API-nyckelskydd på /admin *(backend/app/routers/admin.py, .env: ADMIN_SECRET_KEY)*
 - [x] Dölj /docs och /redoc i produktion — `docs_url=None, redoc_url=None` *(backend/app/main.py)*
 
 ## 🟠 Stabilitet — direkt efter
 
-- [ ] Sätt `temperature: 0` på OpenAI vision-anropet *(vision_service.py, `_build_request_payload()`)*
+- [x] Sätt `temperature: 0` på OpenAI vision-anropet *(vision_service.py, `_build_request_payload()`)*
 - [ ] Cacha vision-resultat per bild-hash (SHA-256) i 24h *(vision_service.py, cache.py)*
 - [ ] Fixa att Tradera rate-limit ger tyst dataförlust — logga + returnera explicit status *(tradera_client.py:97-100)*
 - [ ] Bildvalidering (filtyp, storlek) innan vision-anrop
