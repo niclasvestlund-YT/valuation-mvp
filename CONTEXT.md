@@ -70,6 +70,7 @@ TASKS.md — prioriterad uppgiftslista (3 nivåer)
 KVALL_RAPPORT.md — kvällsrapport 2026-03-25 med alla fynd
 .claude/settings.json — Claude Code permissions (block push main/staging, rm -rf)
 CONTRIBUTING.md — branch workflow and commit conventions
+ARCHITECTURE_REVIEW.md — full technical review: code quality, architecture, DB, security, risks, next steps
 
 ## Endpoints
 POST /value — JSON body: `{image?, images?, filename?, brand?, model?}`; returns ValueEnvelope JSON (includes valuation_id)
@@ -114,8 +115,13 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - `_persist_valuation` dict-parsing (api/value.py:342-378) lacks try/except — can crash silently in BackgroundTask
 - No GitHub remote configured — project is local-only, no off-machine backup
 - Local PostgreSQL not installed — DB save silently fails (all writes return None)
+- XSS: innerHTML with marketplace data in index.html and admin.html — attacker-controlled listing titles render unsanitized
+- SQL injection risk: admin.py table browser uses f-string SQL (mitigated by whitelist, but fragile)
+- No authentication on admin endpoints — full DB read access to anyone
+- CORS allows all origins — any website can read API responses including admin data
 
 ## Recent Changes
+2026-03-25 — docs: full architecture review; XSS in both frontends, SQL injection risk in admin, no auth, sync pipeline blocking, typed pipeline recommended
 2026-03-25 — infra: GitHub workflow; remote added, develop/staging/main branches, CONTRIBUTING.md, deny-list updated
 2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
 2026-03-25 — docs: OVERNIGHT_SUMMARY.md written; v0.2.0 tagged; 66 tests passing, 8 commits this session
