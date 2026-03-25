@@ -316,6 +316,13 @@
     const API = "";  // same origin
     const PAGE_SIZE = 25;
 
+    // Admin auth: read key from sessionStorage or prompt once per session
+    let ADMIN_KEY = sessionStorage.getItem("admin_key") || "";
+    if (!ADMIN_KEY) {
+      ADMIN_KEY = prompt("Ange admin-nyckel:") || "";
+      if (ADMIN_KEY) sessionStorage.setItem("admin_key", ADMIN_KEY);
+    }
+
     const STATUS_LABEL = {
       ok: "Ok",
       degraded: "Degraded",
@@ -341,12 +348,15 @@
 
     // ─── Utility ───
 
+    // XSS fix: escape HTML entities in any untrusted string before innerHTML use
+    function esc(s) { const d = document.createElement("div"); d.textContent = String(s ?? ""); return d.innerHTML; }
+
     function fmt(n) { return (n ?? 0).toLocaleString("sv-SE"); }
 
     function el(tag, cls, text) {
       const e = document.createElement(tag);
       if (cls) e.className = cls;
-      if (text !== undefined) e.textContent = text;
+      if (text !== undefined) e.textContent = text; // XSS fix: textContent is safe
       return e;
     }
 
@@ -363,11 +373,12 @@
       </svg>`;
     }
 
+    // XSS fix: all dynamic values escaped via esc()
     function statTile(label, value, sub, spark, accentClass) {
       return `<div class="adm-stat-tile">
-        <div class="adm-stat-label">${label}</div>
-        <div class="adm-stat-value${accentClass ? ' ' + accentClass : ''}">${value}</div>
-        ${sub ? `<div class="adm-stat-sub">${sub}</div>` : ''}
+        <div class="adm-stat-label">${esc(label)}</div>
+        <div class="adm-stat-value${accentClass ? ' ' + esc(accentClass) : ''}">${esc(value)}</div>
+        ${sub ? `<div class="adm-stat-sub">${esc(sub)}</div>` : ''}
         ${spark ? sparklineSvg(spark) : ''}
       </div>`;
     }
@@ -403,7 +414,8 @@
     // ─── Fetch helpers ───
 
     async function get(path) {
-      const r = await fetch(API + path);
+      const r = await fetch(API + path, { headers: { "X-Admin-Key": ADMIN_KEY } }); // admin auth
+      if (r.status === 403) { sessionStorage.removeItem("admin_key"); throw new Error("Ogiltig admin-nyckel. Ladda om sidan."); }
       if (!r.ok) throw new Error(`API svarade med fel (${r.status})`);
       return r.json();
     }
@@ -575,16 +587,16 @@
         info.textContent = `${fmt(tableTotal)} rader · sida ${tablePage + 1} av ${totalPages}`;
         info.style.display = "block";
 
-        // Build table
+        // XSS fix: build table with escaped values via esc()
         const head = document.getElementById("tableHead");
-        head.innerHTML = "<tr>" + data.columns.map(c => `<th>${c}</th>`).join("") + "</tr>";
+        head.innerHTML = "<tr>" + data.columns.map(c => `<th>${esc(c)}</th>`).join("") + "</tr>";
 
         const body = document.getElementById("tableBody");
         body.innerHTML = data.rows.map(row =>
           "<tr>" + row.map(cell =>
             cell === null
               ? `<td><span class="adm-null">null</span></td>`
-              : `<td>${String(cell)}</td>`
+              : `<td>${esc(cell)}</td>`
           ).join("") + "</tr>"
         ).join("");
 

@@ -1,6 +1,6 @@
 """
 Admin router — read-only PostgreSQL inspection & metrics.
-No auth enforced here; wire in your middleware when ready.
+Protected by ADMIN_SECRET_KEY header check.
 Mounted at /admin in main.py.
 """
 
@@ -11,10 +11,21 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 
-admin_router = APIRouter(prefix="/admin", tags=["admin"])
+ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "").strip()
+
+
+async def verify_admin_key(x_admin_key: str = Header(default="")) -> None:
+    """Reject requests without a valid ADMIN_SECRET_KEY header."""
+    if not ADMIN_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Admin access disabled — ADMIN_SECRET_KEY not configured")
+    if x_admin_key != ADMIN_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Invalid or missing admin key")
+
+
+admin_router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(verify_admin_key)])
 
 # ---------------------------------------------------------------------------
 # DB helpers

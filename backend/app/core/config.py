@@ -71,6 +71,8 @@ class Settings:
     serpapi_gl: str | None
     serpapi_hl: str | None
     database_url: str
+    allowed_origins: str | None
+    admin_secret_key: str | None
 
     @property
     def is_mock_mode(self) -> bool:
@@ -118,4 +120,6 @@ settings = Settings(
     serpapi_gl=_read_env("SERPAPI_GL") or "se",
     serpapi_hl=_read_env("SERPAPI_HL") or "sv",
     database_url=_read_env("DATABASE_URL") or "postgresql+asyncpg://postgres:dev@localhost:5432/valuation",
+    allowed_origins=_read_env("ALLOWED_ORIGINS"),
+    admin_secret_key=_read_env("ADMIN_SECRET_KEY"),
 )

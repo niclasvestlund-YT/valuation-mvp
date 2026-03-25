@@ -45,9 +45,12 @@ app.state.is_mock_mode = settings.is_mock_mode
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(RequestSizeLimitMiddleware)
 
+_allowed_origins_raw = settings.allowed_origins
+_allowed_origins = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()] if _allowed_origins_raw else ["http://localhost:8000", "http://localhost:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

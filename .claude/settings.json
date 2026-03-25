@@ -1,26 +1,13 @@
 {
   "permissions": {
-    "allow": [
-      "Edit",
-      "Write",
-      "Bash(git status*)",
-      "Bash(git diff*)",
-      "Bash(git log*)",
-      "Bash(git add*)",
-      "Bash(git commit*)",
-      "Bash(git remote*)",
-      "Bash(git branch*)",
-      "Bash(git checkout*)",
-      "Bash(git push origin develop*)",
-      "Bash(python -m pytest*)",
-      "Bash(cd *)"
-    ],
+    "defaultMode": "bypassPermissions",
     "deny": [
-      "Bash(git push origin main*)",
-      "Bash(git push origin staging*)",
-      "Bash(git push --force*)",
+      "Bash(git push origin main)",
+      "Bash(git push origin staging)",
       "Bash(rm -rf *)",
-      "Bash(rm -r /*)"
+      "Bash(git reset --hard *)",
+      "Bash(sudo *)",
+      "Bash(* --force)"
     ]
   }
 }

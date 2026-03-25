@@ -101,6 +101,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - SERPAPI_GL — default se
 - SERPAPI_HL — default sv
 - DATABASE_URL — PostgreSQL connection string; default postgresql+asyncpg://postgres:dev@localhost:5432/valuation; Railway sets this automatically
+- ADMIN_SECRET_KEY — required for /admin/* API access; admin.html prompts for it on load
+- ALLOWED_ORIGINS — comma-separated CORS origins; default localhost only
 
 ## Response States
 - ok — enough evidence, shows used-value range
@@ -115,12 +117,10 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - `_persist_valuation` dict-parsing (api/value.py:342-378) lacks try/except — can crash silently in BackgroundTask
 - No GitHub remote configured — project is local-only, no off-machine backup
 - Local PostgreSQL not installed — DB save silently fails (all writes return None)
-- XSS: innerHTML with marketplace data in index.html and admin.html — attacker-controlled listing titles render unsanitized
 - SQL injection risk: admin.py table browser uses f-string SQL (mitigated by whitelist, but fragile)
-- No authentication on admin endpoints — full DB read access to anyone
-- CORS allows all origins — any website can read API responses including admin data
 
 ## Recent Changes
+2026-03-25 — security: XSS fix (esc() in admin.html, createElement in index.html), admin auth via X-Admin-Key header, CORS restricted to ALLOWED_ORIGINS env var, bypassPermissions mode
 2026-03-25 — docs: full architecture review; XSS in both frontends, SQL injection risk in admin, no auth, sync pipeline blocking, typed pipeline recommended
 2026-03-25 — infra: GitHub workflow; remote added, develop/staging/main branches, CONTRIBUTING.md, deny-list updated
 2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
@@ -140,7 +140,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-24 — zero-SerpAPI pipeline: blocket-api package integrated as primary used-market source; Serper.dev as primary new-price source; SerpAPI demoted to optional fallback for both; prisjakt_client.py stub documents 403 block; in-memory TTL cache added
 2026-03-24 — bug sweep (14 issues): removed google_shopping from used-market pipeline; removed fabricated price history; vision sends all images in one joint request; degraded status suppresses estimates; preliminary estimate no longer uses single_source_insufficient anchor; word-boundary fix for locked/unlocked; removed client-side VITE_API_KEY auth; CORS allow_credentials fixed; variant-aware wrong-model detection (iPhone 13 Pro); EXIF strip fails closed; manual override no longer sets category=manual_override; close.py blocks on TBD golden tests + parses bullet-prefixed Learning fields; escape hatch hidden when no estimate exists
 2026-03-24 — data flywheel: PostgreSQL + asyncpg + SQLAlchemy async; Valuation + PriceSnapshot models; save every result via BackgroundTasks; POST /feedback endpoint; Alembic initial migration
-2026-03-23 — added CLAUDE.md, CONTEXT.md, Makefile
 
 ## Next Up
 [Empty — add manually]

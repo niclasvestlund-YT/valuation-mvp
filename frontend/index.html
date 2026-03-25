@@ -2340,7 +2340,11 @@
             }
           });
           slot.appendChild(inp);
-          slot.innerHTML += `<i data-lucide="camera" style="width:16px;height:16px;stroke-width:1.5;color:var(--text-faint)"></i>`;
+          // XSS fix: use createElement instead of innerHTML += (which also destroyed the input child)
+          const camIcon = document.createElement("i");
+          camIcon.setAttribute("data-lucide", "camera");
+          camIcon.style.cssText = "width:16px;height:16px;stroke-width:1.5;color:var(--text-faint)";
+          slot.appendChild(camIcon);
           slot.appendChild(el("div", "angle-slot-label", label));
           slots.appendChild(slot);
         });
