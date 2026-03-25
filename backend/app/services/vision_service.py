@@ -328,8 +328,20 @@ class VisionService:
         image: str | None = None,
         request_id: str | None = None,
     ) -> ProductIdentificationResult:
+        import hashlib
+        from backend.app.utils.cache import get_cached, set_cached
+
         resolved_request_id = request_id or self._new_request_id()
         incoming_images = merge_image_inputs(images=images, image=image)
+
+        # Cache key: SHA-256 of sorted image data URLs
+        cache_key = "vision:" + hashlib.sha256(
+            "|".join(sorted(incoming_images)).encode()
+        ).hexdigest()
+        cached_result = get_cached(cache_key)
+        if cached_result is not None:
+            logger.info("vision.identify.cache_hit request_id=%s", resolved_request_id)
+            return cached_result
 
         logger.info(
             "vision.identify.start request_id=%s image_count=%s use_mock_vision=%s",
@@ -404,6 +416,7 @@ class VisionService:
             result.model,
             result.confidence,
         )
+        set_cached(cache_key, result)
         return result
 
     def _build_request_payload(self, processed_images: list) -> dict:
