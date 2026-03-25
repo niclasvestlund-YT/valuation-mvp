@@ -77,7 +77,7 @@ GET /admin/metrics — valuation counts, confidence, status/brand/category break
 GET /admin/table/{name} — paginated rows for any public table (25/page)
 GET /admin/index-health — seq scan ratios to spot missing indexes
 GET /admin/slow-queries — currently running queries >500ms
-GET /health — returns JSON {"status": "ok", "version": "0.1.0"}
+GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": {...}} with per-service config state
 
 ## Env Vars
 - OPENAI_API_KEY — OpenAI Vision API (platform.openai.com)
@@ -109,6 +109,7 @@ GET /health — returns JSON {"status": "ok", "version": "0.1.0"}
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — feat: production hardening; input validation (condition enum, images count ≤8, text fields ≤128 chars), 20MB request body limit, /health returns dependency states
 2026-03-25 — test: 17 new tests; depreciation rules, condition propagation, enrich_envelope states, scoring edge cases; total 66 tests passing
 2026-03-25 — refactor: remove dead code; market_service.get_prices() unused method removed
 2026-03-25 — feat: wire condition field end-to-end; ValueRequest.condition → value_item → calculate_valuation + build_preliminary_estimate → get_depreciation_range; affects pricing range and preliminary estimate

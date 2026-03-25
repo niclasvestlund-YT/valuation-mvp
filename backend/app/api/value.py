@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Body
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.value_engine import ValueEngine
 from backend.app.db.crud import save_feedback, save_price_snapshot, save_valuation
@@ -55,6 +55,11 @@ REASON_DETAILS = {
 }
 
 
+_VALID_CONDITIONS = {"excellent", "good", "fair", "poor"}
+_MAX_IMAGES = 8
+_MAX_TEXT_FIELD_LEN = 128
+
+
 class ValueRequest(BaseModel):
     image: str | None = None
     images: list[str] | None = None
@@ -63,6 +68,27 @@ class ValueRequest(BaseModel):
     model: str | None = None
     category: str | None = None
     condition: str | None = None  # "excellent" | "good" | "fair" | "poor"
+
+    @field_validator("condition")
+    @classmethod
+    def validate_condition(cls, v: str | None) -> str | None:
+        if v is not None and v.lower() not in _VALID_CONDITIONS:
+            raise ValueError(f"condition must be one of {sorted(_VALID_CONDITIONS)}")
+        return v.lower() if v else v
+
+    @field_validator("images")
+    @classmethod
+    def validate_images_count(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None and len(v) > _MAX_IMAGES:
+            raise ValueError(f"images must not exceed {_MAX_IMAGES} items")
+        return v
+
+    @field_validator("brand", "model", "category", "filename")
+    @classmethod
+    def validate_text_length(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > _MAX_TEXT_FIELD_LEN:
+            raise ValueError(f"field must not exceed {_MAX_TEXT_FIELD_LEN} characters")
+        return v
 
 
 class SourceBreakdown(BaseModel):

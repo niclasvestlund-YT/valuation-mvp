@@ -8,6 +8,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from backend.app.api.value import router as value_router
 from backend.app.core.config import settings
@@ -16,6 +19,19 @@ from backend.app.db.database import init_db
 from backend.app.middleware.request_id import RequestIdMiddleware
 from backend.app.routers.admin import admin_router
 from backend.app.utils.logger import get_logger, _configure_root
+
+_MAX_REQUEST_BODY_BYTES = 20 * 1024 * 1024  # 20 MB
+
+
+class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > _MAX_REQUEST_BODY_BYTES:
+            return JSONResponse(
+                status_code=413,
+                content={"detail": f"Request body too large (max {_MAX_REQUEST_BODY_BYTES // (1024*1024)} MB)"},
+            )
+        return await call_next(request)
 
 # Initialise structured logging as early as possible
 _configure_root()
@@ -27,6 +43,7 @@ app.state.is_mock_mode = settings.is_mock_mode
 
 # Request-ID middleware — must be first so all downstream code sees request_id
 app.add_middleware(RequestIdMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,7 +76,17 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "version": VERSION}
+    return {
+        "status": "ok",
+        "version": VERSION,
+        "dependencies": {
+            "vision": "mock" if settings.is_mock_mode else ("configured" if settings.openai_api_key else "missing_key"),
+            "tradera": "configured" if settings.has_tradera_credentials else "unconfigured",
+            "serper": "configured" if settings.has_serper_credentials else "unconfigured",
+            "serpapi": "configured" if settings.has_serpapi_credentials else "unconfigured",
+            "database": "configured" if settings.has_database else "unconfigured",
+        },
+    }
 
 
 @app.get("/admin", response_class=FileResponse)
