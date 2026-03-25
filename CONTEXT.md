@@ -28,6 +28,7 @@ backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
 backend/app/core/version.py — single source of truth for VERSION string
+backend/app/core/thresholds.py — all 40+ pipeline thresholds in one file (confidence caps, scoring weights, gates)
 backend/app/core/value_engine.py — main orchestration: vision → market → score → price → envelope
 backend/app/services/vision_service.py — OpenAI Vision API, product identification, confidence rules
 backend/app/services/market_service.py — market data wrapper, provider selection
@@ -61,6 +62,7 @@ tests/test_new_price_service.py — new price service tests
 tests/test_pricing_service.py — pricing service tests
 tests/test_value_engine.py — end-to-end value engine tests
 tests/test_depreciation_rules.py — condition adjustments and category depreciation range tests
+tests/test_golden_cases.py — 7 canonical product pipeline tests (Sony XM4/5, iPhone 13, DJI Osmo, MacBook Air)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -122,7 +124,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
-2026-03-25 — feat: rate limiting (slowapi 10/min), hide /docs in prod, temperature=0 on vision, vision cache SHA-256, Tradera rate-limit logging, .env.example updated
+2026-03-26 — refactor: thresholds.py (40+ constants), golden tests (7 cases, 73 total), calibration logging, market_data_json persisted, valuation-mvp/ removed from git
+2026-03-25 — feat: rate limiting (slowapi 10/min), hide /docs in prod, temperature=0 on vision, vision cache SHA-256, Tradera rate-limit logging
 2026-03-25 — docs: deep investigation report; AI usage map, pipeline analysis, 10 prioritized opportunities, evaluation plan, QA/trust findings
 2026-03-25 — fix: vision prompt rewrite for better product identification; chain-of-thought procedure (brand→line→generation→variant→cross-check); specificity examples; product knowledge hints (DJI Osmo Pocket 1/2/3, Sony WH-1000XM4/5); adjusted confidence bands (0.80–0.89 for design-based generation ID); camera-specific requested angles; 66 tests pass
 2026-03-25 — feat: improved pricing model; FIX 1 depreciation fallback (0 comps + new price → depreciation_estimate, conf=0.35); FIX 2 graduated confidence penalty replaces hard MIN_RELEVANT_COMPARABLES=3 gate; FIX 3 percentile range (p15/p85 for ≥4 comps, ±15% otherwise); FIX 4 CANONICAL comment + legacy deprecation; FIX 5 calibration table; FIX 6 response_time_ms on all return paths; 66 tests pass
@@ -133,21 +136,9 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-25 — security: XSS fix, admin auth via X-Admin-Key, CORS restricted to ALLOWED_ORIGINS, bypassPermissions
 2026-03-25 — docs: full architecture review
 2026-03-25 — infra: GitHub workflow; remote added, develop/staging/main branches, CONTRIBUTING.md
-2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
-2026-03-25 — docs: OVERNIGHT_SUMMARY.md written; v0.2.0 tagged; 66 tests passing, 8 commits this session
-2026-03-25 — feat: Railway deployment; railway.toml (nixpacks, healthcheck /health), Procfile, DEPLOY.md with env vars and migration steps
-2026-03-25 — feat: production hardening; input validation (condition enum, images count ≤8, text fields ≤128 chars), 20MB request body limit, /health returns dependency states
-2026-03-25 — test: 17 new tests; depreciation rules, condition propagation, enrich_envelope states, scoring edge cases; total 66 tests passing
-2026-03-25 — refactor: remove dead code; market_service.get_prices() unused method removed
-2026-03-25 — feat: wire condition field end-to-end; ValueRequest.condition → value_item → calculate_valuation + build_preliminary_estimate → get_depreciation_range; affects pricing range and preliminary estimate
-2026-03-25 — feat: changelog system; CHANGELOG.md, version.py (VERSION=0.1.0), /health returns JSON with version, git tag v0.1.0
-2026-03-25 — feat: structured logging foundation; centralised get_logger() with JSON formatter and request_id propagation; RequestIdMiddleware; two sinks (stdout + logs/app.jsonl); logged vision/valuation/db events; 10 logger tests pass
-2026-03-25 — fix: image-based valuations always returned ambiguous_model; root cause: MULTIPLE_ALTERNATIVES_CONFIDENCE_CAP (0.74) is structurally always below AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD (0.90), so candidate_models always triggered hard-block; fix: demoted multiple_plausible_models from hard_block_reasons to soft warning; only missing_brand_or_model now hard-blocks
-2026-03-25 — admin dashboard: GET /admin serves vanilla JS admin.html; admin router with DB overview, valuation metrics, table browser, index health, slow queries; Admin nav button added to main header
-2026-03-24 — frontend fixes: double product name dedup (WH-1000XM + WH-1000XM4 → WH-1000XM4); comparable status field (status=completed → Såld); quick comparables list now visible in main view (no need to expand "Se detaljer"); ended_at time-ago shown per comparable
-2026-03-24 — pipeline fixes: AVIF image support; color word stripping before Blocket query; MIN_SOLD_COMPARABLES=0; confidence floor 0.55; needs_more_images demoted to warning; Blocket/Tradera comparables no longer classified as "related" in frontend; category passed through manual override
-2026-03-24 — frontend rewrite: premium Klarna-style design system; warm off-white tokens; Inter font; Lucide icons throughout; upload, scanning, and result screens redesigned; quick view with text-hero estimate, combined info line, retention bar; advanced view with dot plot, comparable listings, reasoning, feedback, next steps; ambiguous/insufficient/error states redesigned; no blue, no emoji; all JS logic preserved unchanged
-2026-03-24 — zero-SerpAPI pipeline: blocket-api package integrated as primary used-market source; Serper.dev as primary new-price source; SerpAPI demoted to optional fallback for both; prisjakt_client.py stub documents 403 block; in-memory TTL cache added
+2026-03-25 — chore: kvällsgranskning; TASKS.md + KVALL_RAPPORT.md + .claude/settings.json
+2026-03-25 — feat: Railway deployment, production hardening, structured logging, admin dashboard
+2026-03-24 — frontend rewrite: premium Klarna-style design system; pipeline fixes; bug sweep (14 issues)
 
 ## Next Up
 [Empty — add manually]

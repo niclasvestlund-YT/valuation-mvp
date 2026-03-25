@@ -1,23 +1,21 @@
-# STATUS — 2026-03-25
+# STATUS — 2026-03-26
 
-## Done (🔴 + 🟠 tasks)
-- Rate limiting: slowapi 10 req/min per IP on POST /value
-- Hide /docs /redoc in production (RAILWAY_ENVIRONMENT detection)
-- OpenAI vision temperature=0 for deterministic output
-- Vision cache per SHA-256 image hash (1h TTL, avoids duplicate API calls)
-- Tradera rate-limit logging improved (explicit warning + 1h pause notice)
-- .env.example updated with SERPER_DEV_API_KEY
-- Marked 9 tasks as [x] done in TASKS.md (including previously completed items)
+## Done this session (🟡 Moat-building)
+- market_data_json now persisted to DB; depreciation_estimate saves PriceSnapshot
+- valuation-mvp/ dir removed from git (55 files, 4613 lines); .gitignore expanded
+- core/thresholds.py: 40+ constants extracted from 3 files into single tuning file
+- Confidence calibration logging: calibration.valuation structured log event
+- 7 golden tests: Sony XM4/XM5, iPhone 13, DJI Osmo Pocket 3, MacBook Air M2, unknown product, low confidence
+- Fixed request/req variable shadowing bug in value.py
 
 ## Tests
-- 66 passed, 0 failed
+- 73 passed, 0 failed (was 66, +7 golden)
 
-## Skipped
-- Lokal PostgreSQL (requires manual install)
-- Railway deployment verification (requires Railway access)
-- GitHub push (auth configured in earlier session, skipping per instructions)
+## Remaining 🟡
+- [ ] Integrationstester mot riktig DB (kräver lokal PostgreSQL)
 
-## Next
-1. Set up local PostgreSQL to test DB persistence end-to-end
-2. Start 🟡 Moat-building tasks (golden tests, integration tests, thresholds config)
-3. Push all commits: `git push origin develop`
+## Next priorities (🟢)
+- OCR-steg innan vision
+- Bundle-filtrering förbättringar
+- New price anchor minimum 2 sources
+- Mobil-first redesign
