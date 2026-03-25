@@ -30,7 +30,7 @@
 ## 🟡 Moat-byggande 🏰
 
 - [x] Komplett datainsamling i DB — market_data_json now persisted, depreciation_estimate saves PriceSnapshot
-- [ ] Radera eller arkivera `valuation-mvp/`-mappen — skapar förvirring
+- [x] Radera eller arkivera `valuation-mvp/`-mappen — removed from git, added to .gitignore
 - [ ] Automatisera golden tests — 7+ produktbilder med förväntad brand/model *(ny: tests/golden/)*
 - [ ] Integrationstester som verifierar hela flödet mot riktig DB
 - [ ] Confidence calibration logging — logga alla ok-värderingar, granska efter 100+ st

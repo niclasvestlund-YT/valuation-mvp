@@ -4,3 +4,11 @@
 .pip-cache/
 __pycache__/
 .DS_Store
+logs/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+valuation-mvp/
+.claude/worktrees/
