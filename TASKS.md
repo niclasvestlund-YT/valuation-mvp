@@ -29,7 +29,7 @@
 
 ## 🟡 Moat-byggande 🏰
 
-- [ ] Komplett datainsamling i DB — varje värdering ska spara alla fält *(models.py, crud.py, value.py)*
+- [x] Komplett datainsamling i DB — market_data_json now persisted, depreciation_estimate saves PriceSnapshot
 - [ ] Radera eller arkivera `valuation-mvp/`-mappen — skapar förvirring
 - [ ] Automatisera golden tests — 7+ produktbilder med förväntad brand/model *(ny: tests/golden/)*
 - [ ] Integrationstester som verifierar hela flödet mot riktig DB

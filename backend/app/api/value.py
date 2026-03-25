@@ -381,11 +381,12 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
             },
             "condition": response_payload.get("_condition"),
             "response_time_ms": response_payload.get("_response_time_ms"),
+            "market_data_json": market_data if market_data else None,
         }
 
         await save_valuation(db_data)
 
-        if response_payload.get("status") == "ok" and db_data.get("estimated_value"):
+        if response_payload.get("status") in {"ok", "depreciation_estimate"} and db_data.get("estimated_value"):
             await save_price_snapshot({
                 "product_identifier": model_id,
                 "estimated_value": db_data["estimated_value"],
