@@ -33,7 +33,7 @@
 - [x] Radera eller arkivera `valuation-mvp/`-mappen — removed from git, added to .gitignore
 - [ ] Automatisera golden tests — 7+ produktbilder med förväntad brand/model *(ny: tests/golden/)*
 - [ ] Integrationstester som verifierar hela flödet mot riktig DB
-- [ ] Confidence calibration logging — logga alla ok-värderingar, granska efter 100+ st
+- [x] Confidence calibration logging — `calibration.valuation` log event for ok/depreciation_estimate
 - [x] Samla alla 25+ thresholds i en config-fil *(core/thresholds.py)* — 40+ constants extracted
 
 ## 🟢 Bättre värderingar

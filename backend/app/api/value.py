@@ -409,31 +409,31 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/value", response_model=ValueEnvelope)
 @limiter.limit("10/minute")
 def value_image(request: Request, background_tasks: BackgroundTasks, payload: ValueRequest | None = Body(default=None)):
-    request = payload or ValueRequest()
+    req = payload or ValueRequest()
     valuation_id = str(uuid.uuid4())
     t0 = time.monotonic()
 
     logger.info("request.value.start", extra={
         "valuation_id": valuation_id,
-        "has_images": bool(request.images or request.image),
-        "brand_override": bool(request.brand),
-        "model_override": bool(request.model),
-        "condition": request.condition,
+        "has_images": bool(req.images or req.image),
+        "brand_override": bool(req.brand),
+        "model_override": bool(req.model),
+        "condition": req.condition,
     })
 
     try:
         response_payload = enrich_envelope(value_engine.value_item(
-            images=request.images,
-            image=request.image,
-            brand=request.brand,
-            model=request.model,
-            category=request.category,
-            condition=request.condition,
+            images=req.images,
+            image=req.image,
+            brand=req.brand,
+            model=req.model,
+            category=req.category,
+            condition=req.condition,
         ))
         if response_payload.get("status") in {"degraded", "error"}:
             result = _record_failure(
                 payload=response_payload,
-                request=request,
+                request=req,
                 error_type="ValueEngineFailure",
             )
         else:
@@ -465,7 +465,7 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
                 "reasons": [exc.code],
                 "debug_id": exc.request_id,
             }),
-                request=request,
+                request=req,
                 error_type=type(exc).__name__,
                 technical_message=str(exc),
             )
@@ -478,7 +478,7 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
                 "reasons": [exc.code],
                 "debug_id": exc.request_id,
             }),
-                request=request,
+                request=req,
                 error_type=type(exc).__name__,
                 technical_message=str(exc),
             )
@@ -508,6 +508,30 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
         "response_time_ms": elapsed_ms,
     })
 
+    # Confidence calibration logging — structured data for post-hoc analysis
+    _status = result.get("status")
+    if _status in {"ok", "depreciation_estimate"}:
+        _data = result.get("data") or {}
+        _val = _data.get("valuation") or {}
+        _snap = result.get("market_snapshot") or {}
+        logger.info("calibration.valuation", extra={
+            "valuation_id": valuation_id,
+            "status": _status,
+            "brand": _data.get("brand"),
+            "model": _data.get("model"),
+            "category": _data.get("category"),
+            "condition": req.condition,
+            "fair_estimate": _val.get("fair_estimate"),
+            "low_estimate": _val.get("low_estimate"),
+            "high_estimate": _val.get("high_estimate"),
+            "confidence": _val.get("confidence"),
+            "vision_confidence": _data.get("confidence"),
+            "comparable_count": _val.get("comparable_count"),
+            "sold_count": _snap.get("sold_count"),
+            "new_price": (_data.get("market_data") or {}).get("new_price", {}).get("estimated_new_price"),
+            "response_time_ms": elapsed_ms,
+        })
+
     # Dump last result for local dev inspection
     try:
         import pathlib, json as _json
@@ -519,7 +543,7 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
         pass
 
     # Pass DB-only metadata separately — don't leak internal fields in the API response
-    persist_payload = {**result, "_condition": request.condition, "_response_time_ms": elapsed_ms}
+    persist_payload = {**result, "_condition": req.condition, "_response_time_ms": elapsed_ms}
     background_tasks.add_task(_persist_valuation, persist_payload, valuation_id)
     return result
 
