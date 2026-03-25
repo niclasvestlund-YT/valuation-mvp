@@ -5,7 +5,7 @@
 ## Prio 1 — Kritiskt
 - [ ] Wrappa `_persist_valuation` dict-parsing i try/except så att oväntade nycklar aldrig crashar bakgrundsuppgiften
 - [ ] Sätt upp lokal PostgreSQL (Postgres.app, Homebrew eller Railway) så att DB-save faktiskt fungerar
-- [ ] Lägg till GitHub-remote och pusha projektet
+- [ ] Lägg till GitHub-remote och pusha projektet (remote added, auth pending)
 
 ## Prio 2 — Viktigt
 - [ ] Ersätt Prisjakt-stub med fungerande prishistorikkälla (Prisjakt blockerar server-side)
@@ -24,3 +24,4 @@
 - [x] Checkpoint-commit 2026-03-25
 - [x] Säkerhetsskanning (.env, API-nycklar)
 - [x] .claude/settings.json med permissions
+- [x] GitHub workflow: remote, branches (develop/staging/main), CONTRIBUTING.md, deny-list updated

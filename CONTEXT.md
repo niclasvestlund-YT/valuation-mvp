@@ -68,7 +68,8 @@ automation/history/DECISIONS.md — architecture decision log
 automation/history/IMPROVEMENTS.md — improvement history
 TASKS.md — prioriterad uppgiftslista (3 nivåer)
 KVALL_RAPPORT.md — kvällsrapport 2026-03-25 med alla fynd
-.claude/settings.json — Claude Code permissions (block push main, rm -rf)
+.claude/settings.json — Claude Code permissions (block push main/staging, rm -rf)
+CONTRIBUTING.md — branch workflow and commit conventions
 
 ## Endpoints
 POST /value — JSON body: `{image?, images?, filename?, brand?, model?}`; returns ValueEnvelope JSON (includes valuation_id)
@@ -115,6 +116,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Local PostgreSQL not installed — DB save silently fails (all writes return None)
 
 ## Recent Changes
+2026-03-25 — infra: GitHub workflow; remote added, develop/staging/main branches, CONTRIBUTING.md, deny-list updated
 2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
 2026-03-25 — docs: OVERNIGHT_SUMMARY.md written; v0.2.0 tagged; 66 tests passing, 8 commits this session
 2026-03-25 — feat: Railway deployment; railway.toml (nixpacks, healthcheck /health), Procfile, DEPLOY.md with env vars and migration steps
