@@ -1,54 +1,60 @@
-# STATUS.md — valuation-mvp
+# Pricing Model Improvements — STATUS.md
+Date: 2026-03-25
 
-**Generated:** 2026-03-25
-**Based on:** TASKS.md, CONTEXT.md, DB_GIT_REVIEW.md, CLAUDE.md
-
-> Note: Five DB fixes from DB_GIT_REVIEW.md are already done per Recent Changes
-> (confidence_score→confidence, _persist_valuation try/except, indexes, admin.py pool, condition+response_time_ms).
-> TASKS.md has not been updated to reflect these. Items below are truly remaining.
+## Summary
+Six targeted improvements to the pricing engine. All 66 tests pass. Committed to `develop`.
 
 ---
 
-## Critical — Breaks something now
+## FIX 1 — Depreciation fallback when no comparables
 
-- [ ] **Set up local PostgreSQL** — DB save silently fails; every write returns None; zero data persists (TASKS Prio 1; CONTEXT Known Issues)
-- [ ] **Complete GitHub auth and push** — remote added but auth pending; code only exists locally (TASKS Prio 1)
-- [ ] **Fix dual-path table creation** — `database.py:17` `create_all` bypasses Alembic on every startup; will cause "column already exists" or "column does not exist" errors when schema evolves (CONTEXT Known Issues; DB_GIT_REVIEW Risk #4)
-- [ ] **Fix SQL injection risk in admin table browser** — `admin.py` uses f-string SQL for table name; whitelist mitigates but is fragile (CONTEXT Known Issues)
-- [ ] **Fix `save_feedback` silent failure** — if valuation_id is missing from DB (common when DB was down), feedback is silently dropped with no log entry (DB_GIT_REVIEW)
+**Before:** 0 comparables + new price → `insufficient_evidence`, no valuation shown.
 
----
-
-## Important — Needed for the data platform vision
-
-- [ ] **Replace Prisjakt stub with working price history source** — Prisjakt blocks server-side (HTTP 403); no price history is wired (TASKS Prio 2; CONTEXT Known Issues)
-- [ ] **Add `.env.example`** with all env vars (no values) for onboarding (TASKS Prio 2)
-- [ ] **Integration tests against real DB** — verify the full request flow end-to-end (TASKS Prio 2)
-- [ ] **Verify Railway deployment end-to-end** (TASKS Prio 2)
-- [ ] **Set up CI/CD pipeline** — no GitHub Actions; every push is untested (DB_GIT_REVIEW Git Review)
-- [ ] **Add backup strategy** — Railway has point-in-time recovery but no automated export; project deletion = total data loss (DB_GIT_REVIEW)
-- [ ] **Normalize product identity** — add a `products` table so "WH-1000XM4" / "WH1000XM4" / "Sony WH-1000XM4" resolve to one entity; needed for trends and analytics (DB_GIT_REVIEW)
-- [ ] **Store market listings** — add `market_listings` table; raw listings are discarded after each request, blocking trend analysis (DB_GIT_REVIEW)
-- [ ] **Multi-tenancy support** — add `api_keys`/`tenants` table for B2B billing, rate limiting, data isolation (DB_GIT_REVIEW)
-- [ ] **Add missing fields** — `currency` and `request_image_count` on valuations; `condition` and `currency` on price_snapshots (DB_GIT_REVIEW)
-- [ ] **Clean up `alembic.ini` hardcoded URL** — default credentials in config file; should rely solely on env var (DB_GIT_REVIEW)
-- [ ] **Enable branch protection on GitHub** — documented in CONTRIBUTING.md but not enforced (DB_GIT_REVIEW)
+**After:** 0 comparables + new price → `status=depreciation_estimate` with a fair estimate
+calculated from `new_price × category_depreciation_midpoint`.
+Confidence is fixed at 0.35. Swedish warning shown to user.
+If 0 comparables AND no new price → still `insufficient_evidence`.
 
 ---
 
-## Nice to have — Can wait
+## FIX 2 — Graduated confidence penalty (replaces hard gate)
 
-- [ ] **Feedback loop** — show historical valuations per product (TASKS Prio 3)
-- [ ] **Cron worker for automatic price updates** via PriceSnapshot (TASKS Prio 3)
-- [ ] **Rate limiting on POST /value** (TASKS Prio 3)
-- [ ] **Image validation** — check filetype and size before vision call (TASKS Prio 3)
-- [ ] **Admin dashboard authentication** (TASKS Prio 3)
-- [ ] **Add PR template** — `.github/pull_request_template.md` (DB_GIT_REVIEW)
-- [ ] **Expand .gitignore** — missing `logs/`, `*.egg-info/`, `.pytest_cache/`, `dist/`, `.mypy_cache/`, `*.db`, `.env.*` (DB_GIT_REVIEW)
-- [ ] **Switch to `develop` branch** for daily work; currently on `main` (DB_GIT_REVIEW)
+**Before:** `< 3 relevant comparables` → hard gate to `insufficient_evidence`.
+
+**After:** 1 comp: −0.25 confidence, 2 comps: −0.15, 3 comps: −0.05, 4+: no penalty.
+Pricing proceeds with reduced confidence instead of refusing entirely.
 
 ---
 
-**Summary:** 5 critical, 12 important, 8 nice-to-have. The top priority is getting PostgreSQL running locally so data actually persists, followed by completing the GitHub push so the code is backed up.
+## FIX 3 — Percentile price range (replaces raw min/max)
 
-DONE
+**Before:** `low = min(prices)`, `high = max(prices)` — easily skewed by outliers.
+
+**After:** For ≥4 comparables: p15/p85. For <4: fair ± 15%.
+
+---
+
+## FIX 4 — Canonical engine / deprecated legacy
+
+`pricing_service.py` has CANONICAL PRICING ENGINE header.
+`valuation-mvp/.../pricing.py` has DEPRECATED comment.
+
+---
+
+## FIX 5 — Confidence calibration table
+
+Added as comment at top of `pricing_service.py`.
+0.80-1.00 Very high / 0.60-0.79 High / 0.40-0.59 Medium / 0.20-0.39 Low / 0.00-0.19 Very low
+
+---
+
+## FIX 6 — response_time_ms on all return paths
+
+Every response envelope now includes `response_time_ms` (integer milliseconds).
+Covers all 5 paths in `value_engine.py`.
+
+---
+
+## Test results
+- 66 tests, 0 failures
+- Updated 2 tests to match new behaviour (FIX 1 + FIX 2)
