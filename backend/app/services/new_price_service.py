@@ -35,6 +35,20 @@ ACCESSORY_ONLY_KEYWORDS = {
     "spare parts",
 }
 
+# Bundle/combo suffixes that indicate a multi-item pack, not the base product.
+# Only applied when the target model name itself contains no bundle indicator.
+BUNDLE_VARIANT_KEYWORDS = {
+    "combo",
+    "bundle",
+    "adventure",
+    "creator",
+    "kit",
+    "fly more",
+    "standard combo",
+    "adventure combo",
+    "creator combo",
+}
+
 CATEGORY_MINIMUM_PRICE_BY_CURRENCY = {
     "SEK": {
         "smartphone": 500.0,
@@ -127,6 +141,15 @@ def should_reject_candidate(
 
     if any(keyword in haystack for keyword in ACCESSORY_ONLY_KEYWORDS):
         return True, "accessory_only"
+
+    # Reject bundle/combo variants when the target model is a base product.
+    # e.g. "Osmo Action 5 Pro Standard Combo" should not set the price for "Osmo Action 5 Pro".
+    normalized_model = normalize_text(model)
+    model_is_base_product = not any(kw in normalized_model for kw in BUNDLE_VARIANT_KEYWORDS)
+    if model_is_base_product:
+        title_normalized = normalize_text(candidate.get("title") or "")
+        if any(kw in title_normalized for kw in BUNDLE_VARIANT_KEYWORDS):
+            return True, "bundle_variant_for_base_model"
 
     normalized_brand = normalize_text(brand)
     if normalized_brand and normalized_brand not in haystack:
