@@ -9,7 +9,7 @@ Local MVP for estimating the second-hand value of consumer tech products from ph
 ## Stack
 - Backend: FastAPI, Python 3.11, uvicorn
 - Frontend: Single static HTML/CSS/JS file, served by FastAPI at GET /
-- Deploy: local only (Railway mentioned in task template but not configured)
+- Deploy: Railway (railway.toml + Procfile); nixpacks builder; healthcheck /health; auto-deploys on push
 - Key deps: fastapi, uvicorn, pydantic, requests, Pillow, pillow-heif, python-dotenv, blocket-api
 
 ## Request Flow
@@ -109,6 +109,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — feat: Railway deployment; railway.toml (nixpacks, healthcheck /health), Procfile, DEPLOY.md with env vars and migration steps
 2026-03-25 — feat: production hardening; input validation (condition enum, images count ≤8, text fields ≤128 chars), 20MB request body limit, /health returns dependency states
 2026-03-25 — test: 17 new tests; depreciation rules, condition propagation, enrich_envelope states, scoring edge cases; total 66 tests passing
 2026-03-25 — refactor: remove dead code; market_service.get_prices() unused method removed
