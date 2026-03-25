@@ -1,60 +1,33 @@
-# Pricing Model Improvements — STATUS.md
+# Vision Prompt Rewrite — STATUS.md
 Date: 2026-03-25
 
-## Summary
-Six targeted improvements to the pricing engine. All 66 tests pass. Committed to `develop`.
+## Problem
+ChatGPT identified "DJI Osmo Pocket 3" from image. Our app returned "DJI Osmo" (ambiguous_model).
+Both use OpenAI Vision API. Difference is in our prompt.
 
----
+## Root Cause
+Old prompt was too conservative and lacked generation-detection guidance.
+Model saw "OSMO" text on body and returned that as the full model name.
 
-## FIX 1 — Depreciation fallback when no comparables
+## Old Prompt (key issues)
+- "Identify one consumer tech product" — no specificity target
+- No chain-of-thought for generation identification
+- No examples of desired specificity level
+- No product knowledge hints for differentiating generations
+- Confidence 0.90+ required visible model text — design-based ID was penalized
 
-**Before:** 0 comparables + new price → `insufficient_evidence`, no valuation shown.
+## New Prompt (key improvements)
+1. Chain-of-thought: Brand → Product Line → Generation/Version → Variant → Cross-check
+2. Specificity examples: BAD "DJI Osmo" vs GOOD "DJI Osmo Pocket 3"
+3. Product knowledge hints: Pocket 1/2/3 differences, Sony XM4/5, iPhone generations
+4. Key rule: "OSMO on body + 2-inch rotatable OLED = Osmo Pocket 3, not just DJI Osmo"
+5. Confidence 0.80–0.89 now valid for design-based generation ID
+6. Camera-specific requested angles added
 
-**After:** 0 comparables + new price → `status=depreciation_estimate` with a fair estimate
-calculated from `new_price × category_depreciation_midpoint`.
-Confidence is fixed at 0.35. Swedish warning shown to user.
-If 0 comparables AND no new price → still `insufficient_evidence`.
+## Test Results
+- 66/66 tests passing, 0 regressions
+- Live API test: needs production verification (no API key in dev env)
 
----
-
-## FIX 2 — Graduated confidence penalty (replaces hard gate)
-
-**Before:** `< 3 relevant comparables` → hard gate to `insufficient_evidence`.
-
-**After:** 1 comp: −0.25 confidence, 2 comps: −0.15, 3 comps: −0.05, 4+: no penalty.
-Pricing proceeds with reduced confidence instead of refusing entirely.
-
----
-
-## FIX 3 — Percentile price range (replaces raw min/max)
-
-**Before:** `low = min(prices)`, `high = max(prices)` — easily skewed by outliers.
-
-**After:** For ≥4 comparables: p15/p85. For <4: fair ± 15%.
-
----
-
-## FIX 4 — Canonical engine / deprecated legacy
-
-`pricing_service.py` has CANONICAL PRICING ENGINE header.
-`valuation-mvp/.../pricing.py` has DEPRECATED comment.
-
----
-
-## FIX 5 — Confidence calibration table
-
-Added as comment at top of `pricing_service.py`.
-0.80-1.00 Very high / 0.60-0.79 High / 0.40-0.59 Medium / 0.20-0.39 Low / 0.00-0.19 Very low
-
----
-
-## FIX 6 — response_time_ms on all return paths
-
-Every response envelope now includes `response_time_ms` (integer milliseconds).
-Covers all 5 paths in `value_engine.py`.
-
----
-
-## Test results
-- 66 tests, 0 failures
-- Updated 2 tests to match new behaviour (FIX 1 + FIX 2)
+## Files Changed
+- backend/app/services/vision_service.py — prompt rewrite
+- CONTEXT.md — updated
