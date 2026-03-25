@@ -21,7 +21,7 @@
 
 - [x] Sätt `temperature: 0` på OpenAI vision-anropet *(vision_service.py, `_build_request_payload()`)*
 - [x] Cacha vision-resultat per bild-hash (SHA-256) i 1h *(vision_service.py, cache.py)*
-- [ ] Fixa att Tradera rate-limit ger tyst dataförlust — logga + returnera explicit status *(tradera_client.py:97-100)*
+- [x] Fixa att Tradera rate-limit ger tyst dataförlust — logga + returnera explicit status *(tradera_client.py:97-100)*
 - [ ] Bildvalidering (filtyp, storlek) innan vision-anrop
 - [ ] Lägg till .env.example med alla env-variabler (utan värden) för onboarding
 - [ ] Skapa `staging`-branch + separat Railway staging-miljö

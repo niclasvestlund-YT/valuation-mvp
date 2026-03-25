@@ -50,7 +50,7 @@ class TraderaClient:
             return []
 
         if get_cached(_RATE_LIMIT_CACHE_KEY):
-            logger.info("tradera.rate_limited_cached query=%s", normalized_query)
+            logger.warning("tradera.search.rate_limited_cached query=%s — skipping API call for ~1h", normalized_query)
             return []
 
         cache_key = f"tradera:{normalized_query}:{category_id}:{order_by}"
@@ -96,10 +96,18 @@ class TraderaClient:
         except requests.HTTPError as exc:
             if exc.response is not None and exc.response.status_code == 429:
                 # Rate limited — set a flag so ALL subsequent queries skip the API for 1h
-                logger.warning("tradera.search.rate_limited query=%s", normalized_query)
+                logger.warning(
+                    "tradera.search.rate_limited query=%s status=429 — all Tradera queries paused for 1h",
+                    normalized_query,
+                )
                 set_cached(_RATE_LIMIT_CACHE_KEY, True)
             else:
-                logger.warning("tradera.search.request_failed query=%s reason=%s", normalized_query, exc)
+                logger.warning(
+                    "tradera.search.request_failed query=%s status=%s reason=%s",
+                    normalized_query,
+                    exc.response.status_code if exc.response is not None else "N/A",
+                    exc,
+                )
             return []
         except requests.RequestException as exc:
             logger.warning("tradera.search.request_failed query=%s reason=%s", normalized_query, exc)
