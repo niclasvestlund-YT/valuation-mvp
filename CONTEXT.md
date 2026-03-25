@@ -111,14 +111,11 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 ## Known Issues
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
-- `_persist_valuation` dict-parsing (api/value.py:342-378) lacks try/except — can crash silently in BackgroundTask
 - Local PostgreSQL not installed — DB save silently fails (all writes return None)
-- admin.py:160,212 queries `confidence_score` but column is `confidence` — metrics tab crashes
-- admin.py opens raw asyncpg connections per query, bypasses SQLAlchemy pool
-- No indexes on valuations.status, .brand, .category — admin GROUP BY does full scans
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-25 — fix: 5 DB issues; confidence_score→confidence, _persist_valuation try/except, indexes on status/brand/category, admin.py→SQLAlchemy pool, condition+response_time_ms fields
 2026-03-25 — docs: DB + Git review; found confidence_score bug, missing indexes, pool bypass, dual-path create_all
 2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
 2026-03-25 — docs: OVERNIGHT_SUMMARY.md written; v0.2.0 tagged; 66 tests passing, 8 commits this session
@@ -136,7 +133,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-24 — frontend rewrite: premium Klarna-style design system; warm off-white tokens; Inter font; Lucide icons throughout; upload, scanning, and result screens redesigned; quick view with text-hero estimate, combined info line, retention bar; advanced view with dot plot, comparable listings, reasoning, feedback, next steps; ambiguous/insufficient/error states redesigned; no blue, no emoji; all JS logic preserved unchanged
 2026-03-24 — zero-SerpAPI pipeline: blocket-api package integrated as primary used-market source; Serper.dev as primary new-price source; SerpAPI demoted to optional fallback for both; prisjakt_client.py stub documents 403 block; in-memory TTL cache added
 2026-03-24 — bug sweep (14 issues): removed google_shopping from used-market pipeline; removed fabricated price history; vision sends all images in one joint request; degraded status suppresses estimates; preliminary estimate no longer uses single_source_insufficient anchor; word-boundary fix for locked/unlocked; removed client-side VITE_API_KEY auth; CORS allow_credentials fixed; variant-aware wrong-model detection (iPhone 13 Pro); EXIF strip fails closed; manual override no longer sets category=manual_override; close.py blocks on TBD golden tests + parses bullet-prefixed Learning fields; escape hatch hidden when no estimate exists
-2026-03-24 — data flywheel: PostgreSQL + asyncpg + SQLAlchemy async; Valuation + PriceSnapshot models; save every result via BackgroundTasks; POST /feedback endpoint; Alembic initial migration
 
 ## Next Up
 [Empty — add manually]
