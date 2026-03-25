@@ -104,12 +104,12 @@ GET /health — returns JSON {"status": "ok", "version": "0.1.0"}
 - error — request failed (bad upload, decode failure, unexpected exception)
 
 ## Known Issues
-- `condition` input is not wired up — always passed as `None` through the pipeline; depreciation and scoring ignore product condition
-- `market_service.get_prices()` is not called from the main request flow; may be dead code or test-only
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
+- `market_service.get_prices()` is not called from the main request flow; may be dead code or test-only
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — feat: wire condition field end-to-end; ValueRequest.condition → value_item → calculate_valuation + build_preliminary_estimate → get_depreciation_range; affects pricing range and preliminary estimate
 2026-03-25 — feat: changelog system; CHANGELOG.md, version.py (VERSION=0.1.0), /health returns JSON with version, git tag v0.1.0
 2026-03-25 — feat: structured logging foundation; centralised get_logger() with JSON formatter and request_id propagation; RequestIdMiddleware; two sinks (stdout + logs/app.jsonl); logged vision/valuation/db events; 10 logger tests pass
 2026-03-25 — fix: image-based valuations always returned ambiguous_model; root cause: MULTIPLE_ALTERNATIVES_CONFIDENCE_CAP (0.74) is structurally always below AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD (0.90), so candidate_models always triggered hard-block; fix: demoted multiple_plausible_models from hard_block_reasons to soft warning; only missing_brand_or_model now hard-blocks

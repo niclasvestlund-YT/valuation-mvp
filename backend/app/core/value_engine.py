@@ -336,6 +336,7 @@ def build_preliminary_estimate(
     market_comparables: list[dict],
     new_price_data: dict | None,
     pricing_result: dict | None,
+    condition: str | None = None,
 ) -> dict | None:
     if is_manual_override(product_identification):
         identification_confidence = 0.99
@@ -389,7 +390,7 @@ def build_preliminary_estimate(
     market_signal_estimate = float(median(market_prices))
     depreciation_low, depreciation_high = get_depreciation_range(
         getattr(product_identification, "category", None),
-        condition=None,
+        condition=condition,
     )
     anchor_midpoint = new_price_anchor * ((depreciation_low + depreciation_high) / 2)
     blended_estimate = (market_signal_estimate * 0.75) + (anchor_midpoint * 0.25)
@@ -496,6 +497,7 @@ class ValueEngine:
         brand: str | None = None,
         model: str | None = None,
         category: str | None = None,
+        condition: str | None = None,
     ) -> dict:
         market_comparables: list[dict] = []
         new_price_data: dict | None = None
@@ -539,6 +541,7 @@ class ValueEngine:
                 "candidate_count": len(resolved_identification.candidate_models or []),
                 "needs_more_images": resolved_identification.needs_more_images,
                 "source": resolved_identification.source,
+                "condition": condition,
             },
         )
 
@@ -639,7 +642,7 @@ class ValueEngine:
                 product_identification=resolved_identification,
                 used_market_comparables=market_comparables,
                 new_price_estimate=new_price_data,
-                condition=None,
+                condition=condition,
             )
         except Exception as _exc:
             logger.error(
@@ -703,6 +706,7 @@ class ValueEngine:
             market_comparables=market_comparables,
             new_price_data=new_price_data,
             pricing_result=pricing_result,
+            condition=condition,
         )
         if pricing_result.get("status") == "insufficient_evidence":
             warnings = list(dict.fromkeys([*soft_ambiguity_warnings, *pricing_result.get("warnings", [])]))

@@ -62,6 +62,7 @@ class ValueRequest(BaseModel):
     brand: str | None = None
     model: str | None = None
     category: str | None = None
+    condition: str | None = None  # "excellent" | "good" | "fair" | "poor"
 
 
 class SourceBreakdown(BaseModel):
@@ -375,6 +376,7 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
         "has_images": bool(request.images or request.image),
         "brand_override": bool(request.brand),
         "model_override": bool(request.model),
+        "condition": request.condition,
     })
 
     try:
@@ -384,6 +386,7 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
             brand=request.brand,
             model=request.model,
             category=request.category,
+            condition=request.condition,
         ))
         if response_payload.get("status") in {"degraded", "error"}:
             result = _record_failure(
