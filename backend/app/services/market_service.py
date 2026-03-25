@@ -34,5 +34,3 @@ class MarketService:
 
         return comparables
 
-    def get_prices(self, brand: str, model: str, category: str | None = None) -> list[int]:
-        return [int(round(float(comparable["price"]))) for comparable in self.get_comparables(brand, model, category)]

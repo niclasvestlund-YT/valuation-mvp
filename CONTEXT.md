@@ -105,10 +105,10 @@ GET /health — returns JSON {"status": "ok", "version": "0.1.0"}
 
 ## Known Issues
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
-- `market_service.get_prices()` is not called from the main request flow; may be dead code or test-only
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — refactor: remove dead code; market_service.get_prices() unused method removed
 2026-03-25 — feat: wire condition field end-to-end; ValueRequest.condition → value_item → calculate_valuation + build_preliminary_estimate → get_depreciation_range; affects pricing range and preliminary estimate
 2026-03-25 — feat: changelog system; CHANGELOG.md, version.py (VERSION=0.1.0), /health returns JSON with version, git tag v0.1.0
 2026-03-25 — feat: structured logging foundation; centralised get_logger() with JSON formatter and request_id propagation; RequestIdMiddleware; two sinks (stdout + logs/app.jsonl); logged vision/valuation/db events; 10 logger tests pass
