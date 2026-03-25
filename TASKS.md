@@ -31,7 +31,7 @@
 
 - [x] Komplett datainsamling i DB — market_data_json now persisted, depreciation_estimate saves PriceSnapshot
 - [x] Radera eller arkivera `valuation-mvp/`-mappen — removed from git, added to .gitignore
-- [ ] Automatisera golden tests — 7+ produktbilder med förväntad brand/model *(ny: tests/golden/)*
+- [x] Automatisera golden tests — 7 canonical product tests in tests/test_golden_cases.py
 - [ ] Integrationstester som verifierar hela flödet mot riktig DB
 - [x] Confidence calibration logging — `calibration.valuation` log event for ok/depreciation_estimate
 - [x] Samla alla 25+ thresholds i en config-fil *(core/thresholds.py)* — 40+ constants extracted
