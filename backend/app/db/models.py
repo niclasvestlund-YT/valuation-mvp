@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .database import Base
@@ -16,17 +16,21 @@ class Valuation(Base):
     # Product identification
     product_name = Column(String, index=True)        # "Sony WH-1000XM4"
     product_identifier = Column(String, index=True)  # "WH-1000XM4"
-    brand = Column(String)
-    category = Column(String)
+    brand = Column(String, index=True)
+    category = Column(String, index=True)
     vision_confidence = Column(Float)
 
     # Valuation result
-    status = Column(String)                          # "ok", "ambiguous_model", etc.
+    status = Column(String, index=True)              # "ok", "ambiguous_model", etc.
     estimated_value = Column(Integer, nullable=True)
     value_range_low = Column(Integer, nullable=True)
     value_range_high = Column(Integer, nullable=True)
     new_price = Column(Integer, nullable=True)
     confidence = Column(Float, nullable=True)
+
+    # Request context
+    condition = Column(String, nullable=True)        # "excellent", "good", "fair", "poor"
+    response_time_ms = Column(Integer, nullable=True)
 
     # Data quality metrics
     num_comparables_raw = Column(Integer)
@@ -58,3 +62,7 @@ class PriceSnapshot(Base):
     sources_json = Column(JSONB)
     snapshot_date = Column(String, index=True)       # "2026-03-24"
     source = Column(String, default="user_scan")     # "user_scan" or "cron_worker"
+
+    __table_args__ = (
+        Index("ix_price_snapshots_product_date", "product_identifier", "snapshot_date"),
+    )

@@ -1,6 +1,7 @@
 """
 Admin router — read-only PostgreSQL inspection & metrics.
 Protected by ADMIN_SECRET_KEY header check.
+Uses the shared SQLAlchemy async session pool from database.py.
 Mounted at /admin in main.py.
 """
 
@@ -10,9 +11,11 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import asyncpg
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import text
+
+from backend.app.db.database import async_session
 
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "").strip()
 
@@ -27,32 +30,30 @@ async def verify_admin_key(x_admin_key: str = Header(default="")) -> None:
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(verify_admin_key)])
 
+
 # ---------------------------------------------------------------------------
-# DB helpers
+# DB helpers — use SQLAlchemy connection pool instead of raw asyncpg
 # ---------------------------------------------------------------------------
-
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:dev@localhost:5432/valuation")
-
-
-async def _conn() -> asyncpg.Connection:
-    return await asyncpg.connect(DATABASE_URL)
-
 
 async def _fetch(sql: str, *args: Any) -> list[dict]:
-    conn = await _conn()
-    try:
-        rows = await conn.fetch(sql, *args)
-        return [dict(r) for r in rows]
-    finally:
-        await conn.close()
+    async with async_session() as session:
+        result = await session.execute(text(sql), _positional_to_named(sql, args))
+        return [dict(row._mapping) for row in result.fetchall()]
 
 
 async def _fetchval(sql: str, *args: Any) -> Any:
-    conn = await _conn()
-    try:
-        return await conn.fetchval(sql, *args)
-    finally:
-        await conn.close()
+    async with async_session() as session:
+        result = await session.execute(text(sql), _positional_to_named(sql, args))
+        row = result.fetchone()
+        return row[0] if row else None
+
+
+def _positional_to_named(sql: str, args: tuple) -> dict:
+    """Convert $1, $2 positional params to :p1, :p2 named params for SQLAlchemy text()."""
+    params = {}
+    for i, val in enumerate(args, 1):
+        params[f"p{i}"] = val
+    return params
 
 
 # ---------------------------------------------------------------------------
@@ -162,13 +163,13 @@ async def valuation_metrics():
 
         total = await _fetchval("SELECT COUNT(*) FROM valuations") or 0
         last_24h = await _fetchval(
-            "SELECT COUNT(*) FROM valuations WHERE created_at >= $1", day_ago
+            "SELECT COUNT(*) FROM valuations WHERE created_at >= :p1", day_ago
         ) or 0
         last_7d = await _fetchval(
-            "SELECT COUNT(*) FROM valuations WHERE created_at >= $1", week_ago
+            "SELECT COUNT(*) FROM valuations WHERE created_at >= :p1", week_ago
         ) or 0
         avg_conf = await _fetchval(
-            "SELECT ROUND(AVG(confidence_score)::numeric, 3) FROM valuations WHERE confidence_score IS NOT NULL"
+            "SELECT ROUND(AVG(confidence)::numeric, 3) FROM valuations WHERE confidence IS NOT NULL"
         )
 
         status_breakdown = await _fetch(
@@ -220,7 +221,7 @@ async def valuation_metrics():
             SELECT
                 date_trunc('day', created_at) AS day,
                 COUNT(*) AS count,
-                ROUND(AVG(confidence_score)::numeric, 3) AS avg_confidence
+                ROUND(AVG(confidence)::numeric, 3) AS avg_confidence
             FROM valuations
             WHERE created_at >= NOW() - INTERVAL '30 days'
             GROUP BY 1
@@ -270,7 +271,7 @@ async def browse_table(
         raise HTTPException(status_code=404, detail="Table not found")
 
     cols = await _fetch(
-        "SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND table_schema = 'public'",
+        "SELECT column_name FROM information_schema.columns WHERE table_name = :p1 AND table_schema = 'public'",
         table_name,
     )
     col_names = [r["column_name"] for r in cols]
@@ -281,7 +282,7 @@ async def browse_table(
     total = await _fetchval(f'SELECT COUNT(*) FROM "{table_name}"')
 
     rows = await _fetch(
-        f'SELECT * FROM "{table_name}" ORDER BY "{order_by}" {direction} LIMIT $1 OFFSET $2',
+        f'SELECT * FROM "{table_name}" ORDER BY "{order_by}" {direction} LIMIT :p1 OFFSET :p2',
         limit,
         offset,
     )
@@ -308,7 +309,7 @@ async def slow_queries(min_ms: float = 500):
                 query,
                 state
             FROM pg_stat_activity
-            WHERE (now() - pg_stat_activity.query_start) > ($1 * interval '1 millisecond')
+            WHERE (now() - pg_stat_activity.query_start) > (:p1 * interval '1 millisecond')
               AND state != 'idle'
               AND datname = current_database()
             ORDER BY duration DESC

@@ -1,3 +1,4 @@
+import time
 import uuid
 from datetime import datetime
 from typing import Any, Literal
@@ -338,64 +339,73 @@ def _record_failure(
 
 async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str) -> None:
     """Fire-and-forget: extract fields from response and save to DB. Never raises."""
-    data = response_payload.get("data") or {}
-    valuation = data.get("valuation") or {}
-    market_data = data.get("market_data") or {}
-    market_snapshot = response_payload.get("market_snapshot") or {}
-    debug_summary = response_payload.get("debug_summary") or {}
-    new_price_info = (market_data.get("new_price") or {})
+    try:
+        data = response_payload.get("data") or {}
+        valuation = data.get("valuation") or {}
+        market_data = data.get("market_data") or {}
+        market_snapshot = response_payload.get("market_snapshot") or {}
+        debug_summary = response_payload.get("debug_summary") or {}
+        new_price_info = (market_data.get("new_price") or {})
 
-    brand = data.get("brand")
-    model_id = data.get("model")
-    line = data.get("line")
-    product_name = " ".join(p for p in [brand, line, model_id] if p) or None
+        brand = data.get("brand")
+        model_id = data.get("model")
+        line = data.get("line")
+        product_name = " ".join(p for p in [brand, line, model_id] if p) or None
 
-    db_data = {
-        "id": valuation_id,
-        "product_name": product_name,
-        "product_identifier": model_id,
-        "brand": brand,
-        "category": data.get("category"),
-        "vision_confidence": data.get("confidence"),
-        "status": response_payload.get("status"),
-        "estimated_value": valuation.get("fair_estimate"),
-        "value_range_low": valuation.get("low_estimate"),
-        "value_range_high": valuation.get("high_estimate"),
-        "new_price": new_price_info.get("estimated_new_price"),
-        "confidence": valuation.get("confidence"),
-        "num_comparables_raw": (
-            debug_summary.get("total_comparables_fetched")
-            or market_snapshot.get("fetched_count")
-            or 0
-        ),
-        "num_comparables_used": valuation.get("comparable_count") or 0,
-        "sources_json": {
-            "fetched": market_snapshot.get("fetched_count", 0),
-            "sold": market_snapshot.get("sold_count", 0),
-            "active": market_snapshot.get("active_count", 0),
-            "relevant": market_snapshot.get("relevant_count", 0),
-        },
-    }
-
-    await save_valuation(db_data)
-
-    if response_payload.get("status") == "ok" and db_data.get("estimated_value"):
-        await save_price_snapshot({
+        db_data = {
+            "id": valuation_id,
+            "product_name": product_name,
             "product_identifier": model_id,
-            "estimated_value": db_data["estimated_value"],
-            "value_range_low": db_data["value_range_low"],
-            "value_range_high": db_data["value_range_high"],
-            "new_price": db_data["new_price"],
-            "num_comparables": db_data["num_comparables_used"],
-            "sources_json": db_data["sources_json"],
-            "snapshot_date": datetime.utcnow().strftime("%Y-%m-%d"),
-        })
+            "brand": brand,
+            "category": data.get("category"),
+            "vision_confidence": data.get("confidence"),
+            "status": response_payload.get("status"),
+            "estimated_value": valuation.get("fair_estimate"),
+            "value_range_low": valuation.get("low_estimate"),
+            "value_range_high": valuation.get("high_estimate"),
+            "new_price": new_price_info.get("estimated_new_price"),
+            "confidence": valuation.get("confidence"),
+            "num_comparables_raw": (
+                debug_summary.get("total_comparables_fetched")
+                or market_snapshot.get("fetched_count")
+                or 0
+            ),
+            "num_comparables_used": valuation.get("comparable_count") or 0,
+            "sources_json": {
+                "fetched": market_snapshot.get("fetched_count", 0),
+                "sold": market_snapshot.get("sold_count", 0),
+                "active": market_snapshot.get("active_count", 0),
+                "relevant": market_snapshot.get("relevant_count", 0),
+            },
+            "condition": response_payload.get("_condition"),
+            "response_time_ms": response_payload.get("_response_time_ms"),
+        }
+
+        await save_valuation(db_data)
+
+        if response_payload.get("status") == "ok" and db_data.get("estimated_value"):
+            await save_price_snapshot({
+                "product_identifier": model_id,
+                "estimated_value": db_data["estimated_value"],
+                "value_range_low": db_data["value_range_low"],
+                "value_range_high": db_data["value_range_high"],
+                "new_price": db_data["new_price"],
+                "num_comparables": db_data["num_comparables_used"],
+                "sources_json": db_data["sources_json"],
+                "snapshot_date": datetime.utcnow().strftime("%Y-%m-%d"),
+            })
+    except Exception as exc:
+        logger.error("persist_valuation.failed", extra={
+            "valuation_id": valuation_id,
+            "error": f"{type(exc).__name__}: {exc}",
+        }, exc_info=True)
 
 
 @router.post("/value", response_model=ValueEnvelope)
 def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None = Body(default=None)):
     request = payload or ValueRequest()
     valuation_id = str(uuid.uuid4())
+    t0 = time.monotonic()
 
     logger.info("request.value.start", extra={
         "valuation_id": valuation_id,
@@ -484,9 +494,13 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
         )
 
     result["valuation_id"] = valuation_id
+    elapsed_ms = int((time.monotonic() - t0) * 1000)
+    result["_condition"] = request.condition
+    result["_response_time_ms"] = elapsed_ms
     logger.info("request.value.complete", extra={
         "valuation_id": valuation_id,
         "status": result.get("status"),
+        "response_time_ms": elapsed_ms,
     })
     background_tasks.add_task(_persist_valuation, result, valuation_id)
     return result
