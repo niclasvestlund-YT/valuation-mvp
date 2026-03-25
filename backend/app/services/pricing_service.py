@@ -7,7 +7,7 @@ from backend.app.services.outlier_filter import filter_comparable_outliers
 MIN_RELEVANCE_SCORE = 0.55
 MIN_RELEVANT_COMPARABLES = 3
 MIN_AVERAGE_RELEVANCE = 0.65
-MIN_SOLD_COMPARABLES = 1
+MIN_SOLD_COMPARABLES = 0  # Blocket/Tradera only expose active listings; active prices are valid market data
 
 BASE_PRICING_CONFIDENCE = 0.2
 MAX_PRICING_CONFIDENCE = 0.95
@@ -261,9 +261,6 @@ class PricingService:
 
         if average_relevance < MIN_AVERAGE_RELEVANCE:
             reasons.append("average_relevance_too_low")
-
-        if sold_count < MIN_SOLD_COMPARABLES:
-            reasons.append("no_sold_comparables")
 
         return reasons
 

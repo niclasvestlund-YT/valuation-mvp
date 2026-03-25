@@ -88,15 +88,16 @@ class ValueEngineTests(unittest.TestCase):
             request_id=request_id,
         )
 
-    def test_returns_ambiguous_model_for_combined_identification_signals(self) -> None:
+    def test_pipeline_continues_with_multiple_candidate_models_as_soft_warning(self) -> None:
+        """With multiple plausible models, the pipeline runs (not hard-blocked) and surfaces a warning."""
         new_price_service = StubNewPriceService(
             payload={
-                "estimated_new_price": 3990,
-                "currency": "SEK",
-                "confidence": 0.2,
-                "source_count": 1,
-                "sources": [{"source": "Webhallen"}],
-                "method": "single_source_insufficient",
+                "estimated_new_price": None,
+                "currency": None,
+                "confidence": 0.0,
+                "source_count": 0,
+                "sources": [],
+                "method": "unavailable",
             }
         )
         engine = ValueEngine(
@@ -110,16 +111,50 @@ class ValueEngineTests(unittest.TestCase):
 
         result = engine.value_item(images=["data:image/jpeg;base64,test"])
 
-        self.assertEqual(result["status"], "ambiguous_model")
-        self.assertIn("multiple_plausible_models", result["reasons"])
+        # Pipeline now continues for candidate_models (soft warning, not hard block)
+        self.assertIn(result["status"], {"insufficient_evidence", "ok"})
+        # The soft ambiguity warning must be visible in the response
+        all_warnings = result.get("warnings", [])
+        self.assertTrue(
+            any("möjliga modeller" in w.lower() for w in all_warnings),
+            f"Expected multiple-models warning in {all_warnings}",
+        )
         self.assertIsNone(result["data"]["price"])
-        self.assertFalse(result["debug_summary"]["market_lookup_attempted"])
-        self.assertEqual(result["market_snapshot"]["fetched_count"], 0)
-        self.assertEqual(result["market_snapshot"]["relevant_count"], 0)
-        self.assertEqual(len(new_price_service.calls), 0)
-        self.assertIn("Flera rimliga modellkandidater finns fortfarande kvar.", result["debug_summary"]["status_reasons"])
+        # Market was looked up
+        self.assertTrue(result["debug_summary"]["market_lookup_attempted"])
 
-    def test_ambiguous_model_can_still_include_safe_new_price_context(self) -> None:
+    def test_returns_ambiguous_model_when_brand_or_model_is_missing(self) -> None:
+        """Missing brand/model is the only hard-block that produces ambiguous_model."""
+        engine = ValueEngine(
+            vision_service=StubVisionService(
+                ProductIdentificationResult(
+                    brand=None,
+                    line=None,
+                    model=None,
+                    category="smartphone",
+                    variant=None,
+                    candidate_models=[],
+                    confidence=0.3,
+                    reasoning_summary="No product recognised.",
+                    needs_more_images=True,
+                    requested_additional_angles=[],
+                    source="Vision",
+                    request_id="test_request",
+                )
+            ),
+            market_service=StubMarketService(),
+            new_price_service=StubNewPriceService(),
+            pricing_service=StubPricingService(),
+        )
+
+        result = engine.value_item(images=["data:image/jpeg;base64,test"])
+
+        self.assertEqual(result["status"], "ambiguous_model")
+        self.assertIn("missing_brand_or_model", result["reasons"])
+        self.assertFalse(result["debug_summary"]["market_lookup_attempted"])
+
+    def test_new_price_context_available_in_insufficient_evidence_response(self) -> None:
+        """When pipeline runs but finds no comparables, new_price_data is included in market_data."""
         new_price_service = StubNewPriceService(
             payload={
                 "estimated_new_price": 2799,
@@ -148,11 +183,16 @@ class ValueEngineTests(unittest.TestCase):
 
         result = engine.value_item(images=["data:image/jpeg;base64,test"])
 
-        self.assertEqual(result["status"], "ambiguous_model")
-        self.assertEqual(result["data"]["market_data"]["new_price"]["estimated_new_price"], 2799)
-        self.assertEqual(result["data"]["market_data"]["new_price"]["currency"], "SEK")
+        # With brand+model present and no candidate_models, pipeline proceeds
+        self.assertEqual(result["status"], "insufficient_evidence")
+        # New price context is included in market_data
+        new_price = result["data"]["market_data"]["new_price"]
+        self.assertEqual(new_price["estimated_new_price"], 2799)
+        self.assertEqual(new_price["currency"], "SEK")
+        # New price service was called once during market lookup
         self.assertEqual(len(new_price_service.calls), 1)
-        self.assertEqual(result["market_snapshot"]["fetched_count"], 0)
+        # Market was attempted (brand+model were available)
+        self.assertTrue(result["debug_summary"]["market_lookup_attempted"])
 
     def test_returns_insufficient_evidence_when_pricing_gate_fails(self) -> None:
         engine = ValueEngine(

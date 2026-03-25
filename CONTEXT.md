@@ -46,7 +46,11 @@ backend/app/schemas/product_identification.py — vision output schema
 backend/app/schemas/market_comparable.py — market comparable schema
 backend/app/utils/cache.py — simple in-memory TTL cache (1h default); used by blocket_client + serper_new_price_client
 backend/app/utils/error_reporting.py — structured JSON error logging to logs/errors.jsonl
+backend/app/utils/logger.py — centralised JSON logger factory with request_id context var; two sinks (stdout + logs/app.jsonl)
 backend/app/utils/normalization.py — text normalization utilities
+backend/app/middleware/__init__.py — empty
+backend/app/middleware/request_id.py — RequestIdMiddleware: injects UUID per request, sets request_id_var, adds X-Request-ID header
+tests/test_logger.py — 10 tests: JSON fields, request_id propagation, log levels, exc_info
 frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
 frontend/admin.html — vanilla JS admin dashboard; tabs: DB overview, valuations metrics, table browser, index health
 tests/test_vision_service.py — vision service tests
@@ -105,6 +109,7 @@ GET /health — returns "API running"
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — feat: structured logging foundation; centralised get_logger() with JSON formatter and request_id propagation; RequestIdMiddleware; two sinks (stdout + logs/app.jsonl); logged vision/valuation/db events; 10 logger tests pass
 2026-03-25 — fix: image-based valuations always returned ambiguous_model; root cause: MULTIPLE_ALTERNATIVES_CONFIDENCE_CAP (0.74) is structurally always below AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD (0.90), so candidate_models always triggered hard-block; fix: demoted multiple_plausible_models from hard_block_reasons to soft warning; only missing_brand_or_model now hard-blocks
 2026-03-25 — admin dashboard: GET /admin serves vanilla JS admin.html; admin router with DB overview, valuation metrics, table browser, index health, slow queries; Admin nav button added to main header
 2026-03-24 — frontend fixes: double product name dedup (WH-1000XM + WH-1000XM4 → WH-1000XM4); comparable status field (status=completed → Såld); quick comparables list now visible in main view (no need to expand "Se detaljer"); ended_at time-ago shown per comparable

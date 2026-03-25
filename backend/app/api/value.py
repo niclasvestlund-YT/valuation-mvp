@@ -16,6 +16,9 @@ from backend.app.utils.error_reporting import (
     new_debug_id,
     record_error_artifacts,
 )
+from backend.app.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 value_engine = ValueEngine()
@@ -58,6 +61,7 @@ class ValueRequest(BaseModel):
     filename: str | None = None
     brand: str | None = None
     model: str | None = None
+    category: str | None = None
 
 
 class SourceBreakdown(BaseModel):
@@ -366,12 +370,20 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
     request = payload or ValueRequest()
     valuation_id = str(uuid.uuid4())
 
+    logger.info("request.value.start", extra={
+        "valuation_id": valuation_id,
+        "has_images": bool(request.images or request.image),
+        "brand_override": bool(request.brand),
+        "model_override": bool(request.model),
+    })
+
     try:
         response_payload = enrich_envelope(value_engine.value_item(
             images=request.images,
             image=request.image,
             brand=request.brand,
             model=request.model,
+            category=request.category,
         ))
         if response_payload.get("status") in {"degraded", "error"}:
             result = _record_failure(
@@ -443,6 +455,10 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
         )
 
     result["valuation_id"] = valuation_id
+    logger.info("request.value.complete", extra={
+        "valuation_id": valuation_id,
+        "status": result.get("status"),
+    })
     background_tasks.add_task(_persist_valuation, result, valuation_id)
     return result
 

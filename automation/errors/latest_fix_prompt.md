@@ -4,31 +4,33 @@ User-visible problem:
 - Vi kunde inte läsa eller behandla underlaget i det här försöket.
 
 Debug context:
-- debug_id: `vision_513771133b65`
-- stage: `upload`
+- debug_id: `vision_9513b3c329ae`
+- stage: `image_decode`
 - status: `error`
-- technical_message: no_images_provided: At least one uploaded image is required for identification. (request_id=vision_513771133b65)
+- technical_message: image_preprocess_failed: Unsupported image type: image/avif (request_id=vision_9513b3c329ae)
 
 Safe reproduction summary:
 ```json
 {
-  "image_count": 0,
-  "has_image_payload": false,
+  "image_count": 1,
+  "has_image_payload": true,
   "brand_override_present": false,
   "model_override_present": false,
-  "filename_present": false
+  "filename_present": true
 }
 ```
 
 Relevant files to inspect:
-- `frontend/index.html`
-- `backend/app/api/value.py`
+- `5d02da5df552836db894cead8a68f5f3.avif`
+- `backend/app/services/image_preprocess.py`
+- `backend/app/services/vision_service.py`
 
 Suggested investigation area:
-- Check request validation and missing-image handling between the frontend submit flow and /value route.
+- Check base64 parsing, MIME handling, HEIC conversion, and Pillow decode/conversion paths.
 
 Reproduction hints:
-- Repeat the request and confirm whether any image was uploaded.
+- Repeat the request with 1 uploaded image(s).
+- Use the same file name again to confirm the failure is reproducible.
 - Copy this report into Codex and ask it to fix the failing stage.
 
 Constraints:

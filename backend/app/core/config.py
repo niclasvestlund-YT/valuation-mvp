@@ -61,6 +61,8 @@ class Settings:
     tradera_base_url: str
     tradera_timeout_seconds: int
     serper_api_key: str | None
+    google_cse_api_key: str | None
+    google_cse_cx: str | None
     serpapi_api_key: str | None
     serpapi_base_url: str
     serpapi_timeout_seconds: int
@@ -87,6 +89,10 @@ class Settings:
         return bool(self.serper_api_key)
 
     @property
+    def has_google_cse_credentials(self) -> bool:
+        return bool(self.google_cse_api_key and self.google_cse_cx)
+
+    @property
     def has_serpapi_credentials(self) -> bool:
         return bool(self.serpapi_api_key)
 
@@ -94,6 +100,8 @@ class Settings:
 settings = Settings(
     openai_api_key=_read_env("OPENAI_API_KEY"),
     serper_api_key=_read_env("SERPER_DEV_API_KEY"),
+    google_cse_api_key=_read_env("GOOGLE_CSE_API_KEY"),
+    google_cse_cx=_read_env("GOOGLE_CSE_CX"),
     use_mock_vision=_read_bool_env("USE_MOCK_VISION", default=False),
     openai_vision_model=_read_env("OPENAI_VISION_MODEL") or "gpt-4.1-mini",
     openai_timeout_seconds=_read_int_env("OPENAI_TIMEOUT_SECONDS", default=30),

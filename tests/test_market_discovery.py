@@ -14,6 +14,14 @@ class StubTraderaClient:
         return self.raw_results
 
 
+class StubBlocketClient:
+    def __init__(self, results: list | None = None) -> None:
+        self.results = results or []
+
+    def search(self, query: str):
+        return self.results
+
+
 class StubSerpApiUsedMarketClient:
     def __init__(self, results: list[MarketComparable] | None = None, configured: bool = True) -> None:
         self.results = results or []
@@ -106,21 +114,11 @@ class MarketDiscoveryTests(unittest.TestCase):
 
         self.assertIsNone(comparable)
 
-    def test_market_data_service_supplements_sparse_tradera_results(self) -> None:
+    def test_market_data_service_uses_serpapi_when_primary_sources_empty(self) -> None:
+        """SerpAPI fallback fires only when both Blocket and Tradera return zero results."""
         service = MarketDataService(
-            tradera_client=StubTraderaClient(
-                raw_results=[
-                    {
-                        "Id": "111",
-                        "ShortDescription": "DJI Osmo Action 5 Pro",
-                        "BuyItNowPrice": "3990",
-                        "Currency": "SEK",
-                        "Status": "active",
-                        "ItemUrl": "https://www.tradera.com/item/1000208/111/dji-osmo-action-5-pro",
-                    }
-                ],
-                configured=True,
-            ),
+            blocket_client=StubBlocketClient(),
+            tradera_client=StubTraderaClient(raw_results=[], configured=True),
             serpapi_used_market_client=StubSerpApiUsedMarketClient(
                 results=[
                     MarketComparable(
@@ -144,8 +142,8 @@ class MarketDiscoveryTests(unittest.TestCase):
             category="camera",
         )
 
-        self.assertEqual(len(comparables), 2)
-        self.assertEqual({item.source for item in comparables}, {"Tradera", "blocket_serpapi"})
+        self.assertEqual(len(comparables), 1)
+        self.assertEqual(comparables[0].source, "blocket_serpapi")
 
 
 if __name__ == "__main__":

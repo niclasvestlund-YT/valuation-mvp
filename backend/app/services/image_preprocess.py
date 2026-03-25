@@ -9,6 +9,7 @@ SUPPORTED_IMAGE_MIME_TYPES = {
     "image/jpeg",
     "image/png",
     "image/webp",
+    "image/avif",
     "image/heic",
     "image/heif",
 }

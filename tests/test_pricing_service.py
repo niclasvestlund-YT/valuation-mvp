@@ -214,7 +214,8 @@ class PricingServiceTests(unittest.TestCase):
         self.assertLess(result["valuation"]["fair_estimate"], 600)
         self.assertEqual(result["valuation"]["source_breakdown"]["outliers_removed"], 2)
 
-    def test_no_sold_comparables_returns_insufficient_evidence(self) -> None:
+    def test_active_only_comparables_are_accepted_as_valid_evidence(self) -> None:
+        """MIN_SOLD_COMPARABLES=0: active-only listings are valid market data."""
         result = self.service.calculate_valuation(
             product_identification=self.identification(model="iPhone 13"),
             used_market_comparables=[
@@ -225,9 +226,11 @@ class PricingServiceTests(unittest.TestCase):
             new_price_estimate={"estimated_new_price": 799, "currency": "USD"},
         )
 
-        self.assertEqual(result["status"], "insufficient_evidence")
-        self.assertIsNone(result["valuation"])
-        self.assertIn("no_sold_comparables", result["reasons"])
+        # Active listings are valid with MIN_SOLD_COMPARABLES=0 — pipeline returns ok
+        self.assertEqual(result["status"], "ok")
+        self.assertIsNotNone(result["valuation"])
+        self.assertEqual(result["valuation"]["source_breakdown"]["sold_listings"], 0)
+        self.assertEqual(result["valuation"]["source_breakdown"]["active_listings"], 3)
 
     def test_candidate_model_ambiguity_caps_pricing_confidence(self) -> None:
         result = self.service.calculate_valuation(

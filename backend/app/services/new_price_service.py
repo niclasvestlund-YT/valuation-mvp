@@ -1,11 +1,12 @@
-import logging
 from statistics import median
 from typing import Any
 
+from backend.app.integrations.google_cse_client import GoogleCSEClient
 from backend.app.integrations.new_price_search_client import NewPriceSearchClient, normalize_text
 from backend.app.integrations.serper_new_price_client import SerperNewPriceClient
+from backend.app.utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 USED_KEYWORDS = {
     "used",
@@ -192,8 +193,10 @@ class NewPriceService:
         self,
         search_client: NewPriceSearchClient | None = None,
         serper_client: SerperNewPriceClient | None = None,
+        google_cse_client: GoogleCSEClient | None = None,
     ) -> None:
         self.serper_client = serper_client or SerperNewPriceClient()
+        self.google_cse_client = google_cse_client or GoogleCSEClient()
         self.search_client = search_client or NewPriceSearchClient()
 
     def get_new_price(self, brand: str, model: str, category: str | None = None) -> dict[str, Any]:
@@ -229,7 +232,28 @@ class NewPriceService:
                     response.reason,
                 )
 
-        # SerpAPI fallback — only called when Serper.dev had a hard failure or is unconfigured.
+        # Google CSE fallback — tried when Serper.dev had a hard failure or is unconfigured.
+        if (not self.serper_client.is_configured or serper_failed) and self.google_cse_client.is_configured:
+            logger.info("new_price.google_cse_fallback brand=%s model=%s", brand, model)
+            cse_response = self.google_cse_client.search(brand=brand, model=model, category=category)
+            if cse_response.available:
+                result = self._process_candidates(
+                    cse_response.results,
+                    brand=brand,
+                    model=model,
+                    category=category,
+                    method_label="google_cse_median",
+                    source_label="Google Custom Search",
+                )
+                logger.info(
+                    "new_price.google_cse_done brand=%s model=%s method=%s",
+                    brand,
+                    model,
+                    result.get("method"),
+                )
+                return result
+
+        # SerpAPI fallback — only called when all above failed or are unconfigured.
         # Skipped entirely when SERPAPI_API_KEY is absent (search_client returns available=False immediately).
         if not self.serper_client.is_configured or serper_failed:
             logger.info("new_price.serpapi_fallback brand=%s model=%s", brand, model)

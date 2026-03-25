@@ -2,6 +2,9 @@ from collections import Counter
 from statistics import median
 
 from backend.app.core.config import settings
+from backend.app.utils.logger import get_logger
+
+logger = get_logger(__name__)
 from backend.app.schemas.product_identification import ProductIdentificationResult
 from backend.app.services.comparable_scoring import score_comparable_relevance
 from backend.app.services.depreciation_rules import get_depreciation_range
@@ -348,10 +351,12 @@ def build_preliminary_estimate(
     if len(product_identification.candidate_models or []) > 1:
         return None
 
-    if (new_price_data or {}).get("method") in {"single_source_insufficient", "no_trustworthy_candidates", "unavailable"}:
+    if (new_price_data or {}).get("method") in {"no_trustworthy_candidates", "unavailable"}:
         return None
 
-    new_price_anchor = _extract_new_price_anchor(new_price_data, allow_source_fallback=False)
+    # Allow single_source_insufficient to be used as a fallback anchor via its sources list.
+    # Preliminary estimates are already capped at 0.55 confidence, so the risk is acceptable.
+    new_price_anchor = _extract_new_price_anchor(new_price_data, allow_source_fallback=True)
     if not new_price_anchor:
         return None
 
@@ -524,6 +529,25 @@ class ValueEngine:
             }
         )
 
+        logger.info(
+            "pipeline.vision_complete",
+            extra={
+                "brand": resolved_identification.brand,
+                "model": resolved_identification.model,
+                "category": resolved_identification.category,
+                "confidence": resolved_identification.confidence,
+                "candidate_count": len(resolved_identification.candidate_models or []),
+                "needs_more_images": resolved_identification.needs_more_images,
+                "source": resolved_identification.source,
+            },
+        )
+
+        if not resolved_identification.brand or not resolved_identification.model:
+            logger.warning("pipeline.missing_brand_or_model", extra={
+                "brand": resolved_identification.brand,
+                "model": resolved_identification.model,
+            })
+
         ambiguity_reasons = build_ambiguity_reasons(resolved_identification)
         # Hard-block only when we have NO brand or model — there is literally nothing to
         # search for. All other ambiguity signals (low confidence, candidate_models) still
@@ -617,7 +641,12 @@ class ValueEngine:
                 new_price_estimate=new_price_data,
                 condition=None,
             )
-        except Exception:
+        except Exception as _exc:
+            logger.error(
+                "pipeline.degraded",
+                extra={"brand": resolved_brand, "model": resolved_model, "error": str(_exc)},
+                exc_info=True,
+            )
             display_market_comparables = sort_market_comparables_for_display(
                 product_identification=resolved_identification,
                 market_comparables=market_comparables,
@@ -767,6 +796,18 @@ class ValueEngine:
             }
 
         valuation = pricing_result["valuation"]
+
+        logger.info(
+            "pipeline.valuation_complete",
+            extra={
+                "status": "ok",
+                "brand": resolved_brand,
+                "model": resolved_model,
+                "fair_estimate": valuation.get("fair_estimate"),
+                "confidence": valuation.get("confidence"),
+                "comparable_count": valuation.get("comparable_count"),
+            },
+        )
 
         return {
             "status": "ok",

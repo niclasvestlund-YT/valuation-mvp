@@ -1,5 +1,4 @@
 import json
-import logging
 import time
 from textwrap import dedent
 from uuid import uuid4
@@ -14,8 +13,9 @@ from backend.app.schemas.product_identification import (
     product_identification_json_schema,
 )
 from backend.app.services.image_preprocess import ImagePreprocessError, preprocess_images
+from backend.app.utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 STRONG_IDENTIFICATION_CONFIDENCE = 0.75

@@ -1,4 +1,3 @@
-import logging
 import re
 from datetime import UTC, datetime
 
@@ -6,8 +5,23 @@ from backend.app.integrations.blocket_client import BlocketClient
 from backend.app.integrations.serpapi_used_market_client import SerpApiUsedMarketClient
 from backend.app.integrations.tradera_client import TraderaClient
 from backend.app.schemas.market_comparable import MarketComparable
+from backend.app.utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
+_COLOR_WORDS = {
+    "black", "white", "silver", "gold", "blue", "red", "green", "pink",
+    "graphite", "platinum", "midnight", "starlight", "natural", "titanium",
+    "svart", "vit", "silver", "guld", "blå", "röd", "grön",
+}
+
+
+def strip_color_words(model: str | None) -> str:
+    if not model:
+        return ""
+    tokens = model.split()
+    return " ".join(t for t in tokens if t.lower() not in _COLOR_WORDS).strip()
+
 
 def build_search_query(*parts: str | None) -> str:
     return " ".join(" ".join((part or "").split()) for part in parts if part).strip()
@@ -94,11 +108,12 @@ class MarketDataService:
         model: str,
         category: str | None = None,
     ) -> list[MarketComparable]:
-        exact_query = build_search_query(brand, model)
-        exact_query_aliases = [build_search_query(brand, alias) for alias in build_model_aliases(model)]
+        clean_model = strip_color_words(model)
+        exact_query = build_search_query(brand, clean_model)
+        exact_query_aliases = [build_search_query(brand, alias) for alias in build_model_aliases(clean_model)]
         fallback_queries = self._build_fallback_queries(
             brand=brand,
-            model=model,
+            model=clean_model,
             category=category,
         )
 
