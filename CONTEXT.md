@@ -26,6 +26,7 @@ backend/app/db/crud.py — save_valuation, save_price_snapshot, save_feedback
 backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
+backend/app/core/version.py — single source of truth for VERSION string
 backend/app/core/value_engine.py — main orchestration: vision → market → score → price → envelope
 backend/app/services/vision_service.py — OpenAI Vision API, product identification, confidence rules
 backend/app/services/market_service.py — market data wrapper, provider selection
@@ -75,7 +76,7 @@ GET /admin/metrics — valuation counts, confidence, status/brand/category break
 GET /admin/table/{name} — paginated rows for any public table (25/page)
 GET /admin/index-health — seq scan ratios to spot missing indexes
 GET /admin/slow-queries — currently running queries >500ms
-GET /health — returns "API running"
+GET /health — returns JSON {"status": "ok", "version": "0.1.0"}
 
 ## Env Vars
 - OPENAI_API_KEY — OpenAI Vision API (platform.openai.com)
@@ -109,6 +110,7 @@ GET /health — returns "API running"
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 
 ## Recent Changes
+2026-03-25 — feat: changelog system; CHANGELOG.md, version.py (VERSION=0.1.0), /health returns JSON with version, git tag v0.1.0
 2026-03-25 — feat: structured logging foundation; centralised get_logger() with JSON formatter and request_id propagation; RequestIdMiddleware; two sinks (stdout + logs/app.jsonl); logged vision/valuation/db events; 10 logger tests pass
 2026-03-25 — fix: image-based valuations always returned ambiguous_model; root cause: MULTIPLE_ALTERNATIVES_CONFIDENCE_CAP (0.74) is structurally always below AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD (0.90), so candidate_models always triggered hard-block; fix: demoted multiple_plausible_models from hard_block_reasons to soft warning; only missing_brand_or_model now hard-blocks
 2026-03-25 — admin dashboard: GET /admin serves vanilla JS admin.html; admin router with DB overview, valuation metrics, table browser, index health, slow queries; Admin nav button added to main header

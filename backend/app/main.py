@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from backend.app.api.value import router as value_router
 from backend.app.core.config import settings
+from backend.app.core.version import VERSION
 from backend.app.db.database import init_db
 from backend.app.middleware.request_id import RequestIdMiddleware
 from backend.app.routers.admin import admin_router
@@ -56,9 +57,9 @@ def read_root():
     return FileResponse(FRONTEND_INDEX)
 
 
-@app.get("/health", response_class=PlainTextResponse)
+@app.get("/health")
 def health_check():
-    return "API running"
+    return {"status": "ok", "version": VERSION}
 
 
 @app.get("/admin", response_class=FileResponse)
