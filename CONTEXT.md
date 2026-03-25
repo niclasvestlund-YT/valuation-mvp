@@ -66,6 +66,9 @@ automation/product/GOLDEN_TEST_CASES.md — canonical test cases
 automation/product/NORTH_STAR.md — product vision
 automation/history/DECISIONS.md — architecture decision log
 automation/history/IMPROVEMENTS.md — improvement history
+TASKS.md — prioriterad uppgiftslista (3 nivåer)
+KVALL_RAPPORT.md — kvällsrapport 2026-03-25 med alla fynd
+.claude/settings.json — Claude Code permissions (block push main, rm -rf)
 
 ## Endpoints
 POST /value — JSON body: `{image?, images?, filename?, brand?, model?}`; returns ValueEnvelope JSON (includes valuation_id)
@@ -107,8 +110,12 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 ## Known Issues
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
+- `_persist_valuation` dict-parsing (api/value.py:342-378) lacks try/except — can crash silently in BackgroundTask
+- No GitHub remote configured — project is local-only, no off-machine backup
+- Local PostgreSQL not installed — DB save silently fails (all writes return None)
 
 ## Recent Changes
+2026-03-25 — chore: kvällsgranskning; säkerhetsskanning OK, DB-save-risk dokumenterad, TASKS.md + KVALL_RAPPORT.md + .claude/settings.json skapade
 2026-03-25 — docs: OVERNIGHT_SUMMARY.md written; v0.2.0 tagged; 66 tests passing, 8 commits this session
 2026-03-25 — feat: Railway deployment; railway.toml (nixpacks, healthcheck /health), Procfile, DEPLOY.md with env vars and migration steps
 2026-03-25 — feat: production hardening; input validation (condition enum, images count ≤8, text fields ≤128 chars), 20MB request body limit, /health returns dependency states
