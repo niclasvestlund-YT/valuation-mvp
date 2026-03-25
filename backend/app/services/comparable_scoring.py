@@ -167,6 +167,11 @@ def _osmo_adjustment(title: str, *, line: str, model: str, variant: str) -> Comp
         elif not target_qualifier_versions and listing_qualifier_versions:
             reasons.append("osmo_variant_specific_for_plain_target")
             score_cap = min(score_cap or 1.0, 0.6)
+        elif target_qualifier_versions and not listing_qualifier_versions:
+            # Target is "Action 5 Pro" but listing is "Action 5" — missing qualifier
+            # is a meaningful product difference, cap below the MIN_RELEVANCE_SCORE
+            reasons.append("osmo_variant_qualifier_mismatch")
+            score_cap = min(score_cap or 1.0, 0.52)
 
     if listing_bundle_tokens and not target_bundle_tokens:
         reasons.append("bundle_variant_for_plain_target")
@@ -295,10 +300,14 @@ def score_comparable_relevance(comparable: dict, identification) -> ComparableSc
         if model:
             reasons.append("missing_exact_model_match")
 
-    matched_alternative = next((candidate for candidate in candidate_models if candidate and candidate in title), None)
-    if matched_alternative:
-        reasons.append("matched_alternative_candidate_model")
-        return ComparableScore(score=0.0, reasons=reasons, hard_reject=True)
+    # Only check candidate models if the primary model was NOT already matched.
+    # Without this guard, "osmo action 5" (a candidate) would be found as a
+    # substring of "dji osmo action 5 pro" and incorrectly hard-reject a valid listing.
+    if "exact_model_match" not in reasons:
+        matched_alternative = next((candidate for candidate in candidate_models if candidate and candidate in title), None)
+        if matched_alternative:
+            reasons.append("matched_alternative_candidate_model")
+            return ComparableScore(score=0.0, reasons=reasons, hard_reject=True)
 
     reasons.extend(osmo_adjustment.reasons)
 

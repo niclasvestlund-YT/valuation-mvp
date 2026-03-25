@@ -102,7 +102,7 @@ class ValueEngineTests(unittest.TestCase):
         )
         engine = ValueEngine(
             vision_service=StubVisionService(
-                self.identification(confidence=0.84, candidate_models=["iPhone 13 mini"])
+                self.identification(confidence=0.74, candidate_models=["iPhone 13 mini"])
             ),
             market_service=StubMarketService(),
             new_price_service=new_price_service,
