@@ -11,17 +11,19 @@ from backend.app.services.comparable_scoring import score_comparable_relevance
 from backend.app.services.depreciation_rules import get_depreciation_range
 from backend.app.services.market_service import MarketService
 from backend.app.services.new_price_service import NewPriceService
-from backend.app.services.pricing_service import MIN_RELEVANCE_SCORE, PricingService
+from backend.app.core.thresholds import (
+    ABSOLUTE_IDENTIFICATION_CONFIDENCE_FLOOR,
+    AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD,
+    AMBIGUOUS_NEW_PRICE_CONFIDENCE_FLOOR,
+    MIN_RELEVANCE_SCORE,
+    PRELIMINARY_ESTIMATE_CONFIDENCE_FLOOR,
+    PRELIMINARY_ESTIMATE_MIN_AVERAGE_RELEVANCE,
+    PRELIMINARY_ESTIMATE_MIN_DISCOVERY_RESULTS,
+    PRELIMINARY_ESTIMATE_MIN_RELEVANT_SIGNALS,
+)
+from backend.app.services.pricing_service import PricingService
 from backend.app.services.vision_service import VisionService
 from backend.app.utils.normalization import normalize_product_name
-
-ABSOLUTE_IDENTIFICATION_CONFIDENCE_FLOOR = 0.55
-AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD = 0.80
-AMBIGUOUS_NEW_PRICE_CONFIDENCE_FLOOR = 0.78
-PRELIMINARY_ESTIMATE_CONFIDENCE_FLOOR = 0.86
-PRELIMINARY_ESTIMATE_MIN_RELEVANT_SIGNALS = 1
-PRELIMINARY_ESTIMATE_MIN_AVERAGE_RELEVANCE = 0.66
-PRELIMINARY_ESTIMATE_MIN_DISCOVERY_RESULTS = 3
 DEGRADED_WARNING = "Resultatet bygger på begränsat underlag"
 DEGRADED_REASON = "valuation_pipeline_failure"
 POSITIVE_RELEVANCE_REASONS = {

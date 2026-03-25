@@ -34,7 +34,7 @@
 - [ ] Automatisera golden tests — 7+ produktbilder med förväntad brand/model *(ny: tests/golden/)*
 - [ ] Integrationstester som verifierar hela flödet mot riktig DB
 - [ ] Confidence calibration logging — logga alla ok-värderingar, granska efter 100+ st
-- [ ] Samla alla 25+ thresholds i en config-fil *(ny: core/thresholds.py)*
+- [x] Samla alla 25+ thresholds i en config-fil *(core/thresholds.py)* — 40+ constants extracted
 
 ## 🟢 Bättre värderingar
 

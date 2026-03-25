@@ -11,20 +11,31 @@
 
 from statistics import mean
 
+from backend.app.core.thresholds import (
+    AMBIGUOUS_IDENTIFICATION_CONFIDENCE_CAP,
+    BASE_PRICING_CONFIDENCE,
+    CONFIDENCE_COMPARABLE_MAX,
+    CONFIDENCE_COMPARABLE_WEIGHT,
+    CONFIDENCE_NEW_PRICE_BONUS,
+    CONFIDENCE_OUTLIER_PENALTY,
+    CONFIDENCE_PENALTY_1_COMPARABLE,
+    CONFIDENCE_PENALTY_2_COMPARABLES,
+    CONFIDENCE_PENALTY_3_COMPARABLES,
+    CONFIDENCE_RELEVANCE_WEIGHT,
+    CONFIDENCE_SOLD_RATIO_WEIGHT,
+    LOW_IDENTIFICATION_CONFIDENCE_CAP,
+    MAX_PRICING_CONFIDENCE,
+    MIN_AVERAGE_RELEVANCE,
+    MIN_RELEVANCE_SCORE,
+    MIN_SOLD_COMPARABLES,
+    MULTI_CANDIDATE_CONFIDENCE_CAP,
+    PRICING_AMBIGUOUS_IDENTIFICATION_THRESHOLD,
+    PRICING_LOW_IDENTIFICATION_THRESHOLD,
+    SINGLE_CANDIDATE_CONFIDENCE_CAP,
+)
 from backend.app.services.comparable_scoring import listing_weight, score_comparable_relevance
 from backend.app.services.depreciation_rules import get_depreciation_range
 from backend.app.services.outlier_filter import filter_comparable_outliers
-
-MIN_RELEVANCE_SCORE = 0.55
-MIN_AVERAGE_RELEVANCE = 0.55
-MIN_SOLD_COMPARABLES = 0  # Blocket/Tradera only expose active listings; active prices are valid market data
-
-BASE_PRICING_CONFIDENCE = 0.2
-MAX_PRICING_CONFIDENCE = 0.95
-LOW_IDENTIFICATION_CONFIDENCE_CAP = 0.68
-AMBIGUOUS_IDENTIFICATION_CONFIDENCE_CAP = 0.78
-MULTI_CANDIDATE_CONFIDENCE_CAP = 0.68
-SINGLE_CANDIDATE_CONFIDENCE_CAP = 0.78
 
 INSUFFICIENT_EVIDENCE_WARNING = "Underlaget från andrahandsmarknaden räcker inte för en trovärdig värdering"
 DEPRECIATION_ESTIMATE_WARNING = "Uppskattningen baseras på typisk värdeminskning — inga andrahandsannonser hittades"
@@ -331,20 +342,20 @@ class PricingService:
         outlier_ratio = len(removed_outliers) / total_considered if total_considered else 0.0
 
         score = BASE_PRICING_CONFIDENCE
-        score += min(comparable_count, 5) * 0.08
-        score += average_relevance * 0.2
-        score += sold_ratio * 0.12
+        score += min(comparable_count, CONFIDENCE_COMPARABLE_MAX) * CONFIDENCE_COMPARABLE_WEIGHT
+        score += average_relevance * CONFIDENCE_RELEVANCE_WEIGHT
+        score += sold_ratio * CONFIDENCE_SOLD_RATIO_WEIGHT
         if has_new_price_anchor:
-            score += 0.04
-        score -= outlier_ratio * 0.18
+            score += CONFIDENCE_NEW_PRICE_BONUS
+        score -= outlier_ratio * CONFIDENCE_OUTLIER_PENALTY
 
-        # FIX 2: graduated penalty for sparse data (replaces hard gate)
+        # Graduated penalty for sparse data (replaces hard gate)
         if comparable_count == 1:
-            score -= 0.25
+            score -= CONFIDENCE_PENALTY_1_COMPARABLE
         elif comparable_count == 2:
-            score -= 0.15
+            score -= CONFIDENCE_PENALTY_2_COMPARABLES
         elif comparable_count == 3:
-            score -= 0.05
+            score -= CONFIDENCE_PENALTY_3_COMPARABLES
 
         identification_confidence = float(getattr(product_identification, "confidence", 1.0) or 1.0)
         candidate_models = getattr(product_identification, "candidate_models", []) or []
@@ -352,9 +363,9 @@ class PricingService:
 
         confidence_cap = MAX_PRICING_CONFIDENCE
         if not is_manual_override:
-            if identification_confidence < 0.72:
+            if identification_confidence < PRICING_LOW_IDENTIFICATION_THRESHOLD:
                 confidence_cap = min(confidence_cap, LOW_IDENTIFICATION_CONFIDENCE_CAP)
-            elif identification_confidence < 0.85:
+            elif identification_confidence < PRICING_AMBIGUOUS_IDENTIFICATION_THRESHOLD:
                 confidence_cap = min(confidence_cap, AMBIGUOUS_IDENTIFICATION_CONFIDENCE_CAP)
 
             if len(candidate_models) > 1:
