@@ -1,3 +1,14 @@
+# CANONICAL PRICING ENGINE
+# This is the single source of truth for valuation logic.
+# See valuation-mvp/backend/app/services/pricing.py for the deprecated legacy engine.
+#
+# Confidence calibration reference:
+#   0.80–1.00  Very high  — 5+ comparables, high relevance, new-price anchor
+#   0.60–0.79  High       — 3–4 strong comparables
+#   0.40–0.59  Medium     — 1–2 comparables or moderate relevance
+#   0.20–0.39  Low        — depreciation estimate only (no comparables found)
+#   0.00–0.19  Very low   — avoid displaying; reserved for fallback error states
+
 from statistics import mean
 
 from backend.app.services.comparable_scoring import listing_weight, score_comparable_relevance
@@ -5,7 +16,6 @@ from backend.app.services.depreciation_rules import get_depreciation_range
 from backend.app.services.outlier_filter import filter_comparable_outliers
 
 MIN_RELEVANCE_SCORE = 0.55
-MIN_RELEVANT_COMPARABLES = 3
 MIN_AVERAGE_RELEVANCE = 0.55
 MIN_SOLD_COMPARABLES = 0  # Blocket/Tradera only expose active listings; active prices are valid market data
 
@@ -17,10 +27,25 @@ MULTI_CANDIDATE_CONFIDENCE_CAP = 0.68
 SINGLE_CANDIDATE_CONFIDENCE_CAP = 0.78
 
 INSUFFICIENT_EVIDENCE_WARNING = "Underlaget från andrahandsmarknaden räcker inte för en trovärdig värdering"
+DEPRECIATION_ESTIMATE_WARNING = "Uppskattningen baseras på typisk värdeminskning — inga andrahandsannonser hittades"
 
 
 def clamp(value: float, lower: float, upper: float) -> float:
     return max(lower, min(value, upper))
+
+
+def percentile(sorted_values: list[float], p: float) -> float:
+    """Linear-interpolation percentile on a pre-sorted list."""
+    n = len(sorted_values)
+    if n == 0:
+        return 0.0
+    if n == 1:
+        return sorted_values[0]
+    idx = p * (n - 1)
+    lower_i = int(idx)
+    upper_i = min(lower_i + 1, n - 1)
+    frac = idx - lower_i
+    return sorted_values[lower_i] + frac * (sorted_values[upper_i] - sorted_values[lower_i])
 
 
 def weighted_median(values_and_weights: list[tuple[float, float]]) -> float:
@@ -76,7 +101,6 @@ def build_pricing_warnings(reasons: list[str]) -> list[str]:
 
     warning_map = {
         "no_relevant_comparables": "Vi kunde inte hitta relevanta jämförelseannonser",
-        "not_enough_relevant_comparables": "För få starka jämförelseannonser återstod",
         "average_relevance_too_low": "Jämförelseannonserna liknar produkten för dåligt",
         "no_sold_comparables": "Vi behöver sålda annonser för att förankra ett trovärdigt begagnatvärde",
         "cannot_value_from_new_price_only": "Nypris ensam räcker inte för att värdera en begagnad produkt",
@@ -132,10 +156,37 @@ class PricingService:
         reasons = self._pricing_gate_reasons(
             comparables=working_comparables,
             average_relevance=average_relevance,
-            sold_count=sold_count,
-            has_new_price_anchor=bool(new_price_anchor),
         )
         if reasons:
+            # FIX 1: depreciation fallback when no comparables but new price is known
+            if "no_relevant_comparables" in reasons and new_price_anchor:
+                category = getattr(product_identification, "category", None)
+                dep_low, dep_high = get_depreciation_range(category, condition=condition)
+                midpoint = (dep_low + dep_high) / 2
+                fair_est = int(round(new_price_anchor * midpoint))
+                currency = select_currency([], new_price_estimate)
+                return {
+                    "status": "depreciation_estimate",
+                    "valuation": {
+                        "low_estimate": int(round(new_price_anchor * dep_low)),
+                        "fair_estimate": fair_est,
+                        "high_estimate": int(round(new_price_anchor * dep_high)),
+                        "confidence": 0.35,
+                        "currency": currency,
+                        "evidence_summary": "Uppskattning baserad på typisk värdeminskning. Inga andrahandsannonser hittades.",
+                        "valuation_method": "depreciation_estimate",
+                        "comparable_count": 0,
+                        "source_breakdown": {
+                            "sold_listings": 0,
+                            "active_listings": 0,
+                            "outliers_removed": 0,
+                            "used_new_price": True,
+                        },
+                    },
+                    "warnings": [DEPRECIATION_ESTIMATE_WARNING],
+                    "reasons": reasons,
+                    "evidence": evidence,
+                }
             return {
                 "status": "insufficient_evidence",
                 "valuation": None,
@@ -148,9 +199,14 @@ class PricingService:
             (float(comparable["price"]), float(comparable["weight"])) for comparable in working_comparables
         ]
         fair_estimate = weighted_median(weighted_points)
-        comparable_prices = [float(comparable["price"]) for comparable in working_comparables]
-        low_estimate = min(comparable_prices)
-        high_estimate = max(comparable_prices)
+        comparable_prices = sorted(float(comparable["price"]) for comparable in working_comparables)
+        # FIX 3: percentile range instead of raw min/max
+        if len(comparable_prices) >= 4:
+            low_estimate = percentile(comparable_prices, 0.15)
+            high_estimate = percentile(comparable_prices, 0.85)
+        else:
+            low_estimate = fair_estimate * 0.85
+            high_estimate = fair_estimate * 1.15
         currency = select_currency(working_comparables, new_price_estimate)
 
         if new_price_anchor:
@@ -245,20 +301,14 @@ class PricingService:
         *,
         comparables: list[dict],
         average_relevance: float,
-        sold_count: int,
-        has_new_price_anchor: bool,
     ) -> list[str]:
         reasons: list[str] = []
 
         if not comparables:
             reasons.append("no_relevant_comparables")
-            if has_new_price_anchor:
-                reasons.append("cannot_value_from_new_price_only")
             return reasons
 
-        if len(comparables) < MIN_RELEVANT_COMPARABLES:
-            reasons.append("not_enough_relevant_comparables")
-
+        # FIX 2: no hard comparable-count gate — sparse data applies a confidence penalty instead
         if average_relevance < MIN_AVERAGE_RELEVANCE:
             reasons.append("average_relevance_too_low")
 
@@ -287,6 +337,14 @@ class PricingService:
         if has_new_price_anchor:
             score += 0.04
         score -= outlier_ratio * 0.18
+
+        # FIX 2: graduated penalty for sparse data (replaces hard gate)
+        if comparable_count == 1:
+            score -= 0.25
+        elif comparable_count == 2:
+            score -= 0.15
+        elif comparable_count == 3:
+            score -= 0.05
 
         identification_confidence = float(getattr(product_identification, "confidence", 1.0) or 1.0)
         candidate_models = getattr(product_identification, "candidate_models", []) or []

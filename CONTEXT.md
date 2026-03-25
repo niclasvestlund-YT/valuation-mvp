@@ -107,8 +107,9 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 
 ## Response States
 - ok — enough evidence, shows used-value range
+- depreciation_estimate — 0 comparables found but new price known; uses category depreciation midpoint; confidence=0.35
 - ambiguous_model — confidence < 0.55 or hard ambiguity signal, returns requested angles
-- insufficient_evidence — product identified but < 3 relevant comparables or low confidence
+- insufficient_evidence — product identified but no comparables and no new price, or average relevance too low
 - degraded — upstream API failure (vision, Tradera); SerpAPI failure is silent (not a degraded trigger)
 - error — request failed (bad upload, decode failure, unexpected exception)
 
@@ -120,6 +121,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-25 — feat: improved pricing model; FIX 1 depreciation fallback (0 comps + new price → depreciation_estimate, conf=0.35); FIX 2 graduated confidence penalty replaces hard MIN_RELEVANT_COMPARABLES=3 gate; FIX 3 percentile range (p15/p85 for ≥4 comps, ±15% otherwise); FIX 4 CANONICAL comment + legacy deprecation; FIX 5 calibration table; FIX 6 response_time_ms on all return paths; 66 tests pass
+2026-03-25 — fix: Osmo Action scoring — DJI brand inference, relaxed core-token match (score 0.65), qualifier penalty (score_cap 0.52), candidate model substring guard; Tradera fallback skips broad "DJI Osmo" query; new price rejects bundle/combo variants; 66 tests pass
 2026-03-25 — fix: vision brand inference for DJI Action cameras; prompt now maps "Action 5 Pro" → DJI; expanded text evidence keywords (branding, reads, says, visible on, printed on, stamped, embossed); AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD lowered 0.90→0.80
 2026-03-25 — fix: 5 DB issues; confidence_score→confidence, _persist_valuation try/except, indexes on status/brand/category, admin.py→SQLAlchemy pool, condition+response_time_ms fields
 2026-03-25 — docs: DB + Git review; found confidence_score bug, missing indexes, pool bypass, dual-path create_all

@@ -183,7 +183,8 @@ class PricingServiceTests(unittest.TestCase):
         self.assertLess(bundle_score.score, plain_score.score)
         self.assertIn("bundle_variant_for_plain_target", bundle_score.reasons)
 
-    def test_sparse_data_returns_insufficient_evidence(self) -> None:
+    def test_sparse_data_proceeds_with_confidence_penalty(self) -> None:
+        """FIX 2: 1 comparable no longer hard-gates to insufficient_evidence — proceeds with penalty."""
         result = self.service.calculate_valuation(
             product_identification=self.identification(model="iPhone 13"),
             used_market_comparables=[
@@ -192,10 +193,11 @@ class PricingServiceTests(unittest.TestCase):
             new_price_estimate={"estimated_new_price": 799, "currency": "USD"},
         )
 
-        self.assertEqual(result["status"], "insufficient_evidence")
-        self.assertIsNone(result["valuation"])
-        self.assertIn("not_enough_relevant_comparables", result["reasons"])
+        self.assertEqual(result["status"], "ok")
+        self.assertIsNotNone(result["valuation"])
         self.assertEqual(result["evidence"]["comparable_count"], 1)
+        # Confidence should be reduced due to sparse-data penalty
+        self.assertLess(result["valuation"]["confidence"], 0.60)
 
     def test_outlier_heavy_data_returns_ok(self) -> None:
         result = self.service.calculate_valuation(
@@ -251,17 +253,19 @@ class PricingServiceTests(unittest.TestCase):
         self.assertEqual(result["status"], "ok")
         self.assertLessEqual(result["valuation"]["confidence"], 0.78)
 
-    def test_new_price_only_returns_insufficient_evidence(self) -> None:
+    def test_new_price_only_returns_depreciation_estimate(self) -> None:
+        """FIX 1: no comparables + new price → depreciation_estimate instead of insufficient_evidence."""
         result = self.service.calculate_valuation(
             product_identification=self.identification(model="iPhone 13"),
             used_market_comparables=[],
             new_price_estimate={"estimated_new_price": 799, "currency": "USD"},
         )
 
-        self.assertEqual(result["status"], "insufficient_evidence")
-        self.assertIsNone(result["valuation"])
+        self.assertEqual(result["status"], "depreciation_estimate")
+        self.assertIsNotNone(result["valuation"])
         self.assertIn("no_relevant_comparables", result["reasons"])
-        self.assertIn("cannot_value_from_new_price_only", result["reasons"])
+        self.assertGreater(result["valuation"]["fair_estimate"], 0)
+        self.assertEqual(result["valuation"]["confidence"], 0.35)
 
     def test_strong_evidence_case_returns_ok(self) -> None:
         result = self.service.calculate_valuation(

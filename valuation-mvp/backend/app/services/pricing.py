@@ -1,3 +1,5 @@
+# DEPRECATED: This is the legacy pricing engine.
+# Use backend/app/services/pricing_service.py (CANONICAL PRICING ENGINE) instead.
 import statistics
 from ..models import MarketListing
 

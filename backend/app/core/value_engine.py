@@ -1,3 +1,4 @@
+import time
 from collections import Counter
 from statistics import median
 
@@ -499,6 +500,7 @@ class ValueEngine:
         category: str | None = None,
         condition: str | None = None,
     ) -> dict:
+        _start = time.monotonic()
         market_comparables: list[dict] = []
         new_price_data: dict | None = None
         if brand and model:
@@ -622,6 +624,7 @@ class ValueEngine:
                     product_identification=resolved_identification,
                 ),
                 "debug_id": resolved_identification.request_id,
+                "response_time_ms": int((time.monotonic() - _start) * 1000),
             }
 
         resolved_brand = resolved_identification.brand or ""
@@ -690,6 +693,7 @@ class ValueEngine:
                     product_identification=resolved_identification,
                 ),
                 "debug_id": resolved_identification.request_id,
+                "response_time_ms": int((time.monotonic() - _start) * 1000),
             }
 
         display_market_comparables = sort_market_comparables_for_display(
@@ -753,9 +757,10 @@ class ValueEngine:
                     product_identification=resolved_identification,
                 ),
                 "debug_id": resolved_identification.request_id,
+                "response_time_ms": int((time.monotonic() - _start) * 1000),
             }
 
-        if pricing_result.get("status") != "ok":
+        if pricing_result.get("status") not in {"ok", "depreciation_estimate"}:
             return {
                 "status": "degraded",
                 "data": {
@@ -797,14 +802,16 @@ class ValueEngine:
                     product_identification=resolved_identification,
                 ),
                 "debug_id": resolved_identification.request_id,
+                "response_time_ms": int((time.monotonic() - _start) * 1000),
             }
 
         valuation = pricing_result["valuation"]
+        pricing_status = pricing_result["status"]
 
         logger.info(
             "pipeline.valuation_complete",
             extra={
-                "status": "ok",
+                "status": pricing_status,
                 "brand": resolved_brand,
                 "model": resolved_model,
                 "fair_estimate": valuation.get("fair_estimate"),
@@ -814,7 +821,7 @@ class ValueEngine:
         )
 
         return {
-            "status": "ok",
+            "status": pricing_status,
             "data": {
                 "brand": resolved_brand,
                 "line": resolved_identification.line,
@@ -851,4 +858,5 @@ class ValueEngine:
                 product_identification=resolved_identification,
             ),
             "debug_id": resolved_identification.request_id,
+            "response_time_ms": int((time.monotonic() - _start) * 1000),
         }
