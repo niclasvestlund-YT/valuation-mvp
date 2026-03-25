@@ -9,6 +9,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -58,9 +61,16 @@ async def lifespan(app: FastAPI):
     await dispose_engine()
 
 
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
+
 app = FastAPI(title="valuation-mvp", lifespan=lifespan)
+app.state.limiter = limiter
 app.state.settings = settings
 app.state.is_mock_mode = settings.is_mock_mode
+app.add_exception_handler(RateLimitExceeded, lambda req, exc: JSONResponse(
+    status_code=429,
+    content={"detail": "Rate limit exceeded. Max 10 requests per minute."},
+))
 
 # Request-ID middleware — must be first so all downstream code sees request_id
 app.add_middleware(RequestIdMiddleware)

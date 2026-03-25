@@ -11,5 +11,7 @@ asyncpg
 sqlalchemy[asyncio]
 alembic
 psycopg2-binary
+# Rate limiting
+slowapi
 # Used market data
 blocket-api

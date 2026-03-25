@@ -3,7 +3,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Body
+from fastapi import APIRouter, BackgroundTasks, Body, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.value_engine import ValueEngine
@@ -401,8 +403,11 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
         }, exc_info=True)
 
 
+limiter = Limiter(key_func=get_remote_address)
+
 @router.post("/value", response_model=ValueEnvelope)
-def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None = Body(default=None)):
+@limiter.limit("10/minute")
+def value_image(request: Request, background_tasks: BackgroundTasks, payload: ValueRequest | None = Body(default=None)):
     request = payload or ValueRequest()
     valuation_id = str(uuid.uuid4())
     t0 = time.monotonic()
@@ -495,11 +500,22 @@ def value_image(background_tasks: BackgroundTasks, payload: ValueRequest | None 
 
     result["valuation_id"] = valuation_id
     elapsed_ms = int((time.monotonic() - t0) * 1000)
+    result.setdefault("response_time_ms", elapsed_ms)
     logger.info("request.value.complete", extra={
         "valuation_id": valuation_id,
         "status": result.get("status"),
         "response_time_ms": elapsed_ms,
     })
+
+    # Dump last result for local dev inspection
+    try:
+        import pathlib, json as _json
+        pathlib.Path("logs").mkdir(exist_ok=True)
+        pathlib.Path("logs/last_valuation.json").write_text(
+            _json.dumps(result, ensure_ascii=False, indent=2, default=str)
+        )
+    except Exception:
+        pass
 
     # Pass DB-only metadata separately — don't leak internal fields in the API response
     persist_payload = {**result, "_condition": request.condition, "_response_time_ms": elapsed_ms}
