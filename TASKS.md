@@ -15,7 +15,7 @@
 - [ ] Fixa GitHub-remote auth och pusha projektet
 - [x] Rate limiting på POST /value — installera `slowapi`, 10 req/min per IP *(backend/app/main.py)*
 - [ ] API-nyckelskydd på /admin *(backend/app/api/admin.py, .env: ADMIN_SECRET_KEY)*
-- [ ] Dölj /docs och /redoc i produktion — `docs_url=None, redoc_url=None` *(backend/app/main.py)*
+- [x] Dölj /docs och /redoc i produktion — `docs_url=None, redoc_url=None` *(backend/app/main.py)*
 
 ## 🟠 Stabilitet — direkt efter
 

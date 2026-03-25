@@ -63,7 +63,15 @@ async def lifespan(app: FastAPI):
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
-app = FastAPI(title="valuation-mvp", lifespan=lifespan)
+import os as _os
+_is_production = _os.getenv("RAILWAY_ENVIRONMENT") or _os.getenv("ENVIRONMENT") == "production"
+
+app = FastAPI(
+    title="valuation-mvp",
+    lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+)
 app.state.limiter = limiter
 app.state.settings = settings
 app.state.is_mock_mode = settings.is_mock_mode
