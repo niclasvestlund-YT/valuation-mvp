@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from statistics import median
 from typing import Any
 
@@ -202,11 +203,54 @@ class NewPriceService:
     def get_new_price(self, brand: str, model: str, category: str | None = None) -> dict[str, Any]:
         serper_failed = False
 
-        # Try Serper.dev first (primary — no SerpAPI quota consumed)
-        if self.serper_client.is_configured:
+        # When both Serper and CSE are configured, run them in parallel for comparison.
+        if self.serper_client.is_configured and self.google_cse_client.is_configured:
+            def _fetch_serper():
+                return self.serper_client.search(brand=brand, model=model, category=category)
+
+            def _fetch_cse():
+                return self.google_cse_client.search(brand=brand, model=model, category=category)
+
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                serper_future = pool.submit(_fetch_serper)
+                cse_future = pool.submit(_fetch_cse)
+                serper_response = serper_future.result()
+                cse_response = cse_future.result()
+
+            cse_result = None
+            if cse_response.available:
+                cse_result = self._process_candidates(
+                    cse_response.results,
+                    brand=brand,
+                    model=model,
+                    category=category,
+                    method_label="google_cse_median",
+                    source_label="Google Custom Search",
+                )
+                logger.info("new_price.google_cse_done brand=%s model=%s method=%s", brand, model, cse_result.get("method"))
+
+            if serper_response.available:
+                result = self._process_candidates(
+                    serper_response.results,
+                    brand=brand,
+                    model=model,
+                    category=category,
+                    method_label="serper_google_shopping_median",
+                    source_label="Serper.dev Google Shopping",
+                )
+                logger.info("new_price.serper_done brand=%s model=%s method=%s", brand, model, result.get("method"))
+                result["cse_comparison"] = cse_result
+                return result
+
+            serper_failed = True
+            logger.info("new_price.serper_failed brand=%s model=%s reason=%s", brand, model, serper_response.reason)
+            if cse_result:
+                return cse_result
+
+        elif self.serper_client.is_configured:
+            # Serper only — no CSE configured
             response = self.serper_client.search(brand=brand, model=model, category=category)
             if response.available:
-                # Serper reached the network; return whatever it found (even no_trustworthy_candidates)
                 result = self._process_candidates(
                     response.results,
                     brand=brand,
@@ -215,26 +259,13 @@ class NewPriceService:
                     method_label="serper_google_shopping_median",
                     source_label="Serper.dev Google Shopping",
                 )
-                logger.info(
-                    "new_price.serper_done brand=%s model=%s method=%s",
-                    brand,
-                    model,
-                    result.get("method"),
-                )
+                logger.info("new_price.serper_done brand=%s model=%s method=%s", brand, model, result.get("method"))
                 return result
-            else:
-                # Network/config failure — fall through to SerpAPI
-                serper_failed = True
-                logger.info(
-                    "new_price.serper_failed brand=%s model=%s reason=%s",
-                    brand,
-                    model,
-                    response.reason,
-                )
+            serper_failed = True
+            logger.info("new_price.serper_failed brand=%s model=%s reason=%s", brand, model, response.reason)
 
-        # Google CSE fallback — tried when Serper.dev had a hard failure or is unconfigured.
-        if (not self.serper_client.is_configured or serper_failed) and self.google_cse_client.is_configured:
-            logger.info("new_price.google_cse_fallback brand=%s model=%s", brand, model)
+        elif self.google_cse_client.is_configured:
+            # CSE only — no Serper configured
             cse_response = self.google_cse_client.search(brand=brand, model=model, category=category)
             if cse_response.available:
                 result = self._process_candidates(
@@ -245,16 +276,10 @@ class NewPriceService:
                     method_label="google_cse_median",
                     source_label="Google Custom Search",
                 )
-                logger.info(
-                    "new_price.google_cse_done brand=%s model=%s method=%s",
-                    brand,
-                    model,
-                    result.get("method"),
-                )
+                logger.info("new_price.google_cse_done brand=%s model=%s method=%s", brand, model, result.get("method"))
                 return result
 
         # SerpAPI fallback — only called when all above failed or are unconfigured.
-        # Skipped entirely when SERPAPI_API_KEY is absent (search_client returns available=False immediately).
         if not self.serper_client.is_configured or serper_failed:
             logger.info("new_price.serpapi_fallback brand=%s model=%s", brand, model)
 

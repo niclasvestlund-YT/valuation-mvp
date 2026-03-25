@@ -4,10 +4,12 @@ from xml.etree import ElementTree as ET
 import requests
 
 from backend.app.core.config import settings
+from backend.app.utils.cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
 
 TRADERA_XML_NAMESPACE = {"tradera": "http://api.tradera.com"}
+_RATE_LIMIT_CACHE_KEY = "tradera:rate_limited"
 
 
 def _local_name(tag: str) -> str:
@@ -47,6 +49,16 @@ class TraderaClient:
         if not normalized_query:
             return []
 
+        if get_cached(_RATE_LIMIT_CACHE_KEY):
+            logger.info("tradera.rate_limited_cached query=%s", normalized_query)
+            return []
+
+        cache_key = f"tradera:{normalized_query}:{category_id}:{order_by}"
+        cached = get_cached(cache_key)
+        if cached is not None:
+            logger.info("tradera.cache_hit query=%s count=%s", normalized_query, len(cached))
+            return cached
+
         if not self.is_configured:
             logger.info(
                 "tradera.search.not_configured query=%s app_id_present=%s app_key_present=%s",
@@ -81,6 +93,14 @@ class TraderaClient:
                 timeout=self.timeout_seconds,
             )
             response.raise_for_status()
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 429:
+                # Rate limited — set a flag so ALL subsequent queries skip the API for 1h
+                logger.warning("tradera.search.rate_limited query=%s", normalized_query)
+                set_cached(_RATE_LIMIT_CACHE_KEY, True)
+            else:
+                logger.warning("tradera.search.request_failed query=%s reason=%s", normalized_query, exc)
+            return []
         except requests.RequestException as exc:
             logger.warning("tradera.search.request_failed query=%s reason=%s", normalized_query, exc)
             return []
@@ -94,6 +114,9 @@ class TraderaClient:
                     response.status_code,
                     _body_preview(response.text),
                 )
+            else:
+                # Only cache non-empty results — empty means no listings now, not never
+                set_cached(cache_key, raw_results)
             logger.info(
                 "tradera.search.raw_results query=%s count=%s",
                 normalized_query,

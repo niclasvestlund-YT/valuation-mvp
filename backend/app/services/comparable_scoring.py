@@ -20,6 +20,15 @@ POISON_PATTERNS = {
     "spare part": "listing_replacement_parts",
     "spare parts": "listing_replacement_parts",
     "body only": "listing_body_only",
+    # Swedish
+    "reservdelar": "listing_replacement_parts",
+    "reservdel": "listing_replacement_parts",
+    "trasig": "listing_broken",
+    "säljes trasig": "listing_broken",
+    "icloud lås": "listing_locked",
+    "aktiveringslas": "listing_locked",
+    "tom förpackning": "listing_empty_box",
+    "tom ask": "listing_empty_box",
 }
 
 ACCESSORY_MISMATCH_PATTERNS = {
@@ -27,6 +36,11 @@ ACCESSORY_MISMATCH_PATTERNS = {
     "charger only",
     "strap only",
     "ear pads only",
+    # Swedish accessory-only listings
+    "laddare only",
+    "endast laddare",
+    "endast fodral",
+    "endast rem",
 }
 
 BUNDLE_MISMATCH_PATTERNS = {
@@ -50,6 +64,14 @@ CAMERA_EXTRA_BUNDLE_TOKENS = {
     "stativ",
     "microsd",
     "minneskort",
+    # Swedish bundle/accessory signals
+    "tillbehor",   # tillbehör — accessories included
+    "laddare",     # charger included
+    "fodral",      # case included
+    "hållare",     # mount/holder included
+    "hallare",     # normalized form
+    "linsskydd",   # lens cover
+    "vattentat",   # waterproof housing
 }
 
 
@@ -76,13 +98,20 @@ def tokenize_listing_text(value: str | None) -> list[str]:
     return re.findall(r"[a-z0-9]+", normalize_listing_text(value))
 
 
+_STORAGE_SIZES = {32, 64, 128, 256, 512, 1024}
+
+
 def _extract_osmo_signals(value: str | None) -> dict | None:
     tokens = tokenize_listing_text(value)
     token_set = set(tokens)
     if "osmo" not in token_set:
         return None
 
-    numeric_versions = {token for token in token_set if token.isdigit()}
+    # Only treat small numbers as generation/version — exclude storage sizes (256 gb etc.)
+    numeric_versions = {
+        token for token in token_set
+        if token.isdigit() and int(token) not in _STORAGE_SIZES and int(token) <= 20
+    }
     qualifier_versions = {token for token in token_set if token in OSMO_VERSION_QUALIFIERS}
     bundle_tokens = {token for token in token_set if token in OSMO_BUNDLE_TOKENS}
     family = next((token for token in OSMO_FAMILY_TOKENS if token in token_set), None)
@@ -219,8 +248,15 @@ def score_comparable_relevance(comparable: dict, identification) -> ComparableSc
     if osmo_adjustment.hard_reject:
         return ComparableScore(score=0.0, reasons=osmo_adjustment.reasons, hard_reject=True)
 
+    model_tokens = tokenize_listing_text(model) if model else []
+    title_token_set = set(tokenize_listing_text(title))
+
     if model and model in title:
         score = 0.72
+        reasons.append("exact_model_match")
+    elif model_tokens and len(model_tokens) >= 3 and all(t in title_token_set for t in model_tokens):
+        # All model tokens present but in different order — treat as strong match
+        score = 0.68
         reasons.append("exact_model_match")
     else:
         score = 0.0

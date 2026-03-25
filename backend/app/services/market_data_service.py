@@ -130,18 +130,36 @@ class MarketDataService:
         )
 
         # ── Tradera (primary, requires credentials) ───────────────────────────
+        # Progressive fallback: each tier only runs if the previous returned < 5 results.
+        # This prevents broad fallback queries ("DJI Osmo", "DJI camera") from flooding
+        # results when the exact query already found enough listings.
+        _TRADERA_SUFFICIENT = 5
         tradera_results: list[MarketComparable] = []
         if self.tradera_client.is_configured:
-            query_order = [exact_query, *exact_query_aliases, *fallback_queries]
             staged: list[MarketComparable] = []
-            for query in query_order:
-                normalized = self._normalize_results(self.tradera_client.search(query))
+            queries_run: list[str] = []
+
+            def _run_tradera_query(q: str) -> None:
+                normalized = self._normalize_results(self.tradera_client.search(q))
                 staged.extend(self._filter_by_status(normalized, "completed"))
                 staged.extend(self._filter_by_status(normalized, "active"))
+                queries_run.append(q)
+
+            _run_tradera_query(exact_query)
+            for alias_query in exact_query_aliases:
+                if len(self._dedupe_by_listing_id(staged)) >= _TRADERA_SUFFICIENT:
+                    break
+                _run_tradera_query(alias_query)
+            if len(self._dedupe_by_listing_id(staged)) < _TRADERA_SUFFICIENT:
+                for fallback_query in fallback_queries:
+                    if len(self._dedupe_by_listing_id(staged)) >= _TRADERA_SUFFICIENT:
+                        break
+                    _run_tradera_query(fallback_query)
+
             tradera_results = self._dedupe_by_listing_id(staged)
             logger.info(
-                "market_data.tradera.results query_order=%s count=%s",
-                query_order,
+                "market_data.tradera.results queries_run=%s count=%s",
+                queries_run,
                 len(tradera_results),
             )
         else:

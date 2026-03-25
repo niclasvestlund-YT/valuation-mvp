@@ -2145,6 +2145,34 @@
           });
           srcSection.appendChild(chips);
           advancedInner.appendChild(srcSection);
+
+          // Nyprisjämförelse: Serper vs CSE
+          const cseComp = data?.market_data?.new_price?.cse_comparison;
+          const serperPrice = data?.market_data?.new_price?.estimated_new_price;
+          if (serperPrice || cseComp) {
+            const npSection = el("div", "adv-section");
+            npSection.appendChild(sectionHeader("Nyprisjämförelse"));
+            const npList = el("div", "found-data-list");
+            if (serperPrice) {
+              const row = el("div", "found-data-row");
+              row.appendChild(el("span", null, "Serper.dev"));
+              row.appendChild(el("span", null, formatCurrency(serperPrice, data.market_data.new_price.currency)));
+              npList.appendChild(row);
+            }
+            if (cseComp?.estimated_new_price) {
+              const row = el("div", "found-data-row");
+              row.appendChild(el("span", null, "Google CSE"));
+              row.appendChild(el("span", null, formatCurrency(cseComp.estimated_new_price, cseComp.currency)));
+              npList.appendChild(row);
+            } else if (cseComp) {
+              const row = el("div", "found-data-row");
+              row.appendChild(el("span", null, "Google CSE"));
+              row.appendChild(el("span", "text-muted", "Ingen prisdata"));
+              npList.appendChild(row);
+            }
+            npSection.appendChild(npList);
+            advancedInner.appendChild(npSection);
+          }
         }
 
         // Price distribution dot plot
@@ -2381,8 +2409,16 @@
 
           if (data?.market_data?.new_price?.estimated_new_price) {
             const row = el("div", "found-data-row");
-            row.appendChild(el("span", null, "Nypris"));
+            const hasCseComp = data?.market_data?.new_price?.cse_comparison;
+            row.appendChild(el("span", null, hasCseComp ? "Nypris (Serper)" : "Nypris"));
             row.appendChild(el("span", null, formatCurrency(data.market_data.new_price.estimated_new_price, data.market_data.new_price.currency)));
+            foundList.appendChild(row);
+          }
+          const insuffCse = data?.market_data?.new_price?.cse_comparison;
+          if (insuffCse?.estimated_new_price) {
+            const row = el("div", "found-data-row");
+            row.appendChild(el("span", null, "Nypris (CSE)"));
+            row.appendChild(el("span", null, formatCurrency(insuffCse.estimated_new_price, insuffCse.currency)));
             foundList.appendChild(row);
           }
 
@@ -2402,6 +2438,37 @@
 
           foundSection.appendChild(foundList);
           wrap.appendChild(foundSection);
+        }
+
+        // Comparable listing cards
+        const allMainComparables = sourceGroups.mainComparableEntries;
+        if (allMainComparables.length > 0) {
+          const compWrap = el("div", "quick-comparables-wrap");
+          const compHeader = el("div", "quick-comparables-header");
+          compHeader.appendChild(el("span", "quick-comparables-title", "Annonser vi hittade"));
+          compHeader.appendChild(el("span", "quick-comparables-hint", "Sorterat efter relevans"));
+          compWrap.appendChild(compHeader);
+          const compList = el("div", "quick-comparables-list");
+          allMainComparables.slice(0, 5).forEach(entry => {
+            const row = el("div", "quick-comparable-row");
+            if (entry.href) { row.style.cursor = "pointer"; row.addEventListener("click", () => window.open(entry.href, "_blank", "noreferrer")); }
+            const left = el("div", "quick-comparable-left");
+            left.appendChild(el("div", "quick-comparable-title", entry.title));
+            const sub = el("div", "quick-comparable-sub");
+            const isSold = entry.status === "completed" || entry.listing_type === "sold";
+            const timeAgo = formatTimeAgo(entry.ended_at);
+            const subParts = [getDisplaySourceName(entry.source), isSold ? "Såld" : "Aktiv", timeAgo].filter(Boolean);
+            sub.appendChild(document.createTextNode(subParts.join(" · ")));
+            if (entry.condition_hint) { const tag = el("span", "condition-tag", entry.condition_hint); tag.style.marginLeft = "4px"; sub.appendChild(tag); }
+            left.appendChild(sub);
+            row.appendChild(left);
+            const right = el("div", "quick-comparable-price", formatCurrency(entry.price, entry.currency));
+            if (entry.href) { const linkIcon = el("span", "quick-comparable-link"); linkIcon.innerHTML = `<i data-lucide="external-link" style="width:12px;height:12px;stroke-width:1.5;color:var(--text-muted)"></i>`; right.appendChild(linkIcon); }
+            row.appendChild(right);
+            compList.appendChild(row);
+          });
+          compWrap.appendChild(compList);
+          wrap.appendChild(compWrap);
         }
 
         // Suggestion
