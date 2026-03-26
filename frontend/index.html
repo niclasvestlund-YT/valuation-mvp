@@ -2014,9 +2014,24 @@
         productRow.appendChild(editBtn);
         wrap.appendChild(productRow);
 
+        // ── Depreciation estimate banner ──
+        if (envelope.status === "depreciation_estimate") {
+          const banner = el("div", "section-card");
+          banner.style.cssText = "background:var(--bg-surface);border-left:3px solid var(--text-muted);padding:12px 16px;margin-bottom:12px;";
+          const bannerIcon = el("span", "", "Uppskattning");
+          bannerIcon.style.cssText = "font-weight:600;font-size:0.8125rem;color:var(--text-secondary);";
+          banner.appendChild(bannerIcon);
+          const bannerText = el("div", "", "Baserat på nypris och kategoriavskrivning. Inga sålda annonser hittades.");
+          bannerText.style.cssText = "font-size:0.8125rem;color:var(--text-muted);margin-top:4px;";
+          banner.appendChild(bannerText);
+          wrap.appendChild(banner);
+        }
+
         // ── Estimate ──
         const estimateSection = el("div", "estimate-section");
-        estimateSection.appendChild(sectionHeader("Begagnat marknadsvärde"));
+        estimateSection.appendChild(sectionHeader(
+          envelope.status === "depreciation_estimate" ? "Uppskattat värde (avskrivning)" : "Begagnat marknadsvärde"
+        ));
 
         const estimateValue = el("div", "estimate-value", usedValue.value);
         estimateSection.appendChild(estimateValue);
