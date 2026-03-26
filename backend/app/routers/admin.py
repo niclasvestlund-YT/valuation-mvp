@@ -422,3 +422,62 @@ async def index_health():
         return [dict(r) for r in rows]
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@admin_router.get("/data-quality")
+async def data_quality():
+    """Data quality overview for the intelligence layer tables."""
+    try:
+        product_count = await _fetchval("SELECT COUNT(*) FROM product") or 0
+        comparable_count = await _fetchval("SELECT COUNT(*) FROM market_comparable") or 0
+        active_count = await _fetchval("SELECT COUNT(*) FROM market_comparable WHERE is_active = true") or 0
+        flagged_count = await _fetchval("SELECT COUNT(*) FROM market_comparable WHERE flagged = true") or 0
+        new_price_count = await _fetchval("SELECT COUNT(*) FROM new_price_snapshot") or 0
+        embedding_count = await _fetchval("SELECT COUNT(*) FROM product_embedding") or 0
+        verified_count = await _fetchval("SELECT COUNT(*) FROM product_embedding WHERE verified = true") or 0
+
+        stale_count = await _fetchval(
+            "SELECT COUNT(*) FROM market_comparable WHERE last_seen < NOW() - INTERVAL '90 days'"
+        ) or 0
+
+        top_products = await _fetch(
+            """
+            SELECT product_key, valuation_count, last_seen
+            FROM product
+            ORDER BY valuation_count DESC
+            LIMIT 10
+            """
+        )
+
+        coverage = await _fetch(
+            """
+            SELECT p.product_key,
+                   COUNT(mc.id) AS comparable_count,
+                   COUNT(mc.id) FILTER (WHERE mc.is_active) AS active_count
+            FROM product p
+            LEFT JOIN market_comparable mc ON mc.product_key = p.product_key
+            GROUP BY p.product_key
+            ORDER BY comparable_count DESC
+            LIMIT 20
+            """
+        )
+
+        return {
+            "products": product_count,
+            "comparables": {
+                "total": comparable_count,
+                "active": active_count,
+                "inactive": comparable_count - active_count,
+                "flagged": flagged_count,
+                "stale_90d": stale_count,
+            },
+            "new_price_snapshots": new_price_count,
+            "embeddings": {
+                "total": embedding_count,
+                "verified": verified_count,
+            },
+            "top_products": [dict(r) for r in top_products],
+            "coverage": [dict(r) for r in coverage],
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
