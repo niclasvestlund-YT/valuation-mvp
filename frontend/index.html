@@ -2557,8 +2557,58 @@
         uploadScreen.classList.add("hidden");
         scanningScreen.classList.add("hidden");
 
+        // Show confirmation step for ok/depreciation results
+        if ((status === "ok" || status === "depreciation_estimate") && envelope.data) {
+          const name = getDetectedProductName(envelope.data) || "Okänd produkt";
+          const conf = el("div", "section-card");
+          conf.style.cssText = "text-align:center;padding:32px 20px;";
+
+          if (currentPhotoUrl) {
+            const img = document.createElement("img");
+            img.src = currentPhotoUrl;
+            img.alt = "Produktbild";
+            img.style.cssText = "width:80px;height:80px;object-fit:cover;border-radius:12px;margin-bottom:16px;";
+            conf.appendChild(img);
+          }
+
+          conf.appendChild(el("div", "product-sub", "Vi identifierade:"));
+          const nameEl = el("div", "product-name", name);
+          nameEl.style.cssText = "font-size:1.25rem;margin:8px 0 4px;";
+          conf.appendChild(nameEl);
+
+          const parts = [envelope.data.category, envelope.data.brand].filter(Boolean);
+          conf.appendChild(el("div", "product-sub", parts.join(" · ")));
+
+          const q = el("div", "", "Stämmer detta?");
+          q.style.cssText = "margin-top:20px;font-size:0.9375rem;color:var(--text-secondary);";
+          conf.appendChild(q);
+
+          const btnRow = el("div", "");
+          btnRow.style.cssText = "display:flex;gap:12px;margin-top:16px;justify-content:center;";
+          const yesBtn = el("button", "btn-primary", "Ja, visa värdering");
+          yesBtn.style.cssText += ";flex:1;max-width:200px;";
+          yesBtn.addEventListener("click", () => _showFinalResult(envelope));
+          const noBtn = el("button", "btn-secondary", "Nej, rätta");
+          noBtn.style.cssText = "flex:1;max-width:200px;padding:12px;border-radius:12px;border:1px solid var(--border-medium);background:transparent;cursor:pointer;font-size:0.9375rem;";
+          noBtn.addEventListener("click", () => openCorrectionSheet(envelope.data));
+          btnRow.appendChild(yesBtn);
+          btnRow.appendChild(noBtn);
+          conf.appendChild(btnRow);
+
+          resultScreen.appendChild(conf);
+          lucide.createIcons();
+          return;
+        }
+
+        _showFinalResult(envelope);
+      }
+
+      function _showFinalResult(envelope) {
+        const { status } = envelope;
+        resultScreen.innerHTML = "";
+
         let content;
-        if (status === "ok" && envelope.data?.valuation) {
+        if ((status === "ok" || status === "depreciation_estimate") && envelope.data?.valuation) {
           content = renderOkResult(envelope);
         } else if (status === "ambiguous_model" && envelope.data) {
           content = renderAmbiguousResult(envelope);

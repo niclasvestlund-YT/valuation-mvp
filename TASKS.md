@@ -49,7 +49,7 @@
 ## 🟢 UX
 
 - [x] Mobil-first redesign — responsive CSS for ≤480px: larger upload area, buttons, touch targets
-- [ ] Bekräftelsesteg: "Är detta rätt? Sony WH-1000XM4" innan prisberäkning
+- [x] Bekräftelsesteg: "Stämmer detta?" confirmation screen before showing valuation
 - [ ] Separera depreciation-estimat visuellt från marknadsbackade värderingar
 - [ ] Fixa admin-panel — /admin/data + detaljvy per värdering
 
