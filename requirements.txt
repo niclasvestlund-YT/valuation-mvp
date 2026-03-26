@@ -14,6 +14,9 @@ psycopg2-binary
 pgvector
 # Embeddings (SigLIP/CLIP for product similarity)
 sentence-transformers>=2.2.0
+# OCR
+google-cloud-vision>=3.7.0
+easyocr>=1.7.0
 # Rate limiting
 slowapi
 # Used market data

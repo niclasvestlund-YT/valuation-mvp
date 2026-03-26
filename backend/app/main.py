@@ -115,6 +115,8 @@ def health_check():
             "serper": "configured" if settings.has_serper_credentials else "unconfigured",
             "serpapi": "configured" if settings.has_serpapi_credentials else "unconfigured",
             "database": "configured" if settings.has_database else "unconfigured",
+            "google_vision_ocr": "mock" if settings.use_mock_google_vision else ("enabled" if settings.google_vision_enabled else "disabled"),
+            "easyocr": "mock" if settings.use_mock_easyocr else ("enabled" if settings.easyocr_enabled else "disabled"),
             "embeddings": "mock" if settings.use_mock_embedding else "configured",
             "crawler": "enabled" if settings.crawler_enabled else "disabled",
         },

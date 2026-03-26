@@ -21,6 +21,8 @@ from backend.app.core.thresholds import (
     PRELIMINARY_ESTIMATE_MIN_DISCOVERY_RESULTS,
     PRELIMINARY_ESTIMATE_MIN_RELEVANT_SIGNALS,
 )
+from backend.app.services.ocr_service import OcrService
+from backend.app.services.ocr_verification import verify_ocr_against_identification
 from backend.app.services.pricing_service import PricingService
 from backend.app.services.vision_service import VisionService
 from backend.app.utils.normalization import normalize_product_name
@@ -490,6 +492,7 @@ class ValueEngine:
         market_service: MarketService | None = None,
         new_price_service: NewPriceService | None = None,
         pricing_service: PricingService | None = None,
+        ocr_service: OcrService | None = None,
     ) -> None:
         self.settings = settings
         self.is_mock_mode = settings.is_mock_mode
@@ -497,6 +500,7 @@ class ValueEngine:
         self.market_service = market_service or MarketService()
         self.new_price_service = new_price_service or NewPriceService()
         self.pricing_service = pricing_service or PricingService()
+        self.ocr_service = ocr_service or OcrService()
 
     def value_item(
         self,
@@ -559,6 +563,48 @@ class ValueEngine:
                 "brand": resolved_identification.brand,
                 "model": resolved_identification.model,
             })
+
+        # OCR cross-verification: run OCR on first image and adjust confidence
+        ocr_evidence = None
+        if not is_manual_override(resolved_identification) and (images or image):
+            try:
+                import base64 as _b64
+                first_image_b64 = images[0] if images else image
+                if first_image_b64:
+                    raw_b64 = first_image_b64.split(",", 1)[-1] if "," in first_image_b64 else first_image_b64
+                    image_bytes = _b64.b64decode(raw_b64)
+                    ocr_result = self.ocr_service.detect(image_bytes)
+                    if ocr_result.has_text or ocr_result.has_logos:
+                        verification = verify_ocr_against_identification(
+                            ocr_result,
+                            brand=resolved_identification.brand,
+                            model=resolved_identification.model,
+                        )
+                        ocr_evidence = {
+                            "text": ocr_result.detected_text[:3],
+                            "logos": ocr_result.detected_logos[:3],
+                            "source": ocr_result.source,
+                            "brand_match": verification.brand_match,
+                            "model_match": verification.model_match,
+                            "contradiction": verification.has_contradiction,
+                            "confidence_delta": verification.confidence_delta,
+                        }
+                        # Apply confidence adjustment
+                        new_confidence = round(
+                            max(0.0, min(1.0, resolved_identification.confidence + verification.confidence_delta)),
+                            2,
+                        )
+                        if new_confidence != resolved_identification.confidence:
+                            resolved_identification = resolved_identification.model_copy(
+                                update={"confidence": new_confidence}
+                            )
+                            logger.info("pipeline.ocr_confidence_adjusted", extra={
+                                "delta": verification.confidence_delta,
+                                "new_confidence": new_confidence,
+                                "details": verification.details,
+                            })
+            except Exception as exc:
+                logger.warning("pipeline.ocr_failed", extra={"error": str(exc)})
 
         ambiguity_reasons = build_ambiguity_reasons(resolved_identification)
         # Hard-block only when we have NO brand or model — there is literally nothing to

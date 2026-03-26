@@ -73,6 +73,15 @@ class Settings:
     database_url: str
     allowed_origins: str | None
     admin_secret_key: str | None
+    # OCR
+    google_vision_enabled: bool
+    google_vision_timeout_seconds: int
+    google_vision_use_web_detection: bool
+    use_mock_google_vision: bool
+    easyocr_enabled: bool
+    easyocr_languages: str
+    use_mock_easyocr: bool
+    ocr_requery_on_mismatch: bool
     # Embeddings
     embedding_model: str
     use_mock_embedding: bool
@@ -132,6 +141,14 @@ settings = Settings(
     database_url=_read_env("DATABASE_URL") or "postgresql+asyncpg://postgres:dev@localhost:5432/valuation",
     allowed_origins=_read_env("ALLOWED_ORIGINS"),
     admin_secret_key=_read_env("ADMIN_SECRET_KEY"),
+    google_vision_enabled=_read_bool_env("GOOGLE_VISION_ENABLED", default=True),
+    google_vision_timeout_seconds=_read_int_env("GOOGLE_VISION_TIMEOUT_SECONDS", default=10),
+    google_vision_use_web_detection=_read_bool_env("GOOGLE_VISION_USE_WEB_DETECTION", default=False),
+    use_mock_google_vision=_read_bool_env("USE_MOCK_GOOGLE_VISION", default=False),
+    easyocr_enabled=_read_bool_env("EASYOCR_ENABLED", default=True),
+    easyocr_languages=_read_env("EASYOCR_LANGUAGES") or "en,sv",
+    use_mock_easyocr=_read_bool_env("USE_MOCK_EASYOCR", default=False),
+    ocr_requery_on_mismatch=_read_bool_env("OCR_REQUERY_ON_MISMATCH", default=True),
     embedding_model=_read_env("EMBEDDING_MODEL") or "google/siglip-base-patch16-224",
     use_mock_embedding=_read_bool_env("USE_MOCK_EMBEDDING", default=False),
     embedding_similarity_threshold=float(_read_env("EMBEDDING_SIMILARITY_THRESHOLD") or "0.92"),

@@ -29,6 +29,11 @@ backend/app/services/crawler_service.py — background crawler for pre-populatin
 backend/app/data/seed_products.json — 80 seed products across 3 priority tiers for crawler
 scripts/crawl_prices.py — CLI to run crawler: --priority, --max, --with-new-prices, --dry-run
 backend/app/services/embedding_service.py — SigLIP/CLIP embedding service for product image similarity (768-dim, pgvector)
+backend/app/services/ocr_service.py — OCR orchestrator: Google Vision → EasyOCR → empty fallback
+backend/app/services/ocr_verification.py — cross-verify OCR text/logos against Vision identification
+backend/app/integrations/google_vision_client.py — Google Cloud Vision API client (TEXT + LOGO + LABEL detection, cached)
+backend/app/integrations/easyocr_client.py — EasyOCR local fallback (no API key needed)
+backend/app/schemas/ocr_result.py — OCR result dataclass with detected text, logos, labels
 backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
@@ -75,6 +80,8 @@ tests/test_crawler_service.py — 10 tests for seed products and crawler
 tests/test_embedding_service.py — 11 tests for embedding service (mock mode, hash, base64, dimensions)
 tests/test_pipeline_integration.py — 13 integration tests (normalization→validation→embedding flow)
 tests/test_data_quality.py — 12 data quality invariant tests (thresholds, seed products, validator)
+tests/test_ocr_service.py — 11 tests for OCR clients and service (mock mode, fallback chain)
+tests/test_ocr_verification.py — 14 tests for OCR cross-verification (brand/model match, contradictions)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -136,6 +143,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-27 — feat: Phase 4 OCR — Google Vision + EasyOCR clients, OCR service, cross-verification, pipeline integration (169 tests)
 2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
 2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
 2026-03-26 — feat: Phase 2-3 — background crawler (80 seed products), cleanup script, /admin/data-quality endpoint
