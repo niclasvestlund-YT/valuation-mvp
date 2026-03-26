@@ -1252,6 +1252,17 @@
       /* ─── Utilities ─── */
       .hidden { display: none !important; }
       .divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
+
+      /* ─── Mobile-first enhancements (≤480px) ─── */
+      @media (max-width: 480px) {
+        .app { padding: 0 12px; }
+        .upload-area { min-height: 220px; border-radius: 24px; }
+        .upload-area-label { font-size: 1.125rem; }
+        .upload-icon-wrap { width: 56px; height: 56px; }
+        .estimate-value { font-size: 3rem; }
+        .btn-primary { min-height: 52px; font-size: 1rem; border-radius: 16px; }
+        .section-card { border-radius: 16px; padding: 16px; }
+      }
     </style>
   </head>
   <body>

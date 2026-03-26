@@ -48,7 +48,7 @@
 
 ## 🟢 UX
 
-- [ ] Mobil-first redesign — 390px, stor kamera-knapp, prisintervall 48px font
+- [x] Mobil-first redesign — responsive CSS for ≤480px: larger upload area, buttons, touch targets
 - [ ] Bekräftelsesteg: "Är detta rätt? Sony WH-1000XM4" innan prisberäkning
 - [ ] Separera depreciation-estimat visuellt från marknadsbackade värderingar
 - [ ] Fixa admin-panel — /admin/data + detaljvy per värdering
