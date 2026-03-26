@@ -359,4 +359,26 @@ def score_comparable_relevance(comparable: dict, identification) -> ComparableSc
 
 
 def listing_weight(comparable: dict) -> float:
-    return 1.25 if comparable.get("listing_type") == "sold" else 0.85
+    base = 1.25 if comparable.get("listing_type") == "sold" else 0.85
+
+    # Freshness decay for cached comparables
+    from backend.app.core.thresholds import COMPARABLE_FRESHNESS_DECAY_RATE, COMPARABLE_SOLD_WEIGHT_BOOST
+    disappeared_at = comparable.get("disappeared_at")
+    if disappeared_at and not comparable.get("is_active", True):
+        # Disappeared listing = likely sold = confirmed price signal
+        base *= COMPARABLE_SOLD_WEIGHT_BOOST
+
+    last_seen = comparable.get("last_seen")
+    if last_seen:
+        from datetime import datetime, timezone
+        try:
+            if isinstance(last_seen, str):
+                last_seen = datetime.fromisoformat(last_seen)
+            if hasattr(last_seen, "timestamp"):
+                age_days = (datetime.now(timezone.utc) - last_seen).total_seconds() / 86400
+                freshness = max(0.5, 1.0 - (age_days * COMPARABLE_FRESHNESS_DECAY_RATE))
+                base *= freshness
+        except (TypeError, ValueError):
+            pass
+
+    return base

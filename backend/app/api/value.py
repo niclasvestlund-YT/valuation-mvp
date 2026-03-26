@@ -9,7 +9,15 @@ from slowapi.util import get_remote_address
 from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.value_engine import ValueEngine
-from backend.app.db.crud import save_feedback, save_price_snapshot, save_valuation
+from backend.app.db.crud import (
+    save_feedback,
+    save_price_snapshot,
+    save_valuation,
+    upsert_comparables,
+    upsert_new_price,
+    upsert_product,
+)
+from backend.app.utils.normalization import normalize_product_key
 from backend.app.schemas.product_identification import VisionServiceError
 from backend.app.utils.error_reporting import (
     attach_error_fields,
@@ -384,7 +392,42 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
             "market_data_json": market_data if market_data else None,
         }
 
+        # Compute and store product_key
+        product_key = None
+        if brand and model_id:
+            product_key = normalize_product_key(brand, model_id)
+            db_data["product_key"] = product_key
+
         await save_valuation(db_data)
+
+        # Cache product + comparables + new price in background
+        if product_key:
+            await upsert_product(product_key, brand, model_id, category=data.get("category"))
+
+            comparables = market_data.get("comparables") or []
+            if comparables:
+                # Normalize comparables to have url field
+                for comp in comparables:
+                    if not comp.get("url") and comp.get("listing_url"):
+                        comp["url"] = comp["listing_url"]
+                    if not comp.get("url") and comp.get("raw", {}).get("ItemUrl"):
+                        comp["url"] = comp["raw"]["ItemUrl"]
+                await upsert_comparables(product_key, comparables, source="pipeline")
+
+            new_price_est = new_price_info.get("estimated_new_price")
+            if new_price_est:
+                new_price_sources = new_price_info.get("sources") or []
+                source_name = new_price_info.get("method") or "serper"
+                source_url = new_price_sources[0].get("url") if new_price_sources else None
+                source_title = new_price_sources[0].get("title") if new_price_sources else None
+                await upsert_new_price(
+                    product_key,
+                    int(new_price_est),
+                    source=source_name,
+                    currency=new_price_info.get("currency") or "SEK",
+                    url=source_url,
+                    title=source_title,
+                )
 
         if response_payload.get("status") in {"ok", "depreciation_estimate"} and db_data.get("estimated_value"):
             await save_price_snapshot({

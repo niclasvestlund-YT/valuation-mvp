@@ -11,6 +11,7 @@ asyncpg
 sqlalchemy[asyncio]
 alembic
 psycopg2-binary
+pgvector
 # Rate limiting
 slowapi
 # Used market data

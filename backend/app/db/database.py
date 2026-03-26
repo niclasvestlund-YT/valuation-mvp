@@ -29,6 +29,8 @@ async def init_db():
     drift apart.
     """
     try:
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         _logger.info("db.init_ok")

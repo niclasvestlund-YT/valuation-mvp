@@ -10,7 +10,7 @@ Local MVP for estimating the second-hand value of consumer tech products from ph
 - Backend: FastAPI, Python 3.11, uvicorn
 - Frontend: Single static HTML/CSS/JS file, served by FastAPI at GET /
 - Deploy: Railway (railway.toml + Procfile); nixpacks builder; healthcheck /health; auto-deploys on push
-- Key deps: fastapi, uvicorn, pydantic, requests, Pillow, pillow-heif, python-dotenv, blocket-api
+- Key deps: fastapi, uvicorn, pydantic, requests, Pillow, pillow-heif, python-dotenv, blocket-api, pgvector
 
 ## Request Flow
 image upload → api/value.py → value_engine.py (orchestrates) → vision_service.py → market_data_service.py + new_price_service.py (parallel) → comparable_scoring.py → pricing_service.py → api/value.py (enrich_envelope) → response
@@ -22,8 +22,9 @@ backend/app/routers/admin.py — read-only admin API: DB overview, valuation met
 backend/app/api/value.py — POST /value + POST /feedback endpoints; saves every valuation to DB via BackgroundTasks
 backend/app/db/__init__.py — empty
 backend/app/db/database.py — async SQLAlchemy engine, session factory, init_db()
-backend/app/db/models.py — Valuation + PriceSnapshot ORM models
-backend/app/db/crud.py — save_valuation, save_price_snapshot, save_feedback
+backend/app/db/models.py — Valuation, PriceSnapshot, Product, MarketComparable, NewPriceSnapshot, ProductEmbedding ORM models
+backend/app/db/crud.py — save_valuation, save_price_snapshot, save_feedback, upsert_product, upsert_comparables, get_cached_comparables, upsert_new_price, get_latest_new_price
+backend/app/services/data_validator.py — ingestion validator for market comparables (hard rejects + soft warnings)
 backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
@@ -64,6 +65,8 @@ tests/test_pricing_service.py — pricing service tests
 tests/test_value_engine.py — end-to-end value engine tests
 tests/test_depreciation_rules.py — condition adjustments and category depreciation range tests
 tests/test_golden_cases.py — 7 canonical product pipeline tests (Sony XM4/5, iPhone 13, DJI Osmo, MacBook Air)
+tests/test_data_validator.py — 15 tests for ingestion validator (rejects, valid, warnings)
+tests/test_normalization.py — 10 tests for normalize_product_key
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -125,6 +128,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-26 — feat: Phase 0 intelligence layer — pgvector, Product/MarketComparable/NewPriceSnapshot/ProductEmbedding tables, product_key normalization, Alembic migration
 2026-03-26 — feat: 🟢 tasks done: bundle filter (multi-item reject), new price min 2 sources, product knowledge JSON, mobile CSS, confirmation step, depreciation visual, admin valuation endpoints
 2026-03-26 — refactor: thresholds.py (40+ constants), golden tests (7 cases, 73 total), calibration logging, market_data_json persisted, valuation-mvp/ removed from git
 2026-03-25 — feat: rate limiting (slowapi 10/min), hide /docs in prod, temperature=0 on vision, vision cache SHA-256, Tradera rate-limit logging

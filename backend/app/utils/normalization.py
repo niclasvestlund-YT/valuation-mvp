@@ -60,3 +60,46 @@ def normalize_product_name(value: str | None) -> str | None:
             parts.append(part)
 
     return " ".join(parts)
+
+
+# Brand alias mapping for product key normalization
+_BRAND_ALIASES = {
+    "dji innovation": "dji",
+    "apple inc": "apple",
+    "apple inc.": "apple",
+    "samsung electronics": "samsung",
+    "sony corporation": "sony",
+    "lg electronics": "lg",
+}
+
+import re as _re
+
+
+def normalize_product_key(brand: str, model: str) -> str:
+    """Normalize brand + model into a canonical key.
+
+    "Sony", "WH-1000XM5" -> "sony_wh-1000xm5"
+    "Apple", "iPhone 15 Pro" -> "apple_iphone-15-pro"
+    "DJI Innovation", "Osmo Pocket 3" -> "dji_osmo-pocket-3"
+    """
+    b = (brand or "").strip().lower()
+    b = _BRAND_ALIASES.get(b, b)
+    # Keep only alphanumeric and hyphens
+    b = _re.sub(r"[^a-z0-9]", "", b)
+
+    m = (model or "").strip().lower()
+    # Replace spaces and underscores with hyphens
+    m = _re.sub(r"[\s_]+", "-", m)
+    # Keep only alphanumeric, hyphens, and dots
+    m = _re.sub(r"[^a-z0-9.\-]", "", m)
+    # Collapse multiple hyphens
+    m = _re.sub(r"-{2,}", "-", m)
+    m = m.strip("-")
+
+    if not b and not m:
+        return "unknown"
+    if not b:
+        return m
+    if not m:
+        return b
+    return f"{b}_{m}"
