@@ -25,6 +25,9 @@ backend/app/db/database.py — async SQLAlchemy engine, session factory, init_db
 backend/app/db/models.py — Valuation, PriceSnapshot, Product, MarketComparable, NewPriceSnapshot, ProductEmbedding ORM models
 backend/app/db/crud.py — save_valuation, save_price_snapshot, save_feedback, upsert_product, upsert_comparables, get_cached_comparables, upsert_new_price, get_latest_new_price
 backend/app/services/data_validator.py — ingestion validator for market comparables (hard rejects + soft warnings)
+backend/app/services/crawler_service.py — background crawler for pre-populating comparable cache from seed products
+backend/app/data/seed_products.json — 80 seed products across 3 priority tiers for crawler
+scripts/crawl_prices.py — CLI to run crawler: --priority, --max, --with-new-prices, --dry-run
 backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
@@ -67,6 +70,7 @@ tests/test_depreciation_rules.py — condition adjustments and category deprecia
 tests/test_golden_cases.py — 7 canonical product pipeline tests (Sony XM4/5, iPhone 13, DJI Osmo, MacBook Air)
 tests/test_data_validator.py — 15 tests for ingestion validator (rejects, valid, warnings)
 tests/test_normalization.py — 10 tests for normalize_product_key
+tests/test_crawler_service.py — 10 tests for seed products and crawler
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
