@@ -51,7 +51,7 @@
 - [x] Mobil-first redesign — responsive CSS for ≤480px: larger upload area, buttons, touch targets
 - [x] Bekräftelsesteg: "Stämmer detta?" confirmation screen before showing valuation
 - [x] Separera depreciation-estimat visuellt — warning banner + different heading
-- [ ] Fixa admin-panel — /admin/data + detaljvy per värdering
+- [x] Fixa admin-panel — GET /admin/valuations (list + filter) + GET /admin/valuation/{id} (detail)
 
 ## 🔵 Senare
 

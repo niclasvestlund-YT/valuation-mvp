@@ -346,6 +346,58 @@ async def slow_queries(min_ms: float = 500):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@admin_router.get("/valuations")
+async def list_valuations(
+    limit: int = Query(25, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    status_filter: str | None = Query(None, alias="status"),
+    brand_filter: str | None = Query(None, alias="brand"),
+):
+    """List valuations with optional filtering."""
+    try:
+        where_parts = []
+        params: dict = {"lim": limit, "off": offset}
+        if status_filter:
+            where_parts.append("status = :status")
+            params["status"] = status_filter
+        if brand_filter:
+            where_parts.append("brand ILIKE :brand")
+            params["brand"] = f"%{brand_filter}%"
+        where_clause = ("WHERE " + " AND ".join(where_parts)) if where_parts else ""
+
+        total = await _fetchval(f"SELECT COUNT(*) FROM valuations {where_clause}", params)
+        rows = await _fetch(
+            f"""SELECT id, created_at, product_name, brand, category, status,
+                       estimated_value, confidence, condition, response_time_ms
+                FROM valuations {where_clause}
+                ORDER BY created_at DESC LIMIT :lim OFFSET :off""",
+            params,
+        )
+        return {"total": total or 0, "valuations": rows}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@admin_router.get("/valuation/{valuation_id}")
+async def get_valuation(valuation_id: str):
+    """Get full detail for a single valuation."""
+    rows = await _fetch(
+        "SELECT * FROM valuations WHERE id = :vid",
+        {"vid": valuation_id},
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Valuation not found")
+
+    val = rows[0]
+    # Convert datetime to ISO string
+    for key in ("created_at",):
+        if key in val and val[key]:
+            from datetime import datetime as dt
+            if isinstance(val[key], dt):
+                val[key] = val[key].isoformat()
+    return val
+
+
 @admin_router.get("/index-health")
 async def index_health():
     """Tables with high seq scan ratios — candidates for new indexes."""
