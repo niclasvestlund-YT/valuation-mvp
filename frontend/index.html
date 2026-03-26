@@ -1022,6 +1022,43 @@
 
       .found-data-row:last-child { border-bottom: none; }
 
+      .lowest-price-badge {
+        display: inline-block;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--accent-positive, #34a873);
+        background: rgba(52, 168, 115, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+
+      .new-price-highlight {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .compare-links-wrap {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        padding: 12px 16px 4px;
+      }
+
+      .compare-prices-link {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+
+      .compare-prices-link:hover {
+        color: var(--text-primary);
+      }
+
       /* ─── Error State ─── */
       .error-screen {
         padding: 8px 0 32px;
@@ -2172,28 +2209,56 @@
           srcSection.appendChild(chips);
           advancedInner.appendChild(srcSection);
 
-          // Nyprisjämförelse: Serper vs CSE
+          // Nyprisjämförelse: individual sources sorted by price
+          const npSources = (data?.market_data?.new_price?.sources || [])
+            .filter(s => s.price > 0)
+            .sort((a, b) => a.price - b.price);
           const cseComp = data?.market_data?.new_price?.cse_comparison;
-          const serperPrice = data?.market_data?.new_price?.estimated_new_price;
-          if (serperPrice || cseComp) {
+          if (npSources.length > 0 || cseComp?.estimated_new_price) {
             const npSection = el("div", "adv-section");
             npSection.appendChild(sectionHeader("Nyprisjämförelse"));
             const npList = el("div", "found-data-list");
-            if (serperPrice) {
+            npSources.forEach((s, i) => {
               const row = el("div", "found-data-row");
-              row.appendChild(el("span", null, "Serper.dev"));
-              row.appendChild(el("span", null, formatCurrency(serperPrice, data.market_data.new_price.currency)));
+              const nameWrap = el("span", null, "");
+              const storeName = s.source || "Butik";
+              nameWrap.textContent = storeName;
+              if (i === 0 && npSources.length > 1) {
+                const badge = el("span", "lowest-price-badge", "Lägst");
+                nameWrap.appendChild(badge);
+              }
+              row.appendChild(nameWrap);
+              const priceEl = el("span", i === 0 ? "new-price-highlight" : null,
+                formatCurrency(s.price, s.currency || data.market_data.new_price.currency));
+              row.appendChild(priceEl);
               npList.appendChild(row);
+            });
+            // Compare price links
+            const modelName = data?.model || data?.data?.model || "";
+            if (modelName) {
+              const linksWrap = el("div", "compare-links-wrap");
+              const prisjaktLink = document.createElement("a");
+              prisjaktLink.href = `https://www.prisjakt.nu/search?search=${encodeURIComponent(modelName)}`;
+              prisjaktLink.target = "_blank";
+              prisjaktLink.rel = "noopener noreferrer";
+              prisjaktLink.className = "compare-prices-link";
+              prisjaktLink.textContent = "Prisjakt \u2197";
+              linksWrap.appendChild(prisjaktLink);
+
+              const googleLink = document.createElement("a");
+              googleLink.href = `https://www.google.se/search?tbm=shop&q=${encodeURIComponent(modelName)}`;
+              googleLink.target = "_blank";
+              googleLink.rel = "noopener noreferrer";
+              googleLink.className = "compare-prices-link";
+              googleLink.textContent = "Google Shopping \u2197";
+              linksWrap.appendChild(googleLink);
+
+              npList.appendChild(linksWrap);
             }
             if (cseComp?.estimated_new_price) {
               const row = el("div", "found-data-row");
               row.appendChild(el("span", null, "Google CSE"));
               row.appendChild(el("span", null, formatCurrency(cseComp.estimated_new_price, cseComp.currency)));
-              npList.appendChild(row);
-            } else if (cseComp) {
-              const row = el("div", "found-data-row");
-              row.appendChild(el("span", null, "Google CSE"));
-              row.appendChild(el("span", "text-muted", "Ingen prisdata"));
               npList.appendChild(row);
             }
             npSection.appendChild(npList);

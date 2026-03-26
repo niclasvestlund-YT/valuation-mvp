@@ -375,17 +375,29 @@ class NewPriceService:
                 "source": source_records[0]["source"] if source_records else "single_source_insufficient",
             }
 
-        prices = [float(candidate["price"]) for candidate in same_currency_candidates]
-        estimated_price = round(float(median(prices)), 2)
-        confidence = 0.45 if len(same_currency_candidates) == 2 else 0.65
+        prices = sorted([float(candidate["price"]) for candidate in same_currency_candidates])
+
+        # Filter extreme outliers: remove prices >2x the lowest price
+        # (likely import markups or wrong products)
+        lowest = prices[0]
+        filtered_prices = [p for p in prices if p <= lowest * 2.0]
+        if len(filtered_prices) < 2:
+            filtered_prices = prices[:2]  # Keep at least 2
+
+        # Use lowest credible price (not median) — closer to what consumers actually pay
+        estimated_price = round(float(filtered_prices[0]), 2)
+        confidence = 0.45 if len(filtered_prices) == 2 else 0.65
         if preferred_currency == "SEK":
             confidence = min(0.8, confidence + 0.1)
+
+        # Sort source records by price (cheapest first)
+        source_records.sort(key=lambda s: float(s.get("price") or 999999))
 
         return {
             "estimated_new_price": estimated_price,
             "currency": preferred_currency,
             "confidence": round(confidence, 2),
-            "source_count": len(same_currency_candidates),
+            "source_count": len(filtered_prices),
             "sources": source_records,
             "method": method_label,
             "price": estimated_price,

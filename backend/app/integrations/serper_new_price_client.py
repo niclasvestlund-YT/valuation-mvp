@@ -22,6 +22,12 @@ UNTRUSTED_SOURCES = {
     "gearbest",
     "joom",
     "shein",
+    "ubuy",
+    "fruugo",
+    "catchoftheday",
+    "onbuy",
+    "pricerunner",
+    "kelkoo",
 }
 
 SWEDISH_HINT_KEYWORDS = {

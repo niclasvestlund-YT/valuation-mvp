@@ -94,7 +94,7 @@ class NewPriceServiceTests(unittest.TestCase):
 
         result = service.get_new_price("Apple", "iPhone 13", "smartphone")
 
-        self.assertEqual(result["estimated_new_price"], 8149.0)
+        self.assertEqual(result["estimated_new_price"], 7999.0)
         self.assertEqual(result["currency"], "SEK")
         self.assertEqual(result["source_count"], 2)
         self.assertEqual(result["method"], "serpapi_google_shopping_median")
@@ -133,7 +133,7 @@ class NewPriceServiceTests(unittest.TestCase):
 
         result = service.get_new_price("Apple", "iPhone 13", "smartphone")
 
-        self.assertEqual(result["estimated_new_price"], 8149.0)
+        self.assertEqual(result["estimated_new_price"], 7999.0)
         self.assertEqual(result["currency"], "SEK")
         self.assertEqual(result["source_count"], 2)
         self.assertTrue(all(source["currency"] == "SEK" for source in result["sources"]))

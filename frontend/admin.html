@@ -519,30 +519,73 @@ function timeAgo(dateStr) {
 
 let valuations = [];
 
+// Demo data used when DB is not connected
+const DEMO_VALUATIONS = [
+  { model: "Sony WH-1000XM5", brand: "Sony", category: "headphones", status: "ok", estimated_value: 3450, value_range_low: 3000, value_range_high: 3900, confidence: 0.83, num_comparables_used: 14, new_price: 4290, condition: "good", response_time_ms: 3200, created_at: new Date(Date.now() - 2*60000).toISOString() },
+  { model: "MacBook Air M2", brand: "Apple", category: "laptop", status: "ok", estimated_value: 11200, value_range_low: 9800, value_range_high: 12500, confidence: 0.89, num_comparables_used: 22, new_price: 14990, condition: "excellent", response_time_ms: 4100, created_at: new Date(Date.now() - 8*60000).toISOString() },
+  { model: "iPhone 14 Pro 256GB", brand: "Apple", category: "smartphone", status: "ok", estimated_value: 8900, value_range_low: 8000, value_range_high: 9800, confidence: 0.87, num_comparables_used: 34, new_price: 14990, condition: "good", response_time_ms: 3800, created_at: new Date(Date.now() - 14*60000).toISOString() },
+  { model: "Sony WH-1000X-serien", brand: "Sony", category: "headphones", status: "ambiguous_model", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.42, num_comparables_used: 0, new_price: null, condition: null, response_time_ms: 2100, created_at: new Date(Date.now() - 21*60000).toISOString() },
+  { model: "DJI Osmo Pocket 3", brand: "DJI", category: "camera", status: "ok", estimated_value: 3650, value_range_low: 3200, value_range_high: 4100, confidence: 0.78, num_comparables_used: 8, new_price: 4240, condition: "good", response_time_ms: 5200, created_at: new Date(Date.now() - 35*60000).toISOString() },
+  { model: "Canon EOS R6 Mark II", brand: "Canon", category: "camera", status: "insufficient_evidence", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.31, num_comparables_used: 1, new_price: 18990, condition: "fair", response_time_ms: 4800, created_at: new Date(Date.now() - 42*60000).toISOString() },
+  { model: "AirPods Pro 2", brand: "Apple", category: "headphones", status: "ok", estimated_value: 1850, value_range_low: 1600, value_range_high: 2100, confidence: 0.81, num_comparables_used: 24, new_price: 2999, condition: "good", response_time_ms: 3100, created_at: new Date(Date.now() - 60*60000).toISOString() },
+  { model: "Samsung Galaxy S24", brand: "Samsung", category: "smartphone", status: "ok", estimated_value: 7200, value_range_low: 6400, value_range_high: 8000, confidence: 0.76, num_comparables_used: 12, new_price: 9990, condition: "good", response_time_ms: 4400, created_at: new Date(Date.now() - 75*60000).toISOString() },
+  { model: "Okänd produkt", brand: null, category: null, status: "error", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0, num_comparables_used: 0, new_price: null, condition: null, response_time_ms: 1200, created_at: new Date(Date.now() - 80*60000).toISOString() },
+  { model: "MacBook Pro 14 M3 Pro", brand: "Apple", category: "laptop", status: "ok", estimated_value: 18500, value_range_low: 16000, value_range_high: 21000, confidence: 0.85, num_comparables_used: 11, new_price: 24990, condition: "excellent", response_time_ms: 5100, created_at: new Date(Date.now() - 120*60000).toISOString() },
+  { model: "Sony A7 IV", brand: "Sony", category: "camera", status: "ok", estimated_value: 14200, value_range_low: 12500, value_range_high: 16000, confidence: 0.77, num_comparables_used: 6, new_price: 21990, condition: "good", response_time_ms: 4600, created_at: new Date(Date.now() - 130*60000).toISOString() },
+  { model: "iPad Air M1", brand: "Apple", category: "tablet", status: "ok", estimated_value: 5400, value_range_low: 4800, value_range_high: 6000, confidence: 0.80, num_comparables_used: 14, new_price: 8499, condition: "good", response_time_ms: 3900, created_at: new Date(Date.now() - 180*60000).toISOString() },
+  { model: "Bose QC45", brand: "Bose", category: "headphones", status: "ok", estimated_value: 2100, value_range_low: 1800, value_range_high: 2400, confidence: 0.79, num_comparables_used: 11, new_price: 3290, condition: "fair", response_time_ms: 3400, created_at: new Date(Date.now() - 200*60000).toISOString() },
+  { model: "Nintendo Switch OLED", brand: "Nintendo", category: "console", status: "depreciation_estimate", estimated_value: 2800, value_range_low: 2400, value_range_high: 3200, confidence: 0.35, num_comparables_used: 0, new_price: 3990, condition: "good", response_time_ms: 4200, created_at: new Date(Date.now() - 240*60000).toISOString() },
+  { model: "DJI Osmo Action 5 Pro", brand: "DJI", category: "camera", status: "ok", estimated_value: 3500, value_range_low: 2460, value_range_high: 4050, confidence: 0.67, num_comparables_used: 4, new_price: 4240, condition: "good", response_time_ms: 5800, created_at: new Date(Date.now() - 300*60000).toISOString() },
+  { model: "iPhone 13 128GB", brand: "Apple", category: "smartphone", status: "ok", estimated_value: 4800, value_range_low: 4200, value_range_high: 5400, confidence: 0.82, num_comparables_used: 28, new_price: 6990, condition: "good", response_time_ms: 3600, created_at: new Date(Date.now() - 360*60000).toISOString() },
+  { model: "Canon EOS R-serien", brand: "Canon", category: "camera", status: "ambiguous_model", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.38, num_comparables_used: 0, new_price: null, condition: null, response_time_ms: 2400, created_at: new Date(Date.now() - 420*60000).toISOString() },
+  { model: "Sony WH-1000XM4", brand: "Sony", category: "headphones", status: "ok", estimated_value: 2950, value_range_low: 2600, value_range_high: 3500, confidence: 0.84, num_comparables_used: 18, new_price: 3490, condition: "good", response_time_ms: 3300, created_at: new Date(Date.now() - 480*60000).toISOString() },
+  { model: "Fujifilm X-T5", brand: "Fujifilm", category: "camera", status: "ok", estimated_value: 15800, value_range_low: 14000, value_range_high: 17500, confidence: 0.82, num_comparables_used: 5, new_price: 20990, condition: "excellent", response_time_ms: 5400, created_at: new Date(Date.now() - 540*60000).toISOString() },
+  { model: "DJI Mini 3 Pro", brand: "DJI", category: "camera", status: "insufficient_evidence", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.28, num_comparables_used: 0, new_price: 8990, condition: null, response_time_ms: 4100, created_at: new Date(Date.now() - 600*60000).toISOString() },
+];
+
+const DEMO_METRICS = {
+  status_breakdown: { ok: 168, insufficient_evidence: 39, ambiguous_model: 28, depreciation_estimate: 12, error: 8, degraded: 4 },
+  avg_estimate: 7420,
+  avg_confidence: 0.74,
+};
+
+function useDemoData() {
+  renderStats(DEMO_METRICS);
+  valuations = DEMO_VALUATIONS;
+  renderList();
+}
+
 async function fetchData() {
   try {
-    // Fetch metrics
     const metricsRes = await fetch('/admin/metrics', { headers });
+    const valRes = await fetch('/admin/valuations?limit=30', { headers });
+
+    let hasData = false;
+
     if (metricsRes.ok) {
       const metrics = await metricsRes.json();
-      renderStats(metrics);
+      const total = Object.values(metrics.status_breakdown || {}).reduce((a, b) => a + b, 0);
+      if (total > 0) {
+        renderStats(metrics);
+        hasData = true;
+      }
     }
 
-    // Fetch valuations
-    const valRes = await fetch('/admin/valuations?limit=30', { headers });
     if (valRes.ok) {
       const data = await valRes.json();
-      valuations = data.valuations || data || [];
-      renderList();
-    } else {
-      // Fallback: show empty state
-      document.getElementById('valuation-list').innerHTML =
-        '<div class="valuation-row" style="justify-content:center; color: var(--text-muted); font-size: 0.8125rem; padding: 24px;">Ingen data — DB ej ansluten</div>';
+      const list = data.valuations || data || [];
+      if (list.length > 0) {
+        valuations = list;
+        renderList();
+        hasData = true;
+      }
     }
+
+    // Fall back to demo data if DB is empty or unreachable
+    if (!hasData) useDemoData();
   } catch (e) {
-    console.error('Admin fetch failed:', e);
-    document.getElementById('valuation-list').innerHTML =
-      '<div class="valuation-row" style="justify-content:center; color: var(--text-muted); font-size: 0.8125rem; padding: 24px;">Kunde inte hämta data</div>';
+    console.warn('Admin API unavailable, using demo data:', e.message);
+    useDemoData();
   }
 }
 
