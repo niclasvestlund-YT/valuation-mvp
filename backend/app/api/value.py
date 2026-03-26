@@ -10,12 +10,20 @@ from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.value_engine import ValueEngine
 from backend.app.db.crud import (
+    find_similar_products,
+    invalidate_embeddings,
+    mark_embeddings_verified,
+    save_embedding,
     save_feedback,
     save_price_snapshot,
     save_valuation,
     upsert_comparables,
     upsert_new_price,
     upsert_product,
+)
+from backend.app.services.embedding_service import (
+    compute_embedding_from_base64,
+    compute_image_hash,
 )
 from backend.app.utils.normalization import normalize_product_key
 from backend.app.schemas.product_identification import VisionServiceError
@@ -429,6 +437,27 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
                     title=source_title,
                 )
 
+        # Save embedding for learning loop (fire-and-forget)
+        if product_key and response_payload.get("status") in {"ok", "depreciation_estimate"}:
+            image_b64 = response_payload.get("_image_b64")
+            if image_b64:
+                embedding = compute_embedding_from_base64(image_b64)
+                if embedding:
+                    import base64 as _b64
+                    raw = image_b64.split(",", 1)[-1] if "," in image_b64 else image_b64
+                    try:
+                        img_hash = compute_image_hash(_b64.b64decode(raw))
+                    except Exception:
+                        img_hash = None
+                    if img_hash:
+                        await save_embedding(
+                            product_key,
+                            valuation_id,
+                            img_hash,
+                            embedding,
+                            verified=False,  # verified=True only after positive feedback
+                        )
+
         if response_payload.get("status") in {"ok", "depreciation_estimate"} and db_data.get("estimated_value"):
             await save_price_snapshot({
                 "product_identifier": model_id,
@@ -586,7 +615,9 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
         pass
 
     # Pass DB-only metadata separately — don't leak internal fields in the API response
-    persist_payload = {**result, "_condition": req.condition, "_response_time_ms": elapsed_ms}
+    # Pass first image for embedding computation (fire-and-forget in background)
+    first_image = (req.images[0] if req.images else req.image) if (req.images or req.image) else None
+    persist_payload = {**result, "_condition": req.condition, "_response_time_ms": elapsed_ms, "_image_b64": first_image}
     background_tasks.add_task(_persist_valuation, persist_payload, valuation_id)
     return result
 
@@ -598,8 +629,29 @@ class FeedbackRequest(BaseModel):
 
 
 @router.post("/feedback")
-async def submit_feedback(payload: FeedbackRequest):
+async def submit_feedback(payload: FeedbackRequest, background_tasks: BackgroundTasks):
     saved = await save_feedback(payload.valuation_id, payload.feedback, payload.corrected_product)
     if not saved:
         return {"ok": False, "detail": "Valuation not found or database unavailable"}
+
+    # Learning loop: update embedding verification based on feedback
+    async def _update_embeddings():
+        try:
+            from backend.app.db.database import async_session as _session
+            from backend.app.db.models import Valuation as _Val
+            async with _session() as session:
+                val = await session.get(_Val, payload.valuation_id)
+                if not val or not val.product_key:
+                    return
+
+                if payload.feedback == "correct":
+                    await mark_embeddings_verified(val.product_key, verified=True)
+                    logger.info("feedback.embeddings_verified", extra={"product_key": val.product_key})
+                elif payload.feedback == "wrong_product":
+                    await invalidate_embeddings(val.product_key)
+                    logger.info("feedback.embeddings_invalidated", extra={"product_key": val.product_key})
+        except Exception as exc:
+            logger.error("feedback.embedding_update_failed", extra={"error": str(exc)})
+
+    background_tasks.add_task(_update_embeddings)
     return {"ok": True}

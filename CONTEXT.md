@@ -28,6 +28,7 @@ backend/app/services/data_validator.py — ingestion validator for market compar
 backend/app/services/crawler_service.py — background crawler for pre-populating comparable cache from seed products
 backend/app/data/seed_products.json — 80 seed products across 3 priority tiers for crawler
 scripts/crawl_prices.py — CLI to run crawler: --priority, --max, --with-new-prices, --dry-run
+backend/app/services/embedding_service.py — SigLIP/CLIP embedding service for product image similarity (768-dim, pgvector)
 backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
@@ -71,6 +72,7 @@ tests/test_golden_cases.py — 7 canonical product pipeline tests (Sony XM4/5, i
 tests/test_data_validator.py — 15 tests for ingestion validator (rejects, valid, warnings)
 tests/test_normalization.py — 10 tests for normalize_product_key
 tests/test_crawler_service.py — 10 tests for seed products and crawler
+tests/test_embedding_service.py — 11 tests for embedding service (mock mode, hash, base64, dimensions)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -132,6 +134,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
+2026-03-26 — feat: Phase 2-3 — background crawler (80 seed products), cleanup script, /admin/data-quality endpoint
 2026-03-26 — feat: Phase 0 intelligence layer — pgvector, Product/MarketComparable/NewPriceSnapshot/ProductEmbedding tables, product_key normalization, Alembic migration
 2026-03-26 — feat: 🟢 tasks done: bundle filter (multi-item reject), new price min 2 sources, product knowledge JSON, mobile CSS, confirmation step, depreciation visual, admin valuation endpoints
 2026-03-26 — refactor: thresholds.py (40+ constants), golden tests (7 cases, 73 total), calibration logging, market_data_json persisted, valuation-mvp/ removed from git

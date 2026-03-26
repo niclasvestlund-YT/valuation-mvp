@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import select, text, update
 
 from backend.app.services.data_validator import validate_comparable
 from backend.app.utils.logger import get_logger
 
 from .database import async_session
-from .models import MarketComparable, NewPriceSnapshot, PriceSnapshot, Product, Valuation
+from .models import MarketComparable, NewPriceSnapshot, PriceSnapshot, Product, ProductEmbedding, Valuation
 
 logger = get_logger(__name__)
 
@@ -280,3 +280,88 @@ async def get_latest_new_price(product_key: str) -> dict | None:
     except Exception as exc:
         logger.error("db.get_latest_new_price.error", extra={"product_key": product_key, "error": str(exc)})
         return None
+
+
+async def find_similar_products(
+    embedding: list[float],
+    threshold: float = 0.92,
+    limit: int = 5,
+) -> list[dict]:
+    """pgvector cosine similarity search. Returns verified embeddings sorted by similarity."""
+    try:
+        async with async_session() as session:
+            result = await session.execute(
+                text("""
+                    SELECT product_key, 1 - (embedding <=> :query) AS similarity
+                    FROM product_embedding
+                    WHERE verified = true
+                    ORDER BY embedding <=> :query
+                    LIMIT :limit
+                """),
+                {"query": str(embedding), "limit": limit},
+            )
+            return [
+                {"product_key": row[0], "similarity": float(row[1])}
+                for row in result
+                if float(row[1]) >= threshold
+            ]
+    except Exception as exc:
+        logger.error("db.find_similar.error", extra={"error": str(exc)})
+        return []
+
+
+async def save_embedding(
+    product_key: str,
+    valuation_id: str | None,
+    image_hash: str,
+    embedding: list[float],
+    verified: bool = False,
+) -> bool:
+    """Save product embedding. Skip if image_hash already exists for this product."""
+    try:
+        async with async_session() as session:
+            # Check for duplicate image hash
+            existing = await session.execute(
+                select(ProductEmbedding.id).where(
+                    ProductEmbedding.product_key == product_key,
+                    ProductEmbedding.image_hash == image_hash,
+                )
+            )
+            if existing.scalar_one_or_none():
+                return True  # Already stored
+
+            emb = ProductEmbedding(
+                product_key=product_key,
+                valuation_id=valuation_id,
+                image_hash=image_hash,
+                embedding=embedding,
+                verified=verified,
+            )
+            session.add(emb)
+            await session.commit()
+            logger.debug("db.save_embedding.ok", extra={"product_key": product_key, "image_hash": image_hash[:12]})
+            return True
+    except Exception as exc:
+        logger.error("db.save_embedding.error", extra={"product_key": product_key, "error": str(exc)})
+        return False
+
+
+async def mark_embeddings_verified(product_key: str, verified: bool = True) -> int:
+    """Mark all embeddings for a product as verified (or unverified)."""
+    try:
+        async with async_session() as session:
+            result = await session.execute(
+                update(ProductEmbedding)
+                .where(ProductEmbedding.product_key == product_key)
+                .values(verified=verified)
+            )
+            await session.commit()
+            return result.rowcount
+    except Exception as exc:
+        logger.error("db.mark_embeddings.error", extra={"product_key": product_key, "error": str(exc)})
+        return 0
+
+
+async def invalidate_embeddings(product_key: str) -> int:
+    """Mark all embeddings for a product as unverified (e.g. after user correction)."""
+    return await mark_embeddings_verified(product_key, verified=False)

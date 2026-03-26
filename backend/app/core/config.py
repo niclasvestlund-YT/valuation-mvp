@@ -73,6 +73,10 @@ class Settings:
     database_url: str
     allowed_origins: str | None
     admin_secret_key: str | None
+    # Embeddings
+    embedding_model: str
+    use_mock_embedding: bool
+    embedding_similarity_threshold: float
     # Crawler
     crawler_enabled: bool
     crawler_sleep_seconds: int
@@ -128,6 +132,9 @@ settings = Settings(
     database_url=_read_env("DATABASE_URL") or "postgresql+asyncpg://postgres:dev@localhost:5432/valuation",
     allowed_origins=_read_env("ALLOWED_ORIGINS"),
     admin_secret_key=_read_env("ADMIN_SECRET_KEY"),
+    embedding_model=_read_env("EMBEDDING_MODEL") or "google/siglip-base-patch16-224",
+    use_mock_embedding=_read_bool_env("USE_MOCK_EMBEDDING", default=False),
+    embedding_similarity_threshold=float(_read_env("EMBEDDING_SIMILARITY_THRESHOLD") or "0.92"),
     crawler_enabled=_read_bool_env("CRAWLER_ENABLED", default=False),
     crawler_sleep_seconds=_read_int_env("CRAWLER_SLEEP_SECONDS", default=5),
     crawler_tradera_sleep=_read_int_env("CRAWLER_TRADERA_SLEEP", default=3),

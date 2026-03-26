@@ -12,6 +12,8 @@ sqlalchemy[asyncio]
 alembic
 psycopg2-binary
 pgvector
+# Embeddings (SigLIP/CLIP for product similarity)
+sentence-transformers>=2.2.0
 # Rate limiting
 slowapi
 # Used market data
