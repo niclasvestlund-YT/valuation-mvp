@@ -200,6 +200,16 @@ def _poison_reasons(title: str) -> list[str]:
     return reasons
 
 
+# Multi-item listing patterns (Swedish + English): "2st", "3x", "2 st", "par"
+_MULTI_ITEM_RE = re.compile(r"\b(\d+)\s*(st|x|par|pack|set)\b")
+
+
+def _is_multi_item_listing(title: str) -> bool:
+    """Detect listings selling multiple items (e.g. '2st Sony WH-1000XM4')."""
+    m = _MULTI_ITEM_RE.search(title)
+    return m is not None and int(m.group(1)) > 1
+
+
 def _is_bundle_mismatch(title: str, category: str) -> bool:
     normalized_category = normalize_listing_text(category)
     if "camera" not in normalized_category:
@@ -240,6 +250,9 @@ def score_comparable_relevance(comparable: dict, identification) -> ComparableSc
 
     if _is_bundle_mismatch(title, category):
         return ComparableScore(score=0.0, reasons=["listing_bundle_mismatch"], hard_reject=True)
+
+    if _is_multi_item_listing(title):
+        return ComparableScore(score=0.0, reasons=["multi_item_listing"], hard_reject=True)
 
     if model and model in candidate_models:
         candidate_models = [candidate for candidate in candidate_models if candidate != model]
