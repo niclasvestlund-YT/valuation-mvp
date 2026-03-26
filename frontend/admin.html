@@ -549,9 +549,16 @@ const DEMO_METRICS = {
   avg_confidence: 0.74,
 };
 
+function getLocalHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("valuation_history") || "[]");
+  } catch { return []; }
+}
+
 function useDemoData() {
   renderStats(DEMO_METRICS);
-  valuations = DEMO_VALUATIONS;
+  const local = getLocalHistory();
+  valuations = [...local, ...DEMO_VALUATIONS];
   renderList();
 }
 
@@ -575,7 +582,8 @@ async function fetchData() {
       const data = await valRes.json();
       const list = data.valuations || data || [];
       if (list.length > 0) {
-        valuations = list;
+        const local = getLocalHistory();
+        valuations = [...local, ...list];
         renderList();
         hasData = true;
       }

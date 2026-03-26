@@ -2632,6 +2632,31 @@
         lastEnvelope = envelope;
         const { status } = envelope;
 
+        // Save to localStorage for admin dashboard
+        try {
+          const d = envelope.data || {};
+          const v = d.valuation || {};
+          const entry = {
+            valuation_id: envelope.valuation_id,
+            model: d.model,
+            brand: d.brand,
+            category: d.category,
+            status: status,
+            estimated_value: v.fair_estimate || null,
+            value_range_low: v.low_estimate || null,
+            value_range_high: v.high_estimate || null,
+            confidence: v.confidence || d.confidence,
+            num_comparables_used: v.comparable_count || 0,
+            new_price: d.market_data?.new_price?.estimated_new_price || null,
+            condition: null,
+            response_time_ms: envelope.response_time_ms || null,
+            created_at: new Date().toISOString(),
+          };
+          const history = JSON.parse(localStorage.getItem("valuation_history") || "[]");
+          history.unshift(entry);
+          localStorage.setItem("valuation_history", JSON.stringify(history.slice(0, 50)));
+        } catch (e) { /* ignore */ }
+
         resultScreen.innerHTML = "";
         resultScreen.classList.remove("hidden");
         uploadScreen.classList.add("hidden");
