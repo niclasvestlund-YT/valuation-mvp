@@ -297,6 +297,9 @@ def build_market_snapshot(
     }
 
 
+MIN_NEW_PRICE_SOURCES = 2  # require at least 2 sources to trust a new price anchor
+
+
 def _extract_new_price_anchor(
     new_price_data: dict | None,
     *,
@@ -305,8 +308,10 @@ def _extract_new_price_anchor(
     if not new_price_data:
         return None
 
+    source_count = new_price_data.get("source_count") or len(new_price_data.get("sources", []))
+
     value = new_price_data.get("estimated_new_price")
-    if value is not None:
+    if value is not None and source_count >= MIN_NEW_PRICE_SOURCES:
         try:
             parsed = float(value)
         except (TypeError, ValueError):

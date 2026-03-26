@@ -41,7 +41,7 @@
 - [ ] OCR-steg innan vision (Google Cloud Vision) — skicka hittad text som kontext till prompten
 - [x] Förbättra vision-prompts för hörlurar och kameror — already done: XM4/XM5 hints, DJI Osmo, category angles
 - [x] Förbättra bundle-filtrering — multi-item listing detection ("2st", "3x", "par") hard-rejects
-- [ ] Höj minimikrav för new price anchor från 1 till 2 källor *(value_engine.py:361)*
+- [x] Höj minimikrav för new price anchor från 1 till 2 källor *(value_engine.py MIN_NEW_PRICE_SOURCES=2)*
 - [ ] Ersätt Prisjakt-stub med fungerande prishistorikkälla (Prisjakt blockerar server-side)
 - [ ] Research nya datakällor — Facebook Marketplace SE, Swappie, Refurbed
 - [ ] Flytta hårdkodad produktkunskap från prompten till en JSON-fil
