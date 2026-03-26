@@ -73,6 +73,8 @@ tests/test_data_validator.py — 15 tests for ingestion validator (rejects, vali
 tests/test_normalization.py — 10 tests for normalize_product_key
 tests/test_crawler_service.py — 10 tests for seed products and crawler
 tests/test_embedding_service.py — 11 tests for embedding service (mock mode, hash, base64, dimensions)
+tests/test_pipeline_integration.py — 13 integration tests (normalization→validation→embedding flow)
+tests/test_data_quality.py — 12 data quality invariant tests (thresholds, seed products, validator)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -134,6 +136,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
 2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
 2026-03-26 — feat: Phase 2-3 — background crawler (80 seed products), cleanup script, /admin/data-quality endpoint
 2026-03-26 — feat: Phase 0 intelligence layer — pgvector, Product/MarketComparable/NewPriceSnapshot/ProductEmbedding tables, product_key normalization, Alembic migration
