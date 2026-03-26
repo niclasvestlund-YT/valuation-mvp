@@ -1,21 +1,22 @@
 # STATUS — 2026-03-26
 
-## Done this session (🟡 Moat-building)
-- market_data_json now persisted to DB; depreciation_estimate saves PriceSnapshot
-- valuation-mvp/ dir removed from git (55 files, 4613 lines); .gitignore expanded
-- core/thresholds.py: 40+ constants extracted from 3 files into single tuning file
-- Confidence calibration logging: calibration.valuation structured log event
-- 7 golden tests: Sony XM4/XM5, iPhone 13, DJI Osmo Pocket 3, MacBook Air M2, unknown product, low confidence
-- Fixed request/req variable shadowing bug in value.py
+## Done this session (🟢 Bättre värderingar + UX)
+- Multi-item listing hard-reject ("2st", "3x", "par") in comparable scoring
+- New price anchor requires minimum 2 sources (was 1)
+- Product knowledge extracted to data/product_knowledge.json (7 families, 8 categories)
+- Mobile-first responsive CSS for ≤480px
+- Product confirmation step: "Stämmer detta?" before showing valuation
+- Depreciation estimate visual distinction (banner + different heading)
+- Admin valuation list + detail endpoints (GET /admin/valuations, /admin/valuation/{id})
+- Vision prompt headphone/camera improvements already done (marked)
 
 ## Tests
-- 73 passed, 0 failed (was 66, +7 golden)
+- 73 passed, 0 failed
 
-## Remaining 🟡
-- [ ] Integrationstester mot riktig DB (kräver lokal PostgreSQL)
+## All 🟢 tasks complete. Remaining: 🔵 Senare
+- Feedback-loop, cron-worker, cross-encoder, auth, portfolio, Sentry, CI/CD
 
-## Next priorities (🟢)
-- OCR-steg innan vision
-- Bundle-filtrering förbättringar
-- New price anchor minimum 2 sources
-- Mobil-first redesign
+## Next
+1. Push to GitHub: `git push origin develop`
+2. Set up local PostgreSQL
+3. Start 🔵 tasks (Sentry, GitHub Actions CI, auth)

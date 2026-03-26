@@ -29,6 +29,7 @@ backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
 backend/app/core/version.py — single source of truth for VERSION string
 backend/app/core/thresholds.py — all 40+ pipeline thresholds in one file (confidence caps, scoring weights, gates)
+backend/app/data/product_knowledge.json — 7 product families + 8 category angle sets for vision prompt
 backend/app/core/value_engine.py — main orchestration: vision → market → score → price → envelope
 backend/app/services/vision_service.py — OpenAI Vision API, product identification, confidence rules
 backend/app/services/market_service.py — market data wrapper, provider selection
@@ -124,6 +125,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-26 — feat: 🟢 tasks done: bundle filter (multi-item reject), new price min 2 sources, product knowledge JSON, mobile CSS, confirmation step, depreciation visual, admin valuation endpoints
 2026-03-26 — refactor: thresholds.py (40+ constants), golden tests (7 cases, 73 total), calibration logging, market_data_json persisted, valuation-mvp/ removed from git
 2026-03-25 — feat: rate limiting (slowapi 10/min), hide /docs in prod, temperature=0 on vision, vision cache SHA-256, Tradera rate-limit logging
 2026-03-25 — docs: deep investigation report; AI usage map, pipeline analysis, 10 prioritized opportunities, evaluation plan, QA/trust findings
@@ -136,7 +138,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-25 — security: XSS fix, admin auth via X-Admin-Key, CORS restricted to ALLOWED_ORIGINS, bypassPermissions
 2026-03-25 — docs: full architecture review
 2026-03-25 — infra: GitHub workflow; remote added, develop/staging/main branches, CONTRIBUTING.md
-2026-03-25 — chore: kvällsgranskning; TASKS.md + KVALL_RAPPORT.md + .claude/settings.json
 2026-03-25 — feat: Railway deployment, production hardening, structured logging, admin dashboard
 2026-03-24 — frontend rewrite: premium Klarna-style design system; pipeline fixes; bug sweep (14 issues)
 
