@@ -78,7 +78,7 @@ class VisionServiceValidationTests(unittest.TestCase):
         self.assertTrue(identification.needs_more_images)
         self.assertEqual(
             identification.requested_additional_angles,
-            ["back", "camera module", "bottom edge", "screen on", "model label"],
+            ["back camera module", "charging port / bottom edge", "screen-on showing UI", "model text/IMEI area"],
         )
 
     def test_conflicting_headphone_clues_reduce_confidence(self) -> None:
@@ -121,7 +121,7 @@ class VisionServiceValidationTests(unittest.TestCase):
         self.assertTrue(identification.needs_more_images)
         self.assertEqual(
             identification.requested_additional_angles,
-            ["underside", "ports", "keyboard deck", "screen on", "model label"],
+            ["bottom label", "ports (left side)", "keyboard/trackpad", "model text"],
         )
 
 

@@ -44,7 +44,7 @@
 - [x] Höj minimikrav för new price anchor från 1 till 2 källor *(value_engine.py MIN_NEW_PRICE_SOURCES=2)*
 - [ ] Ersätt Prisjakt-stub med fungerande prishistorikkälla (Prisjakt blockerar server-side)
 - [ ] Research nya datakällor — Facebook Marketplace SE, Swappie, Refurbed
-- [ ] Flytta hårdkodad produktkunskap från prompten till en JSON-fil
+- [x] Flytta hårdkodad produktkunskap till data/product_knowledge.json — 7 product families + 8 category angles
 
 ## 🟢 UX
 

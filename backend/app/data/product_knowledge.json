@@ -1,0 +1,78 @@
+{
+  "product_hints": [
+    {
+      "brand": "DJI",
+      "line": "Osmo Pocket",
+      "generations": [
+        {"model": "DJI Osmo Pocket 1", "cues": "small 1-inch screen, no rotation, squared body"},
+        {"model": "DJI Osmo Pocket 2", "cues": "small 1-inch screen, no rotation, rounded grip, single button"},
+        {"model": "DJI Osmo Pocket 3", "cues": "large 2-inch rotatable OLED touchscreen, 'OSMO' printed on grip, orange-ringed record button, 1-inch CMOS sensor"}
+      ]
+    },
+    {
+      "brand": "DJI",
+      "line": "Osmo Action",
+      "generations": [
+        {"model": "DJI Osmo Action 4", "cues": "action camera, single rear screen"},
+        {"model": "DJI Osmo Action 5 Pro", "cues": "action camera form factor, front+rear screens, 'ACTION 5 PRO' text"}
+      ]
+    },
+    {
+      "brand": "Sony",
+      "line": "WH-1000XM",
+      "generations": [
+        {"model": "Sony WH-1000XM4", "cues": "stepped headband, folding hinges, touch panel on right cup"},
+        {"model": "Sony WH-1000XM5", "cues": "smooth headband, no visible hinges, touch panel on right cup"}
+      ]
+    },
+    {
+      "brand": "Apple",
+      "line": "iPhone",
+      "generations": [
+        {"model": "iPhone 13", "cues": "diagonal dual camera, notch, flat edges"},
+        {"model": "iPhone 14", "cues": "diagonal dual camera, notch, flat edges (same as 13 externally)"},
+        {"model": "iPhone 14 Pro", "cues": "triple camera with larger sensors, Dynamic Island, always-on display"},
+        {"model": "iPhone 15", "cues": "Dynamic Island, dual camera, USB-C, rounded camera module edges"},
+        {"model": "iPhone 15 Pro", "cues": "titanium frame, Action button replaces mute switch, USB-C, triple camera"}
+      ]
+    },
+    {
+      "brand": "Apple",
+      "line": "MacBook Air",
+      "generations": [
+        {"model": "MacBook Air M1", "cues": "wedge shape tapers to thin edge, Touch ID, no MagSafe, 2 Thunderbolt ports"},
+        {"model": "MacBook Air M2", "cues": "flat uniform thickness, MagSafe, notch in display, 2 Thunderbolt ports"},
+        {"model": "MacBook Air M3", "cues": "identical to M2 externally, differentiated by markings only"}
+      ]
+    },
+    {
+      "brand": "Samsung",
+      "line": "Galaxy S",
+      "generations": [
+        {"model": "Samsung Galaxy S23", "cues": "individual camera cutouts (no camera island), flat display"},
+        {"model": "Samsung Galaxy S24", "cues": "flat titanium frame, individual camera cutouts, flat display, slightly boxier than S23"},
+        {"model": "Samsung Galaxy S24 Ultra", "cues": "titanium frame, built-in S Pen, quad camera with periscope lens"}
+      ]
+    },
+    {
+      "brand": "Apple",
+      "line": "AirPods",
+      "generations": [
+        {"model": "AirPods Pro", "cues": "silicone ear tips, shorter stem, active noise cancellation"},
+        {"model": "AirPods Pro 2", "cues": "silicone ear tips, shorter stem, speaker grilles on case, lanyard loop, USB-C"},
+        {"model": "AirPods 3", "cues": "no silicone tips, contoured design, shorter stem than AirPods 2"},
+        {"model": "AirPods Max", "cues": "over-ear headphones, Digital Crown, mesh headband, aluminum cups"}
+      ]
+    }
+  ],
+  "category_angles": {
+    "headphones": ["inside headband", "hinge", "earcup buttons/ports", "case", "model text"],
+    "smartphone": ["back camera module", "charging port / bottom edge", "screen-on showing UI", "model text/IMEI area"],
+    "laptop": ["bottom label", "ports (left side)", "keyboard/trackpad", "model text"],
+    "tablet": ["back with camera and model text", "charging port edge", "screen bezel profile"],
+    "camera": ["lens front", "top controls/dials", "battery compartment/model label", "screen/back controls", "bottom tripod mount area"],
+    "smartwatch": ["watch face", "back with sensors/model text", "side buttons", "band connection"],
+    "console": ["front with ports/disc slot", "back with ports", "label/serial sticker"],
+    "earbuds": ["earbuds out of case", "case open showing earbuds", "case back/bottom with model info"]
+  }
+}

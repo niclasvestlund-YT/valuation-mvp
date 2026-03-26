@@ -1,11 +1,17 @@
 import json
 import time
+from pathlib import Path
 from textwrap import dedent
 from uuid import uuid4
 
 import requests
 
 from backend.app.core.config import settings
+
+# Load product knowledge from JSON (editable without code changes)
+_PRODUCT_KNOWLEDGE_PATH = Path(__file__).resolve().parent.parent / "data" / "product_knowledge.json"
+with open(_PRODUCT_KNOWLEDGE_PATH) as _f:
+    _PRODUCT_KNOWLEDGE = json.load(_f)
 from backend.app.schemas.product_identification import (
     ProductIdentification,
     ProductIdentificationResult,
@@ -102,17 +108,22 @@ CONFLICT_EVIDENCE_KEYWORDS = {
     "mismatch",
 }
 
-CATEGORY_REQUESTED_ANGLES = {
-    "smartphone": ["back", "camera module", "bottom edge", "screen on", "model label"],
-    "laptop": ["underside", "ports", "keyboard deck", "screen on", "model label"],
-    "headphones": ["inside headband", "hinge", "earcup buttons/ports", "case", "model text"],
-    "default": ["front", "back", "label", "ports"],
-}
+CATEGORY_REQUESTED_ANGLES = _PRODUCT_KNOWLEDGE.get("category_angles", {})
+CATEGORY_REQUESTED_ANGLES.setdefault("default", ["front", "back", "label", "ports"])
+
+
+def _build_product_knowledge_block() -> str:
+    """Build product knowledge hints from JSON data file."""
+    lines = []
+    for hint in _PRODUCT_KNOWLEDGE.get("product_hints", []):
+        for gen in hint.get("generations", []):
+            lines.append(f"- {gen['model']}: {gen['cues']}")
+    return "\n        ".join(lines)
 
 
 def build_identification_prompt() -> str:
     return dedent(
-        """
+        f"""
         Role:
         You are an expert consumer-tech product identification engine. Your task is identification only, not valuation.
         You have deep knowledge of product lines and generations — use it. Your goal is to identify the FULL marketed product name
@@ -154,14 +165,7 @@ def build_identification_prompt() -> str:
           "OSMO" on the body of a gimbal camera with a 2-inch rotatable screen means "DJI Osmo Pocket 3", not just "DJI Osmo".
 
         Product knowledge you should apply:
-        - DJI Osmo Pocket 1: small 1-inch screen, no rotation, squared body
-        - DJI Osmo Pocket 2: small 1-inch screen, no rotation, rounded grip, single button
-        - DJI Osmo Pocket 3: large 2-inch rotatable OLED touchscreen, "OSMO" printed on grip, orange-ringed record button, 1-inch CMOS sensor
-        - DJI Osmo Action 5 Pro: action camera form factor, front+rear screens, "ACTION 5 PRO" text
-        - DJI Osmo Action 4: action camera, single rear screen
-        - Sony WH-1000XM5: smooth headband, no visible hinges, touch panel on right cup
-        - Sony WH-1000XM4: stepped headband, folding hinges, touch panel on right cup
-        - iPhone generations differ by camera module layout, notch vs Dynamic Island, button placement
+        {_build_product_knowledge_block()}
 
         Multi-image reasoning:
         - Combine evidence across all images before deciding.
