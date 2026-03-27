@@ -14,3 +14,8 @@ logs/
 dist/
 valuation-mvp/
 .claude/worktrees/
+automation/review_runs/*
+!automation/review_runs/.gitkeep
+automation/logs/review_swarm.log
+models/*.pkl
+models/valor_features.json

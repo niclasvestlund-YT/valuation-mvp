@@ -792,3 +792,227 @@ async def ocr_stats():
     except Exception as exc:
         logger.error("admin /ocr-stats failed: %s", exc, exc_info=True)
         return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+
+
+@admin_router.get("/agent-stats")
+async def agent_stats():
+    """Agent integration stats: observations, jobs, coverage, staleness."""
+    logger.info("admin /agent-stats called")
+    try:
+        total_observations = await _fetchval("SELECT COUNT(*) FROM price_observation") or 0
+
+        observations_per_source = await _fetch(
+            """
+            SELECT source, COUNT(*) AS count,
+                   ROUND(100.0 * COUNT(*) / NULLIF(SUM(COUNT(*)) OVER (), 0), 1) AS pct
+            FROM price_observation
+            GROUP BY source
+            ORDER BY count DESC
+            """
+        )
+
+        observations_per_product = await _fetch(
+            """
+            SELECT product_key, COUNT(*) AS count,
+                   MAX(observed_at) AS latest_observed_at
+            FROM price_observation
+            GROUP BY product_key
+            ORDER BY count DESC
+            LIMIT 20
+            """
+        )
+
+        suspicious_count = await _fetchval(
+            "SELECT COUNT(*) FROM price_observation WHERE suspicious = true"
+        ) or 0
+        suspicious_rate = round(suspicious_count / max(total_observations, 1) * 100, 1)
+
+        recent_jobs = await _fetch(
+            """
+            SELECT id, started_at, finished_at, product_key, search_terms,
+                   source, observations_added, observations_rejected,
+                   status, summary, error_message
+            FROM agent_job
+            ORDER BY started_at DESC
+            LIMIT 20
+            """
+        )
+
+        stale_products = await _fetch(
+            """
+            SELECT product_key, MAX(observed_at) AS latest_observed_at
+            FROM price_observation
+            GROUP BY product_key
+            HAVING MAX(observed_at) < NOW() - INTERVAL '48 hours'
+            ORDER BY MAX(observed_at) ASC
+            """
+        )
+
+        coverage = await _fetchval(
+            "SELECT COUNT(DISTINCT product_key) FROM price_observation"
+        ) or 0
+
+        result = {
+            "total_observations": total_observations,
+            "observations_per_source": [dict(r) for r in observations_per_source],
+            "observations_per_product": [
+                {
+                    **dict(r),
+                    "latest_observed_at": r["latest_observed_at"].isoformat() if r.get("latest_observed_at") else None,
+                }
+                for r in observations_per_product
+            ],
+            "suspicious_count": suspicious_count,
+            "suspicious_rate": suspicious_rate,
+            "recent_jobs": [
+                {
+                    **dict(r),
+                    "started_at": r["started_at"].isoformat() if r.get("started_at") else None,
+                    "finished_at": r["finished_at"].isoformat() if r.get("finished_at") else None,
+                }
+                for r in recent_jobs
+            ],
+            "stale_products": [
+                {
+                    **dict(r),
+                    "latest_observed_at": r["latest_observed_at"].isoformat() if r.get("latest_observed_at") else None,
+                }
+                for r in stale_products
+            ],
+            "coverage": coverage,
+        }
+        logger.info("admin /agent-stats ok, observations=%d coverage=%d", total_observations, coverage)
+        return result
+    except Exception as exc:
+        logger.error("admin /agent-stats failed: %s", exc, exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+
+
+@admin_router.get("/valor-stats")
+async def valor_stats():
+    """VALOR model status, training data overview, estimate accuracy, observations & jobs."""
+    logger.info("admin /valor-stats called")
+    try:
+        # ── Active model ──
+        model_rows = await _fetch(
+            """
+            SELECT id, model_version, model_filename, mae_sek, mape_pct,
+                   within_10pct, within_20pct, vs_baseline_improvement_pct,
+                   trained_at, is_active, training_samples, test_samples,
+                   data_quality_warnings, notes
+            FROM valor_model
+            WHERE is_active = true
+            ORDER BY trained_at DESC
+            LIMIT 1
+            """
+        )
+        model = None
+        if model_rows:
+            m = model_rows[0]
+            model = {
+                **dict(m),
+                "trained_at": m["trained_at"].isoformat() if m.get("trained_at") else None,
+            }
+
+        # ── Training data ──
+        total_samples = await _fetchval("SELECT COUNT(*) FROM training_sample") or 0
+        included_in_training = await _fetchval(
+            "SELECT COUNT(*) FROM training_sample WHERE included_in_training = true"
+        ) or 0
+        samples_per_source = await _fetch(
+            """
+            SELECT source_type, COUNT(*) AS count
+            FROM training_sample
+            GROUP BY source_type
+            ORDER BY count DESC
+            """
+        )
+        avg_quality_score = await _fetchval(
+            "SELECT ROUND(AVG(quality_score)::numeric, 3) FROM training_sample WHERE quality_score IS NOT NULL"
+        )
+
+        training = {
+            "total_samples": int(total_samples),
+            "included_in_training": int(included_in_training),
+            "samples_per_source": [dict(r) for r in samples_per_source],
+            "avg_quality_score": float(avg_quality_score) if avg_quality_score is not None else None,
+        }
+
+        # ── Estimate accuracy ──
+        est_total = await _fetchval("SELECT COUNT(*) FROM valor_estimate") or 0
+
+        estimates = {
+            "total": int(est_total),
+        }
+
+        # ── Observations ──
+        obs_total = await _fetchval("SELECT COUNT(*) FROM price_observation") or 0
+        obs_per_source = await _fetch(
+            """
+            SELECT source, COUNT(*) AS count
+            FROM price_observation
+            GROUP BY source
+            ORDER BY count DESC
+            """
+        )
+        suspicious_count = await _fetchval(
+            "SELECT COUNT(*) FROM price_observation WHERE suspicious = true"
+        ) or 0
+        suspicious_rate = round(int(suspicious_count) / max(int(obs_total), 1) * 100, 1)
+
+        stale_products = await _fetch(
+            """
+            SELECT product_key, MAX(observed_at) AS latest_observed_at
+            FROM price_observation
+            GROUP BY product_key
+            HAVING MAX(observed_at) < NOW() - INTERVAL '48 hours'
+            ORDER BY MAX(observed_at) ASC
+            """
+        )
+
+        observations = {
+            "total": int(obs_total),
+            "per_source": [dict(r) for r in obs_per_source],
+            "suspicious_rate": suspicious_rate,
+            "stale_products": [
+                {
+                    **dict(r),
+                    "latest_observed_at": r["latest_observed_at"].isoformat() if r.get("latest_observed_at") else None,
+                }
+                for r in stale_products
+            ],
+        }
+
+        # ── Recent jobs ──
+        recent_jobs = await _fetch(
+            """
+            SELECT id, started_at, finished_at, product_key, search_terms,
+                   source, observations_added, observations_rejected,
+                   status, summary, error_message
+            FROM agent_job
+            ORDER BY started_at DESC
+            LIMIT 20
+            """
+        )
+        jobs = [
+            {
+                **dict(r),
+                "started_at": r["started_at"].isoformat() if r.get("started_at") else None,
+                "finished_at": r["finished_at"].isoformat() if r.get("finished_at") else None,
+            }
+            for r in recent_jobs
+        ]
+
+        result = {
+            "model": model,
+            "training": training,
+            "estimates": estimates,
+            "observations": observations,
+            "jobs": jobs,
+        }
+        logger.info("admin /valor-stats ok, model=%s samples=%d",
+                     model.get("model_version") if model else "none", total_samples)
+        return result
+    except Exception as exc:
+        logger.error("admin /valor-stats failed: %s", exc, exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})

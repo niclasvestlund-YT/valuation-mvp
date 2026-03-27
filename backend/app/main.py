@@ -18,11 +18,13 @@ from starlette.responses import Response
 
 from backend.app.api.agent import router as agent_router
 from backend.app.api.value import router as value_router
+from backend.app.routers.ingest import ingest_router
 from backend.app.core.config import settings
 from backend.app.core.version import VERSION
 from backend.app.db.database import dispose_engine, init_db
 from backend.app.middleware.request_id import RequestIdMiddleware
 from backend.app.routers.admin import admin_router
+from backend.app.services.valor_service import ValorService
 from backend.app.utils.logger import get_logger, _configure_root
 
 _MAX_REQUEST_BODY_BYTES = 20 * 1024 * 1024  # 20 MB
@@ -76,6 +78,7 @@ app = FastAPI(
 app.state.limiter = limiter
 app.state.settings = settings
 app.state.is_mock_mode = settings.is_mock_mode
+app.state.valor_service = ValorService()
 app.add_exception_handler(RateLimitExceeded, lambda req, exc: JSONResponse(
     status_code=429,
     content={"detail": "Rate limit exceeded. Max 10 requests per minute."},
@@ -120,6 +123,7 @@ def health_check():
             "easyocr": "mock" if settings.use_mock_easyocr else ("enabled" if settings.easyocr_enabled else "disabled"),
             "embeddings": "mock" if settings.use_mock_embedding else "configured",
             "crawler": "enabled" if settings.crawler_enabled else "disabled",
+            "valor": "available" if app.state.valor_service.is_available() else "no_model",
         },
     }
 
@@ -131,4 +135,5 @@ def admin_ui():
 
 app.include_router(value_router)
 app.include_router(agent_router)
+app.include_router(ingest_router)
 app.include_router(admin_router)

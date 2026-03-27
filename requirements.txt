@@ -22,3 +22,8 @@ slowapi
 # Used market data
 blocket-api
 curl-cffi>=0.7.0
+# VALOR ML pipeline
+xgboost>=2.0.0
+joblib>=1.3.0
+scikit-learn>=1.4.0
+pandas>=2.0.0

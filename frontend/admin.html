@@ -792,6 +792,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
           Värderingsflöde
         </a></li>
+        <li><a href="#agent" data-section="agent">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 12v6"/></svg>
+          VALOR & Agent
+        </a></li>
       </ul>
     </nav>
     <div class="sidebar-back">
@@ -972,6 +976,83 @@
         </div>
       </div>
 
+      <!-- ═══ VALOR MODEL STATUS ═══ -->
+      <div class="section">
+        <div class="section-label">VALOR — ML-MODELL
+          <button class="refresh-btn" onclick="loadValorStats()" aria-label="Uppdatera VALOR-statistik">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          </button>
+        </div>
+        <div class="card" id="valor-model-status">
+          <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">VALOR — TRÄNINGSDATA</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
+          <div class="stat-card"><div class="stat-value" id="valor-total-samples">—</div><div class="stat-label">Training samples</div></div>
+          <div class="stat-card"><div class="stat-value" id="valor-included">—</div><div class="stat-label">Inkluderade</div></div>
+          <div class="stat-card"><div class="stat-value" id="valor-avg-quality">—</div><div class="stat-label">Snitt quality</div></div>
+          <div class="stat-card"><div class="stat-value" id="valor-estimates">—</div><div class="stat-label">Estimat gjorda</div></div>
+        </div>
+        <div class="card" id="valor-source-breakdown">
+          <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">VALOR — ÅTGÄRDER</div>
+        <div class="card" style="display:flex;gap:12px;padding:14px 16px;">
+          <button onclick="trainValor()" style="font-size:0.8125rem;font-weight:500;padding:8px 16px;border-radius:8px;border:1px solid var(--accent-positive);background:var(--bg-surface-raised);color:var(--accent-positive);cursor:pointer;font-family:inherit;">Träna om VALOR</button>
+          <button onclick="rollbackValor()" style="font-size:0.8125rem;font-weight:500;padding:8px 16px;border-radius:8px;border:1px solid var(--accent-warning);background:var(--bg-surface-raised);color:var(--accent-warning);cursor:pointer;font-family:inherit;">Rollback</button>
+        </div>
+      </div>
+
+      <!-- ═══ AGENT SECTION ═══ -->
+      <div class="section">
+        <div class="section-label">
+          AGENT — DATAINSAMLING
+          <button class="refresh-btn" onclick="loadAgentStats()" aria-label="Uppdatera agent-statistik">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          </button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
+          <div class="stat-card"><div class="stat-value" id="agent-total-obs">—</div><div class="stat-label">Observationer</div></div>
+          <div class="stat-card"><div class="stat-value" id="agent-coverage">—</div><div class="stat-label">Produkter täckta</div></div>
+          <div class="stat-card"><div class="stat-value" id="agent-suspicious-rate">—</div><div class="stat-label">Suspicious rate</div></div>
+          <div class="stat-card"><div class="stat-value" id="agent-last-run">—</div><div class="stat-label">Senaste körning</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">DATAKVALITET — PER KÄLLA</div>
+        <div class="card" id="agent-source-table">
+          <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">STALE PRODUCTS — SAKNAR DATA &gt;48H</div>
+        <div class="card" id="agent-stale-table">
+          <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">KÖRHISTORIK — SENASTE 20 KÖRNINGAR</div>
+        <div class="card" id="agent-jobs-table" style="max-height:400px;overflow-y:auto;">
+          <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">TOPP-PRODUKTER — MEST OBSERVATIONER</div>
+        <div class="card" id="agent-top-products">
+          <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
+        </div>
+      </div>
+
       <!-- OCR-tjänster -->
       <div class="section">
         <div class="section-label">OCR-TJÄNSTER <button onclick="loadOcrStats()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.6875rem;margin-left:8px;">Uppdatera</button></div>
@@ -1027,6 +1108,10 @@
     <li><a href="#valuations" onclick="closeMobileNav()">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
       Värderingsflöde
+    </a></li>
+    <li><a href="#agent" onclick="closeMobileNav()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 12v6"/></svg>
+      VALOR & Agent
     </a></li>
     <li style="border-top:1px solid var(--border-subtle);margin-top:var(--space-3);padding-top:var(--space-3);"><a href="index.html">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -1578,7 +1663,167 @@ async function loadOcrStats() {
 }
 
 loadOcrStats();
-setTimeout(function refresh() { loadMarketData(); loadValuationsData(); loadOcrStats(); setTimeout(refresh, 60000); }, 60000);
+loadAgentStats();
+
+async function loadAgentStats() {
+  try {
+    const res = await fetch('/admin/agent-stats', { headers });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    // Status cards
+    document.getElementById('agent-total-obs').textContent = (d.total_observations || 0).toLocaleString('sv-SE');
+    document.getElementById('agent-coverage').textContent = (d.coverage || 0).toLocaleString('sv-SE');
+    document.getElementById('agent-suspicious-rate').textContent = d.suspicious_rate != null ? d.suspicious_rate + '%' : '—';
+
+    // Last run info
+    const jobs = d.recent_jobs || [];
+    if (jobs.length > 0) {
+      const last = jobs[0];
+      const statusLabel = last.status === 'done' ? 'done' : last.status === 'failed' ? 'failed' : 'running';
+      const statusColor = last.status === 'done' ? 'var(--accent-positive)' : last.status === 'failed' ? 'var(--accent-danger)' : 'var(--accent-warning)';
+      document.getElementById('agent-last-run').innerHTML =
+        `<span style="color:${statusColor};font-weight:500;">${statusLabel}</span> <span style="font-size:var(--text-xs);color:var(--text-muted);display:block;">${last.started_at ? timeAgo(last.started_at) : ''}</span>`;
+    }
+
+    // Source table
+    const srcEl = document.getElementById('agent-source-table');
+    const sources = d.observations_per_source || [];
+    if (sources.length) {
+      srcEl.innerHTML = sources.map(s => `
+        <div class="source-row">
+          <span class="source-name">${s.source || '—'}</span>
+          <div class="source-stats">
+            <span style="font-weight:600;">${(s.count || 0).toLocaleString('sv-SE')}</span>
+            <span style="color:var(--text-muted);font-size:var(--text-xs);">${s.pct || 0}%</span>
+          </div>
+        </div>`).join('');
+    } else {
+      srcEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Inga observationer ännu</div>';
+    }
+
+    // Stale products
+    const staleEl = document.getElementById('agent-stale-table');
+    const stale = d.stale_products || [];
+    if (stale.length) {
+      staleEl.innerHTML = stale.map(s => `
+        <div class="source-row" style="color:var(--accent-warning);">
+          <span class="source-name">${s.product_key}</span>
+          <span style="font-size:var(--text-xs);">${s.latest_observed_at ? timeAgo(s.latest_observed_at) : '—'}</span>
+        </div>`).join('');
+    } else {
+      staleEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--accent-positive);font-size:0.8125rem;">Inga stale produkter</div>';
+    }
+
+    // Jobs table
+    const jobsEl = document.getElementById('agent-jobs-table');
+    if (jobs.length) {
+      jobsEl.innerHTML = jobs.map(j => {
+        const sc = j.status === 'done' ? 'var(--accent-positive)' : j.status === 'failed' ? 'var(--accent-danger)' : 'var(--accent-warning)';
+        const pill = `<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;color:#fff;background:${sc};">${j.status}</span>`;
+        const t = j.started_at ? new Date(j.started_at).toLocaleString('sv-SE', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+        return `
+        <div class="source-row" style="flex-wrap:wrap;gap:4px;">
+          <span style="font-size:var(--text-xs);color:var(--text-muted);min-width:100px;">${t}</span>
+          <span class="source-name" style="flex:1;min-width:80px;">${j.product_key || '—'}</span>
+          <span style="font-size:var(--text-xs);color:var(--text-muted);">${j.source || ''}</span>
+          <span style="font-weight:500;color:var(--accent-positive);min-width:30px;">+${j.observations_added || 0}</span>
+          <span style="font-weight:500;color:var(--accent-danger);min-width:30px;">-${j.observations_rejected || 0}</span>
+          ${pill}
+        </div>`;
+      }).join('');
+    } else {
+      jobsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Inga körningar ännu</div>';
+    }
+
+    // Top products
+    const topEl = document.getElementById('agent-top-products');
+    const tops = d.observations_per_product || [];
+    if (tops.length) {
+      topEl.innerHTML = tops.map(p => `
+        <div class="source-row">
+          <span class="source-name">${p.product_key}</span>
+          <div class="source-stats">
+            <span style="font-weight:600;">${(p.count || 0).toLocaleString('sv-SE')} obs</span>
+            <span style="font-size:var(--text-xs);color:var(--text-muted);">${p.latest_observed_at ? timeAgo(p.latest_observed_at) : '—'}</span>
+          </div>
+        </div>`).join('');
+    } else {
+      topEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Inga produkter ännu</div>';
+    }
+  } catch (e) { console.warn('agent-stats failed:', e); }
+}
+
+loadValorStats();
+
+async function loadValorStats() {
+  try {
+    const res = await fetch('/admin/valor-stats', { headers });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    // Model status
+    const modelEl = document.getElementById('valor-model-status');
+    const m = d.model;
+    if (m) {
+      modelEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:12px;">
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Version</div><div style="font-weight:600;">${m.model_version || '—'}</div></div>
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">MAE</div><div style="font-weight:600;">${m.mae_sek ? Math.round(m.mae_sek) + ' kr' : '—'}</div></div>
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">MAPE</div><div style="font-weight:600;">${m.mape_pct ? m.mape_pct.toFixed(1) + '%' : '—'}</div></div>
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Inom ±10%</div><div style="font-weight:600;color:var(--accent-positive);">${m.within_10pct ? m.within_10pct.toFixed(1) + '%' : '—'}</div></div>
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Inom ±20%</div><div style="font-weight:600;color:var(--accent-positive);">${m.within_20pct ? m.within_20pct.toFixed(1) + '%' : '—'}</div></div>
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Tränad</div><div style="font-weight:500;">${m.trained_at ? timeAgo(m.trained_at) : '—'}</div></div>
+        </div>
+        <div style="font-size:var(--text-xs);color:var(--accent-positive);font-weight:500;">● Aktiv</div>`;
+    } else {
+      modelEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Ingen VALOR-modell aktiv — samlar träningsdata</div>';
+    }
+
+    // Training data
+    const t = d.training || {};
+    document.getElementById('valor-total-samples').textContent = (t.total_samples || 0).toLocaleString('sv-SE');
+    document.getElementById('valor-included').textContent = (t.included_in_training || 0).toLocaleString('sv-SE');
+    document.getElementById('valor-avg-quality').textContent = t.avg_quality_score != null ? t.avg_quality_score.toFixed(2) : '—';
+    document.getElementById('valor-estimates').textContent = (d.estimates?.total || 0).toLocaleString('sv-SE');
+
+    const srcEl = document.getElementById('valor-source-breakdown');
+    const srcs = t.samples_per_source || [];
+    if (srcs.length) {
+      srcEl.innerHTML = srcs.map(s => `
+        <div class="source-row">
+          <span class="source-name">${s.source_type || '—'}</span>
+          <span style="font-weight:600;">${(s.count || 0).toLocaleString('sv-SE')}</span>
+        </div>`).join('');
+    } else {
+      srcEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8125rem;">Inga training samples ännu</div>';
+    }
+  } catch (e) { console.warn('valor-stats failed:', e); }
+}
+
+async function trainValor() {
+  if (!confirm('Starta VALOR-träning? (Kräver att du kör scripts/train_valor.py manuellt)')) return;
+  try {
+    const res = await fetch('/api/valor/train', { method: 'POST', headers });
+    const d = await res.json();
+    alert(d.note || 'Träning startad');
+  } catch (e) { alert('Kunde inte starta träning: ' + e.message); }
+}
+
+async function rollbackValor() {
+  const version = prompt('Ange modellversion att rulla tillbaka till (t.ex. valor_v1_20260327):');
+  if (!version) return;
+  try {
+    const res = await fetch('/api/valor/rollback', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ version })
+    });
+    if (res.ok) { alert('Rollback klar till ' + version); loadValorStats(); }
+    else { const d = await res.json(); alert('Rollback misslyckades: ' + (d.detail || res.status)); }
+  } catch (e) { alert('Rollback fel: ' + e.message); }
+}
+
+setTimeout(function refresh() { loadMarketData(); loadValuationsData(); loadOcrStats(); loadAgentStats(); loadValorStats(); setTimeout(refresh, 60000); }, 60000);
 </script>
 
 </body>
