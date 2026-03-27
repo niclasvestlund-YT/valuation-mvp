@@ -1,6 +1,7 @@
 """API call counter for admin dashboard.
 
-Thread-safe. Persists to logs/api_counter.json so data survives server restarts.
+Thread-safe. Persists to <project_root>/logs/api_counter.json on every
+mutation so data survives server restarts and crashes.
 """
 
 import json
@@ -10,7 +11,10 @@ from datetime import date, datetime
 from pathlib import Path
 
 _lock = threading.Lock()
-_PERSIST_FILE = Path(__file__).resolve().parents[4] / "logs" / "api_counter.json"
+
+# parents: [0]=utils [1]=app [2]=backend [3]=project_root
+_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+_PERSIST_FILE = _PROJECT_ROOT / "logs" / "api_counter.json"
 
 _total: dict[str, int] = defaultdict(int)
 _daily: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -27,10 +31,6 @@ _ALL_SOURCES = [
     "serpapi_new_price",
     "vision_openai",
 ]
-
-# How often to persist (every N increments)
-_PERSIST_INTERVAL = 5
-_increment_count = 0
 
 
 def _load_from_disk() -> None:
@@ -50,7 +50,7 @@ def _load_from_disk() -> None:
 
 
 def _save_to_disk() -> None:
-    """Persist current state to JSON file."""
+    """Persist current state to JSON file. Called on every mutation."""
     try:
         _PERSIST_FILE.parent.mkdir(parents=True, exist_ok=True)
         data = {
@@ -65,19 +65,21 @@ def _save_to_disk() -> None:
         pass
 
 
+def get_persist_path() -> Path:
+    """Return the persist file path (for testing)."""
+    return _PERSIST_FILE
+
+
 # Load on import
 _load_from_disk()
 
 
 def increment(source: str) -> None:
-    global _increment_count
     with _lock:
         _total[source] += 1
         _daily[str(date.today())][source] += 1
         _last_called[source] = datetime.utcnow().isoformat()
-        _increment_count += 1
-        if _increment_count % _PERSIST_INTERVAL == 0:
-            _save_to_disk()
+        _save_to_disk()
 
 
 def increment_error(source: str) -> None:
@@ -114,9 +116,11 @@ def get_stats() -> dict:
 
 
 def reset() -> None:
+    global _started_at
     with _lock:
         _total.clear()
         _daily.clear()
         _last_called.clear()
         _errors.clear()
+        _started_at = datetime.utcnow().isoformat()
         _save_to_disk()

@@ -1,6 +1,7 @@
 """Tests for the API call counter."""
 
 import threading
+from pathlib import Path
 
 from backend.app.utils import api_counter
 
@@ -42,6 +43,18 @@ class TestApiCounter:
         assert stats["sources"]["tradera"]["error_calls"] == 0
         assert stats["total_all_sources"] == 0
 
+    def test_reset_resets_started_at(self):
+        """reset() should update the 'since' timestamp to now."""
+        api_counter.reset()
+        old_since = api_counter.get_stats()["since"]
+        # Small delay to ensure timestamp differs
+        import time
+        time.sleep(0.01)
+        api_counter.reset()
+        new_since = api_counter.get_stats()["since"]
+        assert new_since != old_since, "reset() should update started_at"
+        assert new_since > old_since, "new timestamp should be later"
+
     def test_thread_safety(self):
         api_counter.reset()
 
@@ -56,3 +69,13 @@ class TestApiCounter:
             t.join()
         stats = api_counter.get_stats()
         assert stats["sources"]["tradera"]["total_calls"] == 1000
+
+    def test_persist_path_is_inside_project(self):
+        """Persist file must be inside the project root, not a parent directory."""
+        persist_path = api_counter.get_persist_path()
+        project_root = Path(__file__).resolve().parents[1]  # tests/ -> project root
+        assert str(persist_path).startswith(str(project_root)), (
+            f"Persist path {persist_path} is outside project root {project_root}"
+        )
+        assert persist_path.name == "api_counter.json"
+        assert persist_path.parent.name == "logs"
