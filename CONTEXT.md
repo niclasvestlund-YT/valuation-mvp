@@ -18,16 +18,19 @@ image upload → api/value.py → value_engine.py (orchestrates) → vision_serv
 ## File Map
 DEEP_INVESTIGATION_REPORT.md — full AI/valuation system investigation: AI usage map, pipeline analysis, QA/trust findings, prioritized opportunities
 backend/app/main.py — FastAPI app, CORS, serves frontend/index.html + frontend/admin.html, /health endpoint, DB init on startup
-backend/app/routers/admin.py — read-only admin API: DB overview, valuation metrics, table browser, index health, slow queries
+backend/app/routers/admin.py — read-only admin API: DB overview, valuation metrics, table browser, index health, slow queries, agent-stats, valor-stats
+backend/app/routers/ingest.py — POST /api/ingest + /agent/job/start + /agent/job/complete + /valor/train + /valor/rollback
 backend/app/api/value.py — POST /value + POST /feedback endpoints; saves every valuation to DB via BackgroundTasks
 backend/app/db/__init__.py — empty
 backend/app/db/database.py — async SQLAlchemy engine, session factory, init_db()
-backend/app/db/models.py — Valuation, PriceSnapshot, Product, MarketComparable, NewPriceSnapshot, ProductEmbedding ORM models
+backend/app/db/models.py — Valuation, PriceSnapshot, Product, MarketComparable, NewPriceSnapshot, AgentJob, PriceObservation, TrainingSample, ValorModel, ValorEstimate, PriceStatistic, ProductEmbedding ORM models
 backend/app/db/crud.py — save_valuation, save_price_snapshot, save_feedback, upsert_product, upsert_comparables, get_cached_comparables, upsert_new_price, get_latest_new_price
 backend/app/services/data_validator.py — ingestion validator for market comparables (hard rejects + soft warnings)
 backend/app/services/crawler_service.py — background crawler for pre-populating comparable cache from seed products
 backend/app/data/seed_products.json — 80 seed products across 3 priority tiers for crawler
 scripts/crawl_prices.py — CLI to run crawler: --priority, --max, --with-new-prices, --dry-run
+scripts/train_valor.py — VALOR ML training: ETL → quality scoring → XGBoost → model registry; --dry-run, --force, --min-samples, --product
+backend/app/services/valor_service.py — VALOR XGBoost wrapper: predict(), reload_model(), mock mode; never crashes
 backend/app/services/embedding_service.py — SigLIP/CLIP embedding service for product image similarity (768-dim, pgvector)
 backend/app/services/ocr_service.py — OCR orchestrator: Google Vision → EasyOCR → empty fallback
 backend/app/services/ocr_verification.py — cross-verify OCR text/logos against Vision identification
@@ -58,6 +61,7 @@ backend/app/integrations/prisjakt_client.py — stub; Prisjakt blocks server-sid
 backend/app/integrations/serpapi_used_market_client.py — SerpAPI used market supplement (optional fallback only)
 backend/app/integrations/new_price_search_client.py — SerpAPI Google Shopping new price (fallback only)
 backend/app/schemas/product_identification.py — vision output schema
+backend/app/schemas/assistant.py — QuickReply + AssistantContext for Prisassistent conversation layer
 backend/app/schemas/market_comparable.py — market comparable schema
 backend/app/utils/cache.py — simple in-memory TTL cache (1h default); used by blocket_client + serper_new_price_client
 backend/app/utils/error_reporting.py — structured JSON error logging to logs/errors.jsonl
@@ -67,7 +71,7 @@ backend/app/middleware/__init__.py — empty
 backend/app/middleware/request_id.py — RequestIdMiddleware: injects UUID per request, sets request_id_var, adds X-Request-ID header
 tests/test_logger.py — 10 tests: JSON fields, request_id propagation, log levels, exc_info
 frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
-frontend/admin.html — vanilla JS admin dashboard; tabs: DB overview, valuations metrics, table browser, index health
+frontend/admin.html — vanilla JS admin dashboard; tabs: DB overview, valuations, crawl, OCR, agent (körhistorik + datakvalitet)
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
@@ -83,6 +87,10 @@ tests/test_pipeline_integration.py — 13 integration tests (normalization→val
 tests/test_data_quality.py — 12 data quality invariant tests (thresholds, seed products, validator)
 tests/test_ocr_service.py — 11 tests for OCR clients and service (mock mode, fallback chain)
 tests/test_ocr_verification.py — 14 tests for OCR cross-verification (brand/model match, contradictions)
+tests/test_valor_service.py — 7 tests for VALOR ML service (mock mode, sanity checks, no-crash)
+tests/test_ingest_endpoint.py — 8 tests for /api/ingest validation (price limits, accessory flags, truncation)
+tests/test_training_pipeline.py — 10 tests for VALOR training ETL (quality scores, encoding, inclusion criteria)
+tests/test_assistant_context.py — 33 tests for Prisassistent (confirmation normalization, phase derivation, quick replies, guardrails)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -106,6 +114,10 @@ GET /admin/metrics — valuation counts, confidence, status/brand/category break
 GET /admin/table/{name} — paginated rows for any public table (25/page)
 GET /admin/index-health — seq scan ratios to spot missing indexes
 GET /admin/slow-queries — currently running queries >500ms
+GET /admin/agent-stats — agent observations, jobs, coverage, stale products, suspicious rate
+POST /api/ingest — accepts list of price observations from agents (X-Admin-Key auth); validates, flags suspicious, returns accept/reject counts
+POST /api/agent/job/start — create agent job record, returns job_id (X-Admin-Key auth)
+POST /api/agent/job/complete — finalize agent job with results (X-Admin-Key auth)
 GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": {...}} with per-service config state
 
 ## Env Vars
@@ -144,6 +156,9 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-27 — feat: Prisassistent slice 1 — AssistantContext on ValueEnvelope, confirmation normalization (ja/japp/stämmer→yes), phase derivation (confirming/correcting/complete/unsupported), quick_replies, frontend data-driven confirm buttons, 236 tests pass
+2026-03-27 — feat: VALOR ML complete — 6 new tables, XGBoost training pipeline, ValorService, /api/ingest + /valor/train + /valor/rollback, VALOR section in frontend, VALOR & Agent admin tab, web-agent exporter, 203 tests pass
+2026-03-27 — feat: agent integration — Alembic migration (price_observation + agent_job tables), POST /api/ingest with validation/suspicious flagging, GET /admin/agent-stats, Agent tab in admin UI
 2026-03-27 — feat: Facebook Marketplace client via DuckDuckGo — no API key, integrated into market_data_service
 2026-03-27 — feat: Phase 4 OCR — Google Vision + EasyOCR clients, OCR service, cross-verification, pipeline integration (169 tests)
 2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
@@ -156,15 +171,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-25 — docs: deep investigation report; AI usage map, pipeline analysis, 10 prioritized opportunities, evaluation plan, QA/trust findings
 2026-03-25 — fix: vision prompt rewrite for better product identification; chain-of-thought procedure (brand→line→generation→variant→cross-check); specificity examples; product knowledge hints (DJI Osmo Pocket 1/2/3, Sony WH-1000XM4/5); adjusted confidence bands (0.80–0.89 for design-based generation ID); camera-specific requested angles; 66 tests pass
 2026-03-25 — feat: improved pricing model; FIX 1 depreciation fallback (0 comps + new price → depreciation_estimate, conf=0.35); FIX 2 graduated confidence penalty replaces hard MIN_RELEVANT_COMPARABLES=3 gate; FIX 3 percentile range (p15/p85 for ≥4 comps, ±15% otherwise); FIX 4 CANONICAL comment + legacy deprecation; FIX 5 calibration table; FIX 6 response_time_ms on all return paths; 66 tests pass
-2026-03-25 — fix: Osmo Action scoring — DJI brand inference, relaxed core-token match (score 0.65), qualifier penalty (score_cap 0.52), candidate model substring guard; Tradera fallback skips broad "DJI Osmo" query; new price rejects bundle/combo variants; 66 tests pass
-2026-03-25 — fix: vision brand inference for DJI Action cameras; prompt now maps "Action 5 Pro" → DJI; expanded text evidence keywords (branding, reads, says, visible on, printed on, stamped, embossed); AMBIGUOUS_IDENTIFICATION_CONFIDENCE_THRESHOLD lowered 0.90→0.80
-2026-03-25 — fix: 5 DB issues; confidence_score→confidence, _persist_valuation try/except, indexes on status/brand/category, admin.py→SQLAlchemy pool, condition+response_time_ms fields
-2026-03-25 — docs: DB + Git review; found confidence_score bug, missing indexes, pool bypass, dual-path create_all
-2026-03-25 — security: XSS fix, admin auth via X-Admin-Key, CORS restricted to ALLOWED_ORIGINS, bypassPermissions
-2026-03-25 — docs: full architecture review
-2026-03-25 — infra: GitHub workflow; remote added, develop/staging/main branches, CONTRIBUTING.md
-2026-03-25 — feat: Railway deployment, production hardening, structured logging, admin dashboard
-2026-03-24 — frontend rewrite: premium Klarna-style design system; pipeline fixes; bug sweep (14 issues)
+2026-03-25 — fix: Osmo Action scoring, vision brand inference for DJI; expanded text evidence keywords
 
 ## Next Up
 [Empty — add manually]
