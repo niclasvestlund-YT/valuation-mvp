@@ -20,7 +20,8 @@ class QuickReply(BaseModel):
 
 class AssistantContext(BaseModel):
     """Conversation state + next-step guidance attached to every ValueEnvelope."""
-    phase: str                              # confirming | correcting | complete | unsupported
+    phase: str                              # confirming | awaiting_condition | awaiting_bundle | awaiting_shipping | awaiting_goal | correcting | ready | unsupported
     prompt: str                             # Swedish user-facing prompt
     quick_replies: list[QuickReply] = Field(default_factory=list)
     guardrail_message: str | None = None    # Set when request is out of scope
+    strategy_summary: str | None = None     # Pricing strategy text, set at ready phase when goal is known
