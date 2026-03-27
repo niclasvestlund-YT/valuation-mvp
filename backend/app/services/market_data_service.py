@@ -2,6 +2,7 @@ import re
 from datetime import UTC, datetime
 
 from backend.app.integrations.blocket_client import BlocketClient
+from backend.app.integrations.facebook_marketplace_client import FacebookMarketplaceClient
 from backend.app.integrations.serpapi_used_market_client import SerpApiUsedMarketClient
 from backend.app.integrations.tradera_client import TraderaClient
 from backend.app.schemas.market_comparable import MarketComparable
@@ -96,10 +97,12 @@ class MarketDataService:
         tradera_client: TraderaClient | None = None,
         blocket_client: BlocketClient | None = None,
         serpapi_used_market_client: SerpApiUsedMarketClient | None = None,
+        facebook_marketplace_client: FacebookMarketplaceClient | None = None,
     ) -> None:
         self.tradera_client = tradera_client or TraderaClient()
         self.blocket_client = blocket_client or BlocketClient()
         self.serpapi_used_market_client = serpapi_used_market_client or SerpApiUsedMarketClient()
+        self.facebook_marketplace_client = facebook_marketplace_client or FacebookMarketplaceClient()
 
     def get_comparables(
         self,
@@ -128,6 +131,24 @@ class MarketDataService:
             model,
             len(blocket_results),
         )
+
+        # ── Facebook Marketplace (via DuckDuckGo, no API key) ─────────────────
+        fb_results: list[MarketComparable] = []
+        try:
+            fb_results = self.facebook_marketplace_client.search(exact_query, category=category)
+            logger.info(
+                "market_data.facebook.results brand=%s model=%s count=%s",
+                brand,
+                model,
+                len(fb_results),
+            )
+        except Exception as exc:
+            logger.warning(
+                "market_data.facebook.failed brand=%s model=%s error=%s",
+                brand,
+                model,
+                exc,
+            )
 
         # ── Tradera (primary, requires credentials) ───────────────────────────
         # Progressive fallback: each tier only runs if the previous returned < 5 results.
@@ -170,7 +191,7 @@ class MarketDataService:
             )
 
         # ── Merge primary sources ─────────────────────────────────────────────
-        deduped_results = self._dedupe_by_listing_id([*tradera_results, *blocket_results])
+        deduped_results = self._dedupe_by_listing_id([*tradera_results, *blocket_results, *fb_results])
 
         # ── SerpAPI fallback — only when primary sources returned nothing ────
         # Skipped entirely when SERPAPI_API_KEY is absent.

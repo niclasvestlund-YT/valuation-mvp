@@ -21,3 +21,4 @@ easyocr>=1.7.0
 slowapi
 # Used market data
 blocket-api
+ddgs

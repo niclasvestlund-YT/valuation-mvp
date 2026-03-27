@@ -51,6 +51,7 @@ backend/app/services/image_preprocess.py — image conversion, resizing, HEIC su
 backend/app/services/outlier_filter.py — MAD/IQR outlier removal
 backend/app/services/depreciation_rules.py — depreciation rate ranges by category
 backend/app/integrations/tradera_client.py — Tradera SOAP API client, Swedish marketplace
+backend/app/integrations/facebook_marketplace_client.py — FB Marketplace via DuckDuckGo index (no API key, no FB account)
 backend/app/integrations/blocket_client.py — Blocket used-market search via blocket-api package; no API key needed; 1h in-memory cache
 backend/app/integrations/serper_new_price_client.py — Serper.dev Google Shopping new price (primary); requires SERPER_DEV_API_KEY; 1h cache
 backend/app/integrations/prisjakt_client.py — stub; Prisjakt blocks server-side requests (HTTP 403); documents investigation
@@ -143,6 +144,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-27 — feat: Facebook Marketplace client via DuckDuckGo — no API key, integrated into market_data_service
 2026-03-27 — feat: Phase 4 OCR — Google Vision + EasyOCR clients, OCR service, cross-verification, pipeline integration (169 tests)
 2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
 2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
