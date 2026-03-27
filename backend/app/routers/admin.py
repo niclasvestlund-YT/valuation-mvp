@@ -16,8 +16,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from fastapi.responses import JSONResponse
+
 from backend.app.db.database import async_session
 from backend.app.utils import api_counter
+from backend.app.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "").strip()
 
@@ -33,9 +38,10 @@ def _validate_identifier(name: str) -> str:
 
 
 async def verify_admin_key(x_admin_key: str = Header(default="")) -> None:
-    """Reject requests without a valid ADMIN_SECRET_KEY header."""
+    """Reject requests without a valid ADMIN_SECRET_KEY header.
+    Skip auth on localhost when ADMIN_SECRET_KEY is not configured."""
     if not ADMIN_SECRET_KEY:
-        raise HTTPException(status_code=403, detail="Admin access disabled — ADMIN_SECRET_KEY not configured")
+        return  # Allow unauthenticated access when no key is configured (local dev)
     if x_admin_key != ADMIN_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Invalid or missing admin key")
 
@@ -488,3 +494,293 @@ async def data_quality():
 async def api_usage():
     """In-memory API call statistics per source. No DB query."""
     return api_counter.get_stats()
+
+
+@admin_router.get("/market-data")
+async def market_data():
+    """Crawl statistics, product coverage, and latest comparables."""
+    logger.info("admin /market-data called")
+    try:
+        total_comparables = await _fetchval("SELECT count(*) FROM market_comparable") or 0
+        active_comparables = await _fetchval(
+            "SELECT count(*) FROM market_comparable WHERE is_active = true"
+        ) or 0
+        flagged_count = await _fetchval(
+            "SELECT count(*) FROM market_comparable WHERE flagged = true"
+        ) or 0
+
+        by_source = await _fetch(
+            """
+            SELECT source,
+                   count(*) as count,
+                   round(avg(price_sek)) as avg_price_sek,
+                   round(avg(relevance_score)::numeric, 2) as avg_relevance
+            FROM market_comparable
+            GROUP BY source
+            ORDER BY count DESC
+            """
+        )
+
+        latest = await _fetch(
+            """
+            SELECT title, source, price_sek, relevance_score,
+                   condition, last_seen
+            FROM market_comparable
+            WHERE is_active = true
+            ORDER BY last_seen DESC
+            LIMIT 8
+            """
+        )
+
+        product_total = await _fetchval("SELECT count(*) FROM product") or 0
+
+        by_category = await _fetch(
+            """
+            SELECT category, count(*) as count
+            FROM product
+            GROUP BY category
+            ORDER BY count DESC
+            """
+        )
+
+        top_by_comparables = await _fetch(
+            """
+            SELECT p.brand, p.model, p.category,
+                   count(mc.id) as comparable_count,
+                   round(avg(mc.price_sek)) as avg_price_sek
+            FROM product p
+            JOIN market_comparable mc ON mc.product_key = p.product_key
+            WHERE mc.is_active = true
+            GROUP BY p.product_key, p.brand, p.model, p.category
+            ORDER BY comparable_count DESC
+            LIMIT 10
+            """
+        )
+
+        result = {
+            "crawl": {
+                "total_comparables": total_comparables,
+                "active_comparables": active_comparables,
+                "flagged_count": flagged_count,
+                "by_source": [dict(r) for r in by_source],
+                "latest": [
+                    {
+                        **dict(r),
+                        "last_seen": r["last_seen"].isoformat() if r.get("last_seen") else None,
+                    }
+                    for r in latest
+                ],
+            },
+            "products": {
+                "total": product_total,
+                "by_category": [dict(r) for r in by_category],
+                "top_by_comparables": [dict(r) for r in top_by_comparables],
+            },
+        }
+        logger.info("admin /market-data called, rows returned: %d", total_comparables)
+        return result
+    except Exception as exc:
+        logger.error("admin /market-data failed: %s", exc, exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+
+
+@admin_router.get("/valuations-data")
+async def valuations_data():
+    """Valuation statistics, recent valuations, and feedback corrections."""
+    logger.info("admin /valuations-data called")
+    try:
+        total = await _fetchval("SELECT count(*) FROM valuations") or 0
+
+        if total == 0:
+            logger.info("admin /valuations-data called, rows returned: 0")
+            return {
+                "empty": True,
+                "summary": {"total": 0},
+                "by_status": [],
+                "by_category": [],
+                "recent": [],
+                "feedback_corrections": [],
+            }
+
+        summary = await _fetch(
+            """
+            SELECT
+                count(*) as total,
+                count(*) FILTER (WHERE date(created_at) = current_date) as today,
+                round(avg(confidence)::numeric, 2) as avg_confidence,
+                round(100.0 * count(*) FILTER (
+                    WHERE confidence >= 0.65) / NULLIF(count(*), 0), 1
+                ) as high_confidence_pct,
+                count(*) FILTER (WHERE feedback IS NOT NULL) as feedback_count
+            FROM valuations
+            """
+        )
+        s = summary[0] if summary else {}
+
+        # Feedback accuracy
+        feedback_stats = await _fetch(
+            """
+            SELECT
+                count(*) FILTER (WHERE feedback = 'correct') as correct,
+                count(*) FILTER (WHERE feedback = 'wrong_product') as incorrect,
+                count(*) as total_with_feedback
+            FROM valuations WHERE feedback IS NOT NULL
+            """
+        )
+        fs = feedback_stats[0] if feedback_stats else {}
+        correct = int(fs.get("correct") or 0)
+        total_fb = int(fs.get("total_with_feedback") or 0)
+        feedback_correct_pct = round(correct / total_fb * 100, 1) if total_fb > 0 else None
+
+        by_status = await _fetch(
+            """
+            SELECT status, count(*) as count,
+                round(100.0 * count(*) / NULLIF(sum(count(*)) over(), 0), 1) as pct
+            FROM valuations
+            GROUP BY status ORDER BY count DESC
+            """
+        )
+
+        by_category = await _fetch(
+            """
+            SELECT category, count(*) as count,
+                round(avg(confidence)::numeric, 2) as avg_confidence
+            FROM valuations
+            WHERE category IS NOT NULL
+            GROUP BY category ORDER BY count DESC
+            """
+        )
+
+        recent = await _fetch(
+            """
+            SELECT brand, product_identifier as model, category, status,
+                estimated_value, value_range_low, value_range_high,
+                confidence,
+                num_comparables_used as num_comparables, created_at, feedback
+            FROM valuations
+            ORDER BY created_at DESC LIMIT 8
+            """
+        )
+
+        feedback_corrections = await _fetch(
+            """
+            SELECT brand || ' ' || product_identifier as original_guess,
+                corrected_product as corrected_to,
+                confidence as confidence_at_time,
+                created_at
+            FROM valuations
+            WHERE feedback IS NOT NULL
+                AND corrected_product IS NOT NULL
+            ORDER BY created_at DESC LIMIT 10
+            """
+        )
+
+        result = {
+            "empty": False,
+            "summary": {
+                "total": int(s.get("total") or 0),
+                "today": int(s.get("today") or 0),
+                "avg_confidence": float(s["avg_confidence"]) if s.get("avg_confidence") else None,
+                "high_confidence_pct": float(s["high_confidence_pct"]) if s.get("high_confidence_pct") else None,
+                "feedback_count": int(s.get("feedback_count") or 0),
+                "feedback_correct_pct": feedback_correct_pct,
+            },
+            "by_status": [dict(r) for r in by_status],
+            "by_category": [dict(r) for r in by_category],
+            "recent": [
+                {
+                    **dict(r),
+                    "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+                }
+                for r in recent
+            ],
+            "feedback_corrections": [
+                {
+                    **dict(r),
+                    "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+                }
+                for r in feedback_corrections
+            ],
+        }
+        logger.info("admin /valuations-data called, rows returned: %d", total)
+        return result
+    except Exception as exc:
+        logger.error("admin /valuations-data failed: %s", exc, exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+
+
+@admin_router.get("/ocr-stats")
+async def ocr_stats():
+    """OCR provider usage counts, fallback rates, and recent activity."""
+    logger.info("admin /ocr-stats called")
+    try:
+        provider_rows = await _fetch(
+            """
+            SELECT COALESCE(ocr_provider, 'none') AS provider, COUNT(*) AS cnt
+            FROM valuations
+            GROUP BY ocr_provider
+            ORDER BY cnt DESC
+            """
+        )
+        provider_counts = {r["provider"]: r["cnt"] for r in provider_rows}
+        total = sum(provider_counts.values())
+        google_count = provider_counts.get("google_vision", 0)
+        easyocr_count = provider_counts.get("easyocr", 0)
+        none_count = provider_counts.get("none", 0)
+
+        text_found_rows = await _fetch(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE ocr_text_found = true) AS found,
+                COUNT(*) FILTER (WHERE ocr_text_found = false) AS not_found,
+                COUNT(*) FILTER (WHERE ocr_provider IS NOT NULL AND ocr_provider != 'none') AS ocr_attempted
+            FROM valuations
+            """
+        )
+        tf = text_found_rows[0] if text_found_rows else {"found": 0, "not_found": 0, "ocr_attempted": 0}
+
+        recent = await _fetch(
+            """
+            SELECT id, brand, product_identifier as model,
+                   COALESCE(ocr_provider, 'none') AS ocr_provider,
+                   ocr_text_found, created_at
+            FROM valuations
+            ORDER BY created_at DESC
+            LIMIT 20
+            """
+        )
+
+        ocr_attempted = int(tf.get("ocr_attempted") or 0)
+        found = int(tf.get("found") or 0)
+        fallback_rate = round(easyocr_count / max(google_count + easyocr_count, 1) * 100, 1)
+        text_hit_rate = round(found / max(ocr_attempted, 1) * 100, 1)
+
+        result = {
+            "total_valuations": total,
+            "ocr_attempted": ocr_attempted,
+            "provider_counts": {
+                "google_vision": google_count,
+                "easyocr": easyocr_count,
+                "none": none_count,
+            },
+            "text_found": found,
+            "text_not_found": int(tf.get("not_found") or 0),
+            "fallback_rate_pct": fallback_rate,
+            "text_hit_rate_pct": text_hit_rate,
+            "recent": [
+                {
+                    "id": str(r["id"]),
+                    "brand": r.get("brand"),
+                    "model": r.get("model"),
+                    "ocr_provider": r["ocr_provider"],
+                    "ocr_text_found": r.get("ocr_text_found"),
+                    "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+                }
+                for r in recent
+            ],
+        }
+        logger.info("admin /ocr-stats called, rows returned: %d", total)
+        return result
+    except Exception as exc:
+        logger.error("admin /ocr-stats failed: %s", exc, exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})

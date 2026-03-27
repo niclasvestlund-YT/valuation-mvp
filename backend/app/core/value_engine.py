@@ -574,21 +574,30 @@ class ValueEngine:
                     raw_b64 = first_image_b64.split(",", 1)[-1] if "," in first_image_b64 else first_image_b64
                     image_bytes = _b64.b64decode(raw_b64)
                     ocr_result = self.ocr_service.detect(image_bytes)
+                    # Always record provider, even if no text found
+                    ocr_evidence = {
+                        "text": ocr_result.detected_text[:3],
+                        "logos": ocr_result.detected_logos[:3],
+                        "source": ocr_result.source,
+                        "provider": ocr_result.provider,
+                        "text_found": ocr_result.text_found,
+                        "brand_match": False,
+                        "model_match": False,
+                        "contradiction": False,
+                        "confidence_delta": 0.0,
+                    }
                     if ocr_result.has_text or ocr_result.has_logos:
                         verification = verify_ocr_against_identification(
                             ocr_result,
                             brand=resolved_identification.brand,
                             model=resolved_identification.model,
                         )
-                        ocr_evidence = {
-                            "text": ocr_result.detected_text[:3],
-                            "logos": ocr_result.detected_logos[:3],
-                            "source": ocr_result.source,
+                        ocr_evidence.update({
                             "brand_match": verification.brand_match,
                             "model_match": verification.model_match,
                             "contradiction": verification.has_contradiction,
                             "confidence_delta": verification.confidence_delta,
-                        }
+                        })
                         # Apply confidence adjustment
                         new_confidence = round(
                             max(0.0, min(1.0, resolved_identification.confidence + verification.confidence_delta)),
@@ -912,4 +921,5 @@ class ValueEngine:
             ),
             "debug_id": resolved_identification.request_id,
             "response_time_ms": int((time.monotonic() - _start) * 1000),
+            "_ocr_evidence": ocr_evidence,
         }

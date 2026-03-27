@@ -36,7 +36,7 @@ async def agent_chat(req: AgentRequest):
     if not settings.agent_enabled:
         raise HTTPException(status_code=503, detail="Agent is not enabled")
 
-    logger.info("agent.chat_request", extra={"message": req.message[:100]})
+    logger.info("agent.chat_request", extra={"user_message": req.message[:100]})
 
     # Step 1: Find the product in OUR database
     intent = await parse_user_intent(req.message)

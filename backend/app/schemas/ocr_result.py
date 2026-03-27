@@ -12,6 +12,8 @@ class OcrResult:
     source: str = "none"
     raw_confidence: float = 0.0
     processing_time_ms: int = 0
+    provider: str = "none"        # "google_vision" | "easyocr" | "none"
+    text_found: bool = False      # True if OCR found any text
 
     @classmethod
     def empty(cls) -> "OcrResult":

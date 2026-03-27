@@ -398,6 +398,8 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
             "condition": response_payload.get("_condition"),
             "response_time_ms": response_payload.get("_response_time_ms"),
             "market_data_json": market_data if market_data else None,
+            "ocr_provider": (response_payload.get("_ocr_evidence") or {}).get("provider"),
+            "ocr_text_found": (response_payload.get("_ocr_evidence") or {}).get("text_found"),
         }
 
         # Compute and store product_key

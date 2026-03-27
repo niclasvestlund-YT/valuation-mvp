@@ -44,6 +44,10 @@ class Valuation(Base):
     sources_json = Column(JSONB)
     market_data_json = Column(JSONB, nullable=True)
 
+    # OCR tracking
+    ocr_provider = Column(String(50), nullable=True, index=True)   # "google_vision" | "easyocr" | None
+    ocr_text_found = Column(Boolean, nullable=True)
+
     # Product identity link
     product_key = Column(String, nullable=True, index=True)  # "sony_wh-1000xm5"
 

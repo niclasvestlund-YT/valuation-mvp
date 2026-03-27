@@ -28,7 +28,9 @@ class OcrService:
         if self.google_client.is_configured:
             result = self.google_client.detect(image_bytes)
             if result.has_text or result.has_logos:
-                logger.info("ocr.source_used", extra={"source": result.source})
+                result.provider = "google_vision"
+                result.text_found = result.has_text
+                logger.info("ocr.source_used", extra={"source": result.source, "provider": "google_vision"})
                 return result
             logger.info("ocr.google_vision_empty_fallback_to_easyocr")
 
@@ -36,10 +38,15 @@ class OcrService:
         if self.easyocr_client.is_configured:
             result = self.easyocr_client.detect(image_bytes)
             if result.has_text:
-                logger.info("ocr.source_used", extra={"source": result.source})
+                result.provider = "easyocr"
+                result.text_found = True
+                logger.info("ocr.source_used", extra={"source": result.source, "provider": "easyocr"})
                 return result
             logger.info("ocr.easyocr_empty")
 
         # No OCR results available
         logger.info("ocr.no_results")
-        return OcrResult.empty()
+        empty = OcrResult.empty()
+        empty.provider = "none"
+        empty.text_found = False
+        return empty
