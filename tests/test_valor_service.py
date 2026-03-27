@@ -49,7 +49,6 @@ class TestValorService(unittest.TestCase):
 
     def test_valor_sanity_check_rejects_extreme_predictions(self):
         """Predictions <50 or >200000 should be filtered to None."""
-        import numpy as np
         from backend.app.services.valor_service import ValorService
         with patch.dict(os.environ, {"USE_MOCK_VALOR": "false"}, clear=False):
             svc = ValorService()
@@ -57,7 +56,7 @@ class TestValorService(unittest.TestCase):
             # Mock a model that returns 10 (too low)
             class FakeModel:
                 def predict(self, X):
-                    return np.array([10.0])
+                    return [10.0]
 
             svc.model = FakeModel()
             svc.features = [
