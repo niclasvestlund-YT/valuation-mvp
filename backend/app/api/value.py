@@ -9,6 +9,7 @@ from slowapi.util import get_remote_address
 from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.value_engine import ValueEngine
+from backend.app.schemas.assistant import AssistantContext, QuickReply
 from backend.app.db.crud import (
     find_similar_products,
     invalidate_embeddings,
@@ -79,6 +80,22 @@ _MAX_IMAGES = 8
 _MAX_TEXT_FIELD_LEN = 128
 
 
+_YES_SYNONYMS = frozenset({"yes", "ja", "japp", "jep", "stämmer", "korrekt", "rätt", "correct"})
+_NO_SYNONYMS = frozenset({"no", "nej", "nope", "fel", "wrong", "incorrect"})
+
+
+def _normalize_confirmation(raw: str | None) -> str | None:
+    """Normalize free-text confirmation to 'yes' | 'no' | None."""
+    if raw is None:
+        return None
+    cleaned = raw.strip().lower()
+    if cleaned in _YES_SYNONYMS or cleaned == "yes":
+        return "yes"
+    if cleaned in _NO_SYNONYMS or cleaned == "no":
+        return "no"
+    return None  # Unrecognized — ignore
+
+
 class ValueRequest(BaseModel):
     image: str | None = None
     images: list[str] | None = None
@@ -87,6 +104,9 @@ class ValueRequest(BaseModel):
     model: str | None = None
     category: str | None = None
     condition: str | None = None  # "excellent" | "good" | "fair" | "poor"
+    # Assistant fields — all optional, additive
+    confirmation: str | None = None          # "yes" | "no" | free-text synonym
+    previous_valuation_id: str | None = None
 
     @field_validator("condition")
     @classmethod
@@ -208,6 +228,14 @@ class ValueEnvelope(BaseModel):
     debug_summary: DebugSummaryPayload | None = None
     debug_id: str
     valuation_id: str | None = None
+    # VALOR ML estimates
+    valor_estimate_sek: int | None = None
+    valor_model_version: str | None = None
+    valor_confidence_label: str | None = None
+    valor_mae_at_prediction: float | None = None
+    valor_available: bool = False
+    # Prisassistent conversation layer
+    assistant_context: AssistantContext | None = None
 
 
 def _build_ok_user_fields(payload: dict[str, Any]) -> tuple[str, str, str | None]:
@@ -310,7 +338,109 @@ def build_user_fields(payload: dict[str, Any]) -> tuple[str, str, str | None]:
     return _build_error_user_fields(payload)
 
 
-def enrich_envelope(payload: dict[str, Any]) -> dict[str, Any]:
+def _get_product_display_name(data: dict[str, Any] | None) -> str:
+    """Extract a human-readable product name from ValueData fields."""
+    if not data:
+        return "produkten"
+    parts = [p for p in [data.get("brand"), data.get("line"), data.get("model")] if p]
+    return " ".join(parts) if parts else "produkten"
+
+
+def _build_assistant_context(
+    status: str,
+    data: dict[str, Any] | None,
+    confirmation: str | None,
+    has_images: bool,
+) -> AssistantContext | None:
+    """Build conversation-phase context from response status + user input.
+
+    Pure rule-based logic — no ML, no LLM, no DB.
+    Returns None for degraded/error statuses (no guidance possible).
+    """
+    # ── No guidance for error states ──
+    if status in {"degraded", "error"}:
+        return None
+
+    product_name = _get_product_display_name(data)
+
+    # ── User confirmed: show final result ──
+    if confirmation == "yes":
+        return AssistantContext(
+            phase="complete",
+            prompt="Här är din värdering.",
+            quick_replies=[
+                QuickReply(label="Ny värdering", action="start_over"),
+                QuickReply(label="Det var fel produkt", action="confirm_no", payload={"confirmation": "no"}),
+            ],
+        )
+
+    # ── User rejected: guide to correction ──
+    if confirmation == "no":
+        return AssistantContext(
+            phase="correcting",
+            prompt="Okej! Skriv in rätt modell eller ta en ny bild.",
+            quick_replies=[
+                QuickReply(label="Skriv modell manuellt", action="manual_input"),
+                QuickReply(label="Ta ny bild", action="add_images"),
+                QuickReply(label="Börja om", action="start_over"),
+            ],
+        )
+
+    # ── No images and no confirmation — out of scope ──
+    if not has_images and confirmation is None:
+        return AssistantContext(
+            phase="unsupported",
+            prompt="Jag kan hjälpa dig värdera en produkt.",
+            quick_replies=[
+                QuickReply(label="Fotografera en produkt", action="start_over"),
+            ],
+            guardrail_message="Ladda upp en bild på produkten du vill värdera så hjälper jag dig.",
+        )
+
+    # ── Valuation succeeded — ask for confirmation ──
+    if status in {"ok", "depreciation_estimate"}:
+        return AssistantContext(
+            phase="confirming",
+            prompt=f"Vi identifierade {product_name}. Stämmer det?",
+            quick_replies=[
+                QuickReply(label="Ja, det stämmer", action="confirm_yes", payload={"confirmation": "yes"}),
+                QuickReply(label="Nej, fel modell", action="confirm_no", payload={"confirmation": "no"}),
+            ],
+        )
+
+    # ── Ambiguous model — guide toward more info ──
+    if status == "ambiguous_model":
+        angles = (data or {}).get("requested_additional_angles") or []
+        angle_hint = f" Försök visa {', '.join(angles[:3])}." if angles else ""
+        return AssistantContext(
+            phase="correcting",
+            prompt=f"Vi är osäkra på exakt modell.{angle_hint}",
+            quick_replies=[
+                QuickReply(label="Ta ny bild", action="add_images"),
+                QuickReply(label="Skriv modell manuellt", action="manual_input"),
+                QuickReply(label="Börja om", action="start_over"),
+            ],
+        )
+
+    # ── Insufficient evidence — gentle guidance ──
+    if status == "insufficient_evidence":
+        return AssistantContext(
+            phase="correcting",
+            prompt=f"Vi kunde identifiera {product_name}, men hittade inte tillräckligt med marknadsdata.",
+            quick_replies=[
+                QuickReply(label="Prova igen", action="start_over"),
+                QuickReply(label="Skriv modell manuellt", action="manual_input"),
+            ],
+        )
+
+    return None
+
+
+def enrich_envelope(
+    payload: dict[str, Any],
+    confirmation: str | None = None,
+    has_images: bool = True,
+) -> dict[str, Any]:
     status = str(payload.get("status") or "error")
     reasons = [str(reason) for reason in payload.get("reasons", []) if reason]
     payload["warnings"] = list(dict.fromkeys(str(warning) for warning in payload.get("warnings", []) if warning))
@@ -325,6 +455,15 @@ def enrich_envelope(payload: dict[str, Any]) -> dict[str, Any]:
         REASON_DETAILS.get(reason, reason.replace("_", " ").capitalize())
         for reason in payload["reasons"]
     ]
+    # ── Assistant context (additive, never breaks existing behavior) ──
+    assistant_ctx = _build_assistant_context(
+        status=status,
+        data=payload.get("data"),
+        confirmation=confirmation,
+        has_images=has_images,
+    )
+    if assistant_ctx:
+        payload["assistant_context"] = assistant_ctx.model_dump()
     return payload
 
 
@@ -400,6 +539,10 @@ async def _persist_valuation(response_payload: dict[str, Any], valuation_id: str
             "market_data_json": market_data if market_data else None,
             "ocr_provider": (response_payload.get("_ocr_evidence") or {}).get("provider"),
             "ocr_text_found": (response_payload.get("_ocr_evidence") or {}).get("text_found"),
+            "valor_estimate_sek": response_payload.get("valor_estimate_sek"),
+            "valor_model_version": response_payload.get("valor_model_version"),
+            "valor_confidence_label": response_payload.get("valor_confidence_label"),
+            "valor_mae_at_prediction": response_payload.get("valor_mae_at_prediction"),
         }
 
         # Compute and store product_key
@@ -487,23 +630,32 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
     valuation_id = str(uuid.uuid4())
     t0 = time.monotonic()
 
+    # Normalize assistant confirmation (ja/japp/yes → "yes", nej/fel → "no")
+    _confirmed = _normalize_confirmation(req.confirmation)
+    _has_images = bool(req.images or req.image)
+
     logger.info("request.value.start", extra={
         "valuation_id": valuation_id,
-        "has_images": bool(req.images or req.image),
+        "has_images": _has_images,
         "brand_override": bool(req.brand),
         "model_override": bool(req.model),
         "condition": req.condition,
+        "confirmation": _confirmed,
     })
 
     try:
-        response_payload = enrich_envelope(value_engine.value_item(
-            images=req.images,
-            image=req.image,
-            brand=req.brand,
-            model=req.model,
-            category=req.category,
-            condition=req.condition,
-        ))
+        response_payload = enrich_envelope(
+            value_engine.value_item(
+                images=req.images,
+                image=req.image,
+                brand=req.brand,
+                model=req.model,
+                category=req.category,
+                condition=req.condition,
+            ),
+            confirmation=_confirmed,
+            has_images=_has_images,
+        )
         if response_payload.get("status") in {"degraded", "error"}:
             result = _record_failure(
                 payload=response_payload,
@@ -538,7 +690,7 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
                 ],
                 "reasons": [exc.code],
                 "debug_id": exc.request_id,
-            }),
+            }, confirmation=_confirmed, has_images=_has_images),
                 request=req,
                 error_type=type(exc).__name__,
                 technical_message=str(exc),
@@ -551,7 +703,7 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
                 "warnings": [exc.message],
                 "reasons": [exc.code],
                 "debug_id": exc.request_id,
-            }),
+            }, confirmation=_confirmed, has_images=_has_images),
                 request=req,
                 error_type=type(exc).__name__,
                 technical_message=str(exc),
@@ -567,13 +719,50 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
             ],
             "reasons": ["value_endpoint_failure"],
             "debug_id": new_debug_id("value"),
-        }),
+        }, confirmation=_confirmed, has_images=_has_images),
             request=request,
             error_type=type(exc).__name__,
             technical_message=f"{type(exc).__name__}: {exc}",
         )
 
     result["valuation_id"] = valuation_id
+
+    # ── VALOR ML estimate (never crashes) ──
+    try:
+        valor_svc = request.app.state.valor_service
+        if valor_svc and valor_svc.is_available() and result.get("status") in {"ok", "depreciation_estimate"}:
+            _data = result.get("data") or {}
+            _brand = _data.get("brand")
+            _model_id = _data.get("model")
+            _market = _data.get("market_data") or {}
+            _new_price_info = _market.get("new_price") or {}
+            _new_price = _new_price_info.get("estimated_new_price")
+            _valuation = _data.get("valuation") or {}
+            _fair = _valuation.get("fair_estimate")
+
+            _ratio = None
+            if _new_price and _fair and _new_price > 0:
+                _ratio = _fair / _new_price
+
+            from backend.app.utils.normalization import normalize_product_key as _npk
+            _pk = _npk(_brand or "", _model_id or "") if _brand and _model_id else None
+
+            if _pk:
+                valor_result = valor_svc.predict(
+                    product_key=_pk,
+                    condition=req.condition or "unknown",
+                    price_to_new_ratio=_ratio,
+                    listing_type="fixed",
+                )
+                if valor_result:
+                    result["valor_estimate_sek"] = valor_result["estimated_price_sek"]
+                    result["valor_model_version"] = valor_result["model_version"]
+                    result["valor_confidence_label"] = valor_result["confidence_label"]
+                    result["valor_mae_at_prediction"] = valor_result["mae_at_prediction"]
+                    result["valor_available"] = True
+    except Exception:
+        pass  # VALOR must never crash the value endpoint
+
     elapsed_ms = int((time.monotonic() - t0) * 1000)
     result.setdefault("response_time_ms", elapsed_ms)
     logger.info("request.value.complete", extra={

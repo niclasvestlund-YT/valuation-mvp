@@ -2193,6 +2193,60 @@
           wrap.appendChild(retBar);
         }
 
+        // ── VALOR experimental model section ──
+        if (data.valor_estimate_sek != null && data.valor_available === true) {
+          const valorWrap = el("div", "");
+          valorWrap.style.cssText = "background:var(--bg-surface);border-radius:12px;padding:14px 16px;margin-top:16px;";
+
+          // Header
+          const valorHeader = el("div", "", "VALOR — EXPERIMENTELL MODELL");
+          valorHeader.style.cssText = "font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;font-weight:600;";
+          valorWrap.appendChild(valorHeader);
+
+          // Price + confidence badge row
+          const valorRow = el("div", "");
+          valorRow.style.cssText = "display:flex;align-items:center;gap:10px;";
+
+          const valorPrice = el("div", "", formatCurrency(data.valor_estimate_sek, "SEK"));
+          valorPrice.style.cssText = "font-size:var(--text-xl);color:var(--text-muted);font-weight:600;";
+          valorRow.appendChild(valorPrice);
+
+          // Confidence badge
+          const valorConf = (data.valor_confidence || "").toLowerCase();
+          let confText = "Medium";
+          let confStyle = "background:#fef3cd;color:#7d5a00;";
+          if (valorConf === "low" || valorConf === "låg") { confText = "Låg"; confStyle = "background:var(--bg-surface);border:1px solid var(--border-subtle);color:var(--text-muted);"; }
+          else if (valorConf === "high" || valorConf === "hög") { confText = "Hög"; confStyle = "background:#e8f5ee;color:#1e6e42;"; }
+          const confBadge = el("span", "", confText);
+          confBadge.style.cssText = `font-size:var(--text-xs);border-radius:6px;padding:2px 8px;font-weight:500;${confStyle}`;
+          valorRow.appendChild(confBadge);
+          valorWrap.appendChild(valorRow);
+
+          // Info line: MAE + under evaluation
+          if (data.valor_mae != null) {
+            const valorInfo = el("div", "", `±${Math.round(data.valor_mae)} kr genomsnittlig avvikelse · Under utvärdering`);
+            valorInfo.style.cssText = "font-size:var(--text-xs);color:var(--text-faint);margin-top:6px;";
+            valorWrap.appendChild(valorInfo);
+          }
+
+          // Diff indicator vs regelbaserat
+          const ruleEstimate = valuation.fair_estimate;
+          if (ruleEstimate && data.valor_estimate_sek) {
+            const diff = data.valor_estimate_sek - ruleEstimate;
+            const pctDiff = Math.abs(diff / ruleEstimate) * 100;
+            if (pctDiff > 10) {
+              const arrow = diff > 0 ? "↑" : "↓";
+              const absDiff = Math.abs(Math.round(diff));
+              const diffLabel = diff > 0 ? `${arrow} ${formatCurrency(absDiff, "SEK")} högre` : `${arrow} ${formatCurrency(absDiff, "SEK")} lägre`;
+              const diffLine = el("div", "", diffLabel);
+              diffLine.style.cssText = "font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;";
+              valorWrap.appendChild(diffLine);
+            }
+          }
+
+          wrap.appendChild(valorWrap);
+        }
+
         // ── Comparables quick list ──
         if (allMainComparables.length > 0) {
           const compWrap = el("div", "quick-comparables-wrap");
@@ -2759,6 +2813,14 @@
         scanningScreen.classList.add("hidden");
 
         // Show confirmation step for ok/depreciation results
+        const ac = envelope.assistant_context || null;
+
+        // If assistant says "complete" (user already confirmed), skip confirm card
+        if (ac && ac.phase === "complete") {
+          _showFinalResult(envelope);
+          return;
+        }
+
         if ((status === "ok" || status === "depreciation_estimate") && envelope.data) {
           const d = envelope.data;
           const name = getDetectedProductName(d) || "Okänd produkt";
@@ -2800,17 +2862,36 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               Bekräfta produkten för att låsa upp din värdering
             </div>
-            <div class="confirm-question">Är det här din produkt?</div>
+            <div class="confirm-question">${(ac && ac.prompt) || 'Är det här din produkt?'}</div>
             <div class="confirm-sub">Bekräfta så visar vi vad den faktiskt är värd.</div>
-            <div style="display:flex;gap:10px;">
-              <button class="btn-primary" id="confirmYesBtn" style="flex:1;padding:14px;border-radius:14px;font-size:0.9375rem;">Ja, det stämmer</button>
-              <button id="confirmNoBtn" style="flex:1;padding:14px;border-radius:14px;font-size:0.9375rem;border:1.5px solid var(--border-medium);background:var(--bg-base);color:var(--text-secondary);cursor:pointer;font-family:inherit;">Nej, rätta</button>
-            </div>
+            <div id="confirmBtns" style="display:flex;gap:10px;"></div>
           `;
 
           resultScreen.appendChild(card);
-          card.querySelector("#confirmYesBtn").addEventListener("click", () => _showFinalResult(envelope));
-          card.querySelector("#confirmNoBtn").addEventListener("click", () => openCorrectionSheet(d));
+
+          // Build confirm buttons from assistant_context quick_replies (with hardcoded fallback)
+          const btnsContainer = card.querySelector("#confirmBtns");
+          const replies = (ac && ac.quick_replies && ac.quick_replies.length)
+            ? ac.quick_replies
+            : [
+                { label: "Ja, det stämmer", action: "confirm_yes" },
+                { label: "Nej, rätta", action: "confirm_no" },
+              ];
+          replies.forEach((qr, idx) => {
+            const btn = document.createElement("button");
+            btn.textContent = qr.label;
+            btn.style.cssText = "flex:1;padding:14px;border-radius:14px;font-size:0.9375rem;cursor:pointer;font-family:inherit;";
+            if (qr.action === "confirm_yes" || idx === 0) {
+              btn.className = "btn-primary";
+              btn.addEventListener("click", () => _showFinalResult(envelope));
+            } else {
+              btn.style.border = "1.5px solid var(--border-medium)";
+              btn.style.background = "var(--bg-base)";
+              btn.style.color = "var(--text-secondary)";
+              btn.addEventListener("click", () => openCorrectionSheet(d));
+            }
+            btnsContainer.appendChild(btn);
+          });
           return;
         }
 
