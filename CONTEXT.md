@@ -17,6 +17,12 @@ image upload → api/value.py → value_engine.py (orchestrates) → vision_serv
 
 ## File Map
 DEEP_INVESTIGATION_REPORT.md — full AI/valuation system investigation: AI usage map, pipeline analysis, QA/trust findings, prioritized opportunities
+docs/RAILWAY_STAGING_SETUP.md — complete Railway staging runbook: topology, env setup, migrations, seed data, verification
+docs/ENVIRONMENT_AND_DATA_PROMOTION.md — operating model: code vs schema vs data promotion, git workflow, idempotent reference data workflow
+scripts/promote_reference_data.py — idempotent reference data promotion: export → import → verify; UPSERT-based, transactional, auditable with manifest
+scripts/export_stage_seed.sql — (legacy) one-time CSV seed export; superseded by promote_reference_data.py
+scripts/import_stage_seed.sh — (legacy) one-time CSV import; superseded by promote_reference_data.py
+scripts/verify_stage_seed.sql — (legacy) post-import SQL verification; superseded by promote_reference_data.py verify
 backend/app/main.py — FastAPI app, CORS, serves frontend/index.html + frontend/admin.html, /health endpoint, DB init on startup
 backend/app/routers/admin.py — read-only admin API: DB overview, valuation metrics, table browser, index health, slow queries, agent-stats, valor-stats
 backend/app/routers/ingest.py — POST /api/ingest + /agent/job/start + /agent/job/complete + /valor/train + /valor/rollback
@@ -90,6 +96,7 @@ tests/test_ocr_verification.py — 14 tests for OCR cross-verification (brand/mo
 tests/test_valor_service.py — 7 tests for VALOR ML service (mock mode, sanity checks, no-crash)
 tests/test_ingest_endpoint.py — 8 tests for /api/ingest validation (price limits, accessory flags, truncation)
 tests/test_training_pipeline.py — 10 tests for VALOR training ETL (quality scores, encoding, inclusion criteria)
+tests/test_promote_reference_data.py — 21 tests for promotion safety (URL guards, localhost rejection, manifest, dry-run, env var mapping)
 tests/test_assistant_context.py — 33 tests for Prisassistent (confirmation normalization, phase derivation, quick replies, guardrails)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
@@ -136,8 +143,9 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - SERPAPI_LOCATION — default Sweden
 - SERPAPI_GL — default se
 - SERPAPI_HL — default sv
-- DATABASE_URL — PostgreSQL connection string; default postgresql+asyncpg://postgres:dev@localhost:5432/valuation; Railway sets this automatically
-- ADMIN_SECRET_KEY — required for /admin/* API access; admin.html prompts for it on load
+- DATABASE_URL — PostgreSQL connection string; auto-normalized from postgres:// to postgresql+asyncpg://; defaults to localhost locally, empty on Railway (fail-closed)
+- ADMIN_SECRET_KEY — required for /admin/* API access; MUST be set on Railway (admin locked without it); optional locally
+- RAILWAY_ENVIRONMENT — auto-set by Railway; "staging" or "production"; controls env detection, docs visibility, admin auth behavior
 - ALLOWED_ORIGINS — comma-separated CORS origins; default localhost only
 
 ## Response States
@@ -151,11 +159,12 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 ## Known Issues
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
-- Local PostgreSQL not installed — DB save silently fails (all writes return None)
 - SQL injection risk: admin.py table browser uses f-string SQL (mitigated by whitelist, but fragile)
-- database.py:17 create_all bypasses Alembic — dual-path table creation will cause conflicts
 
 ## Recent Changes
+2026-03-27 — fix: promotion safety v2 — strict env vars (no DATABASE_URL fallback), localhost rejection, comparable recency filter, valuation_count excluded, DB name warning, 21 promotion tests, migration/URL path docs, weekly runbook
+2026-03-27 — feat: idempotent reference data promotion — promote_reference_data.py (export/import/verify), UPSERT-based, manifest+audit, ENVIRONMENT_AND_DATA_PROMOTION.md operating model
+2026-03-27 — fix: Railway staging safety — DATABASE_URL fail-closed + auto-normalize postgres://, admin auth locked on Railway, logger file sink best-effort, proper staging/production env detection, seed export/import/verify scripts, RAILWAY_STAGING_SETUP.md runbook
 2026-03-27 — feat: Prisassistent slice 1 — AssistantContext on ValueEnvelope, confirmation normalization (ja/japp/stämmer→yes), phase derivation (confirming/correcting/complete/unsupported), quick_replies, frontend data-driven confirm buttons, 236 tests pass
 2026-03-27 — feat: VALOR ML complete — 6 new tables, XGBoost training pipeline, ValorService, /api/ingest + /valor/train + /valor/rollback, VALOR section in frontend, VALOR & Agent admin tab, web-agent exporter, 203 tests pass
 2026-03-27 — feat: agent integration — Alembic migration (price_observation + agent_job tables), POST /api/ingest with validation/suspicious flagging, GET /admin/agent-stats, Agent tab in admin UI
@@ -169,9 +178,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-26 — refactor: thresholds.py (40+ constants), golden tests (7 cases, 73 total), calibration logging, market_data_json persisted, valuation-mvp/ removed from git
 2026-03-25 — feat: rate limiting (slowapi 10/min), hide /docs in prod, temperature=0 on vision, vision cache SHA-256, Tradera rate-limit logging
 2026-03-25 — docs: deep investigation report; AI usage map, pipeline analysis, 10 prioritized opportunities, evaluation plan, QA/trust findings
-2026-03-25 — fix: vision prompt rewrite for better product identification; chain-of-thought procedure (brand→line→generation→variant→cross-check); specificity examples; product knowledge hints (DJI Osmo Pocket 1/2/3, Sony WH-1000XM4/5); adjusted confidence bands (0.80–0.89 for design-based generation ID); camera-specific requested angles; 66 tests pass
-2026-03-25 — feat: improved pricing model; FIX 1 depreciation fallback (0 comps + new price → depreciation_estimate, conf=0.35); FIX 2 graduated confidence penalty replaces hard MIN_RELEVANT_COMPARABLES=3 gate; FIX 3 percentile range (p15/p85 for ≥4 comps, ±15% otherwise); FIX 4 CANONICAL comment + legacy deprecation; FIX 5 calibration table; FIX 6 response_time_ms on all return paths; 66 tests pass
-2026-03-25 — fix: Osmo Action scoring, vision brand inference for DJI; expanded text evidence keywords
+2026-03-25 — fix+feat: vision prompt rewrite, pricing model improvements, Osmo scoring, brand inference, rate limiting
 
 ## Next Up
 [Empty — add manually]
