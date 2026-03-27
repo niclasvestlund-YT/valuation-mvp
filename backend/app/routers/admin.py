@@ -492,8 +492,16 @@ async def data_quality():
 
 @admin_router.get("/api-usage")
 async def api_usage():
-    """In-memory API call statistics per source. No DB query."""
+    """API call statistics per source. Persisted to disk."""
     return api_counter.get_stats()
+
+
+@admin_router.post("/api-usage/reset")
+async def api_usage_reset():
+    """Reset all API call counters."""
+    api_counter.reset()
+    logger.info("admin /api-usage/reset called")
+    return {"ok": True}
 
 
 @admin_router.get("/market-data")

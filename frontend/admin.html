@@ -859,14 +859,17 @@
       <div class="section">
         <div class="section-label">
           API-ANVÄNDNING
-          <button class="refresh-btn" onclick="fetchApiUsage()" aria-label="Uppdatera API-statistik">
+          <button class="refresh-btn" onclick="fetchApiUsage()" aria-label="Uppdatera API-statistik" style="margin-right:4px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
           </button>
         </div>
         <div class="card">
           <div id="api-usage-header" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-3);">Laddar...</div>
           <div id="api-usage-table"></div>
-          <div class="info-footer">Räknarna nollställs vid omstart av servern.</div>
+          <div class="info-footer" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Data sparas till disk och överlever omstarter.</span>
+            <button onclick="resetApiCounters()" style="font-size:0.6875rem;color:var(--accent-danger);background:none;border:1px solid var(--accent-danger);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Nollställ</button>
+          </div>
         </div>
       </div>
 
@@ -1190,6 +1193,14 @@ async function fetchData() {
     console.warn('Admin API unavailable, using demo data:', e.message);
     useDemoData();
   }
+}
+
+async function resetApiCounters() {
+  if (!confirm('Nollställ alla API-räknare?')) return;
+  try {
+    await fetch('/admin/api-usage/reset', { method: 'POST', headers });
+    fetchApiUsage();
+  } catch (e) { console.warn('Reset failed:', e); }
 }
 
 async function fetchApiUsage() {

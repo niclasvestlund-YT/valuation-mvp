@@ -2762,18 +2762,13 @@
         if ((status === "ok" || status === "depreciation_estimate") && envelope.data) {
           const d = envelope.data;
           const name = getDetectedProductName(d) || "Okänd produkt";
-          const conf = d.confidence || 0;
-          const confPct = Math.round(conf * 100);
-          const isHigh = conf >= 0.75;
+          const confVal = d.confidence || 0;
+          const confPct = Math.round(confVal * 100);
+          const isHigh = confVal >= 0.75;
           const category = d.category || "";
           const brand = d.brand || "";
           const valuation = d.valuation || {};
           const fairEst = valuation.fair_estimate;
-
-          // Build similar product suggestions for correction
-          const candidates = (d.candidate_models || []).slice(0, 4);
-          const suggestionsData = candidates.map(c => ({ name: c, sub: `${brand} · Alternativ`, custom: false }));
-          suggestionsData.push({ name: "Annan produkt...", sub: "Skriv in manuellt", custom: true });
 
           const card = document.createElement("div");
           card.className = "confirm-card";
@@ -2805,130 +2800,17 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               Bekräfta produkten för att låsa upp din värdering
             </div>
-            <div id="confirmQuestionArea">
-              <div class="confirm-question">Är det här din produkt?</div>
-              <div class="confirm-sub">Bekräfta så visar vi vad den faktiskt är värd.</div>
-            </div>
-            <div class="confirm-btns" id="confirmMainBtns">
-              <button class="btn-primary" id="confirmYes">Ja, det stämmer</button>
-              <button class="btn-secondary" id="confirmNo" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border-medium);background:transparent;cursor:pointer;font-size:0.9375rem;">Nej, inte riktigt</button>
-            </div>
-            <button class="btn-unsure" id="confirmUnsure">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-              Vet inte riktigt vad det är
-            </button>
-            <div class="confirm-correction" id="confirmCorrection">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                <div style="font-size:0.8125rem;color:var(--text-muted);">Vad är det <strong style="color:var(--text-primary)">egentligen</strong> för produkt?</div>
-                <button id="confirmCancelCorrection" style="font-size:0.75rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;">Avbryt</button>
-              </div>
-              <div class="confirm-search">
-                <svg class="confirm-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input type="text" id="confirmSearchInput" placeholder="Sök produkt, märke eller modell...">
-              </div>
-              <div class="confirm-suggestions" id="confirmSuggestions"></div>
-              <div class="confirm-selected" id="confirmSelected"><span style="font-size:1.125rem;">&#10003;</span> <span id="confirmSelectedText">Produkt vald</span></div>
-              <button class="btn-primary" id="confirmProceed" style="display:none;width:100%;margin-top:10px;">Visa värdering</button>
-              <div id="confirmWriteOwn" style="display:none;display:none;gap:8px;align-items:center;margin-top:8px;">
-                <input id="confirmOwnInput" type="text" placeholder="Skriv in produktnamnet..." style="flex:1;padding:11px 13px;border:1.5px dashed var(--border-medium);border-radius:10px;font-family:inherit;font-size:0.875rem;background:transparent;color:var(--text-primary);outline:none;">
-                <button id="confirmOwnBtn" class="btn-primary" style="padding:11px 16px;white-space:nowrap;">Bekräfta</button>
-              </div>
-            </div>
-            <div class="unsure-panel" id="confirmUnsurePanel">
-              <div class="unsure-title">Ingen fara — vi hjälper dig!</div>
-              <div class="unsure-body">Välj det alternativ som stämmer bäst, så justerar vi identifieringen.</div>
-              <div class="unsure-chips" id="confirmUnsureChips">
-                ${category ? `<button class="unsure-chip" data-cat="${category}">${category}</button>` : ''}
-                <button class="unsure-chip" data-action="search">Sök produkt</button>
-              </div>
+            <div class="confirm-question">Är det här din produkt?</div>
+            <div class="confirm-sub">Bekräfta så visar vi vad den faktiskt är värd.</div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn-primary" id="confirmYesBtn" style="flex:1;padding:14px;border-radius:14px;font-size:0.9375rem;">Ja, det stämmer</button>
+              <button id="confirmNoBtn" style="flex:1;padding:14px;border-radius:14px;font-size:0.9375rem;border:1.5px solid var(--border-medium);background:var(--bg-base);color:var(--text-secondary);cursor:pointer;font-family:inherit;">Nej, rätta</button>
             </div>
           `;
 
           resultScreen.appendChild(card);
-
-          // Wire up confirmation buttons
-          let selectedCorrection = null;
-
-          card.querySelector("#confirmYes").addEventListener("click", () => _showFinalResult(envelope));
-          card.querySelector("#confirmNo").addEventListener("click", () => {
-            card.querySelector("#confirmQuestionArea").style.display = "none";
-            card.querySelector("#confirmMainBtns").style.display = "none";
-            card.querySelector("#confirmUnsure").style.display = "none";
-            card.querySelector("#confirmCorrection").classList.add("open");
-            _renderConfirmSuggestions(suggestionsData);
-            setTimeout(() => card.querySelector("#confirmSearchInput").focus(), 50);
-          });
-          card.querySelector("#confirmCancelCorrection").addEventListener("click", () => {
-            card.querySelector("#confirmCorrection").classList.remove("open");
-            card.querySelector("#confirmQuestionArea").style.display = "";
-            card.querySelector("#confirmMainBtns").style.display = "";
-            card.querySelector("#confirmUnsure").style.display = "";
-          });
-          card.querySelector("#confirmUnsure").addEventListener("click", () => {
-            const panel = card.querySelector("#confirmUnsurePanel");
-            const isOpen = panel.classList.toggle("open");
-            card.querySelector("#confirmMainBtns").style.display = isOpen ? "none" : "";
-            card.querySelector("#confirmQuestionArea").style.display = isOpen ? "none" : "";
-          });
-          card.querySelectorAll(".unsure-chip").forEach(chip => {
-            chip.addEventListener("click", () => {
-              card.querySelector("#confirmUnsurePanel").classList.remove("open");
-              card.querySelector("#confirmQuestionArea").style.display = "none";
-              card.querySelector("#confirmMainBtns").style.display = "none";
-              card.querySelector("#confirmUnsure").style.display = "none";
-              card.querySelector("#confirmCorrection").classList.add("open");
-              const cat = chip.dataset.cat;
-              if (cat) card.querySelector("#confirmSearchInput").value = cat;
-              _renderConfirmSuggestions(suggestionsData);
-            });
-          });
-          card.querySelector("#confirmSearchInput").addEventListener("input", (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = q ? suggestionsData.filter(s => s.name.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q)) : suggestionsData;
-            _renderConfirmSuggestions(filtered.length ? filtered : [suggestionsData[suggestionsData.length - 1]]);
-          });
-          card.querySelector("#confirmProceed").addEventListener("click", () => {
-            if (selectedCorrection) {
-              openCorrectionSheet({ brand: "", model: selectedCorrection });
-            }
-          });
-          card.querySelector("#confirmOwnBtn").addEventListener("click", () => {
-            const val = card.querySelector("#confirmOwnInput").value.trim();
-            if (val) { selectedCorrection = val; openCorrectionSheet({ brand: "", model: val }); }
-          });
-
-          function _renderConfirmSuggestions(items) {
-            const list = card.querySelector("#confirmSuggestions");
-            list.style.display = items.length ? "" : "none";
-            list.innerHTML = items.map((s, i) => `
-              <div class="confirm-sug-item" data-idx="${i}">
-                <div class="confirm-sug-icon">${s.custom ? '&#9998;' : '&#128247;'}</div>
-                <div style="flex:1"><div class="confirm-sug-name">${s.name}</div><div class="confirm-sug-sub">${s.sub}</div></div>
-                <span style="color:var(--text-muted);">&#8250;</span>
-              </div>
-            `).join("");
-            list.querySelectorAll(".confirm-sug-item").forEach(item => {
-              item.addEventListener("click", () => {
-                const idx = parseInt(item.dataset.idx);
-                const s = items[idx];
-                if (s.custom) {
-                  list.style.display = "none";
-                  const wo = card.querySelector("#confirmWriteOwn");
-                  wo.style.display = "flex";
-                  card.querySelector("#confirmOwnInput").focus();
-                  return;
-                }
-                selectedCorrection = s.name;
-                card.querySelector("#confirmSelectedText").textContent = s.name + " vald";
-                card.querySelector("#confirmSelected").classList.add("open");
-                card.querySelector("#confirmProceed").style.display = "block";
-                list.style.display = "none";
-                card.querySelector("#confirmSearchInput").value = s.name;
-              });
-            });
-          }
-
-          lucide.createIcons();
+          card.querySelector("#confirmYesBtn").addEventListener("click", () => _showFinalResult(envelope));
+          card.querySelector("#confirmNoBtn").addEventListener("click", () => openCorrectionSheet(d));
           return;
         }
 

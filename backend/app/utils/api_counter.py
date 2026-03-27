@@ -1,13 +1,17 @@
-"""In-memory API call counter for admin dashboard.
+"""API call counter for admin dashboard.
 
-Thread-safe. Counters reset on server restart.
+Thread-safe. Persists to logs/api_counter.json so data survives server restarts.
 """
 
+import json
+import threading
 from collections import defaultdict
 from datetime import date, datetime
-import threading
+from pathlib import Path
 
 _lock = threading.Lock()
+_PERSIST_FILE = Path(__file__).resolve().parents[4] / "logs" / "api_counter.json"
+
 _total: dict[str, int] = defaultdict(int)
 _daily: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 _last_called: dict[str, str] = {}
@@ -24,17 +28,62 @@ _ALL_SOURCES = [
     "vision_openai",
 ]
 
+# How often to persist (every N increments)
+_PERSIST_INTERVAL = 5
+_increment_count = 0
+
+
+def _load_from_disk() -> None:
+    """Load persisted counters on module import."""
+    global _started_at
+    try:
+        if _PERSIST_FILE.exists():
+            data = json.loads(_PERSIST_FILE.read_text())
+            _total.update(data.get("total", {}))
+            for day, sources in data.get("daily", {}).items():
+                _daily[day].update(sources)
+            _last_called.update(data.get("last_called", {}))
+            _errors.update(data.get("errors", {}))
+            _started_at = data.get("started_at", _started_at)
+    except Exception:
+        pass  # Corrupt file — start fresh
+
+
+def _save_to_disk() -> None:
+    """Persist current state to JSON file."""
+    try:
+        _PERSIST_FILE.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "total": dict(_total),
+            "daily": {k: dict(v) for k, v in _daily.items()},
+            "last_called": dict(_last_called),
+            "errors": dict(_errors),
+            "started_at": _started_at,
+        }
+        _PERSIST_FILE.write_text(json.dumps(data, indent=2))
+    except Exception:
+        pass
+
+
+# Load on import
+_load_from_disk()
+
 
 def increment(source: str) -> None:
+    global _increment_count
     with _lock:
         _total[source] += 1
         _daily[str(date.today())][source] += 1
         _last_called[source] = datetime.utcnow().isoformat()
+        _increment_count += 1
+        if _increment_count % _PERSIST_INTERVAL == 0:
+            _save_to_disk()
 
 
 def increment_error(source: str) -> None:
     with _lock:
         _errors[source] += 1
+        _save_to_disk()
 
 
 def get_stats() -> dict:
@@ -70,3 +119,4 @@ def reset() -> None:
         _daily.clear()
         _last_called.clear()
         _errors.clear()
+        _save_to_disk()
