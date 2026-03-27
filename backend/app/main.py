@@ -16,6 +16,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from backend.app.api.agent import router as agent_router
 from backend.app.api.value import router as value_router
 from backend.app.core.config import settings
 from backend.app.core.version import VERSION
@@ -129,4 +130,5 @@ def admin_ui():
 
 
 app.include_router(value_router)
+app.include_router(agent_router)
 app.include_router(admin_router)

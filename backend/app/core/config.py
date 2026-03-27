@@ -86,6 +86,12 @@ class Settings:
     embedding_model: str
     use_mock_embedding: bool
     embedding_similarity_threshold: float
+    # Agent
+    agent_enabled: bool
+    agent_model: str
+    agent_max_tokens: int
+    agent_temperature: float
+    use_mock_agent: bool
     # Crawler
     crawler_enabled: bool
     crawler_sleep_seconds: int
@@ -149,6 +155,11 @@ settings = Settings(
     easyocr_languages=_read_env("EASYOCR_LANGUAGES") or "en,sv",
     use_mock_easyocr=_read_bool_env("USE_MOCK_EASYOCR", default=False),
     ocr_requery_on_mismatch=_read_bool_env("OCR_REQUERY_ON_MISMATCH", default=True),
+    agent_enabled=_read_bool_env("AGENT_ENABLED", default=False),
+    agent_model=_read_env("AGENT_MODEL") or "gpt-4.1-mini",
+    agent_max_tokens=_read_int_env("AGENT_MAX_TOKENS", default=500),
+    agent_temperature=float(_read_env("AGENT_TEMPERATURE") or "0.3"),
+    use_mock_agent=_read_bool_env("USE_MOCK_AGENT", default=False),
     embedding_model=_read_env("EMBEDDING_MODEL") or "google/siglip-base-patch16-224",
     use_mock_embedding=_read_bool_env("USE_MOCK_EMBEDDING", default=False),
     embedding_similarity_threshold=float(_read_env("EMBEDDING_SIMILARITY_THRESHOLD") or "0.92"),
