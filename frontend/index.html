@@ -1069,6 +1069,53 @@
         gap: 16px;
       }
 
+      /* ─── Confirmation Step ─── */
+      .confirm-card { background:var(--bg-surface-raised); border-radius:20px; padding:28px 24px 24px; box-shadow:0 2px 24px rgba(0,0,0,.06); }
+      .confirm-badge { display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:500; padding:5px 12px; border-radius:40px; }
+      .confirm-badge-high { background:rgba(52,168,115,.08); color:var(--accent-positive); }
+      .confirm-badge-med { background:rgba(212,160,23,.08); color:var(--accent-warning); }
+      .confirm-hero { display:flex; align-items:flex-start; gap:16px; margin:20px 0; }
+      .confirm-img { width:80px; height:80px; object-fit:cover; border-radius:12px; border:1px solid var(--border-subtle); flex-shrink:0; }
+      .confirm-name { font-size:1.25rem; font-weight:600; line-height:1.2; color:var(--text-primary); margin-bottom:6px; }
+      .confirm-tags { display:flex; flex-wrap:wrap; gap:6px; }
+      .confirm-tag { font-size:0.75rem; background:var(--bg-surface); color:var(--text-muted); padding:3px 10px; border-radius:40px; }
+      .confirm-specs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+      .confirm-spec { background:var(--bg-surface); border-radius:10px; padding:10px 12px; }
+      .confirm-spec-teaser { border:1.5px dashed var(--border-medium); background:linear-gradient(135deg,var(--bg-base) 0%,var(--bg-surface) 100%); }
+      .confirm-spec-label { font-size:0.6875rem; color:var(--text-muted); margin-bottom:2px; }
+      .confirm-spec-value { font-size:0.8125rem; font-weight:500; color:var(--text-primary); }
+      .blurred { filter:blur(5px); user-select:none; transition:filter .4s; }
+      .confirm-teaser-hint { display:flex; align-items:center; justify-content:center; gap:6px; font-size:0.75rem; color:var(--text-muted); margin-bottom:20px; }
+      .confirm-question { font-size:1.0625rem; font-weight:500; color:var(--text-primary); text-align:center; margin-bottom:4px; }
+      .confirm-sub { font-size:0.8125rem; color:var(--text-muted); text-align:center; margin-bottom:16px; line-height:1.4; }
+      .confirm-btns { display:flex; gap:10px; }
+      .confirm-btns .btn-primary, .confirm-btns .btn-secondary { flex:1; }
+      .btn-unsure { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin-top:10px; padding:11px; background:var(--bg-surface); color:var(--text-muted); border:1.5px solid var(--border-subtle); border-radius:10px; font-size:0.8125rem; cursor:pointer; transition:all .15s; font-family:inherit; }
+      .btn-unsure:hover { border-color:var(--text-muted); color:var(--text-secondary); }
+      .confirm-correction { display:none; margin-top:16px; padding-top:16px; animation:confirmSlide .2s ease; }
+      .confirm-correction.open { display:block; }
+      @keyframes confirmSlide { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+      .confirm-search { position:relative; margin-bottom:10px; }
+      .confirm-search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
+      .confirm-search input { width:100%; padding:11px 12px 11px 38px; border:1.5px solid var(--border-medium); border-radius:10px; font-family:inherit; font-size:0.875rem; background:var(--bg-base); color:var(--text-primary); outline:none; }
+      .confirm-search input:focus { border-color:var(--text-muted); }
+      .confirm-suggestions { background:var(--bg-surface-raised); border:1.5px solid var(--border-subtle); border-radius:10px; overflow:hidden; margin-bottom:12px; }
+      .confirm-sug-item { display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer; border-bottom:1px solid var(--border-subtle); transition:background .12s; }
+      .confirm-sug-item:last-child { border-bottom:none; }
+      .confirm-sug-item:hover { background:var(--bg-surface); }
+      .confirm-sug-icon { width:40px; height:40px; border-radius:8px; background:var(--bg-surface); display:flex; align-items:center; justify-content:center; font-size:1.125rem; color:var(--text-muted); flex-shrink:0; }
+      .confirm-sug-name { font-size:0.875rem; font-weight:500; color:var(--text-primary); }
+      .confirm-sug-sub { font-size:0.75rem; color:var(--text-muted); margin-top:1px; }
+      .confirm-selected { display:none; background:rgba(52,168,115,.06); border:1.5px solid rgba(52,168,115,.25); border-radius:10px; padding:11px 16px; margin-top:10px; align-items:center; gap:10px; animation:confirmSlide .2s ease; font-size:0.8125rem; color:var(--accent-positive); font-weight:500; }
+      .confirm-selected.open { display:flex; }
+      .unsure-panel { display:none; margin-top:14px; background:rgba(212,160,23,.06); border:1.5px solid rgba(212,160,23,.2); border-radius:10px; padding:14px 16px; animation:confirmSlide .2s ease; }
+      .unsure-panel.open { display:block; }
+      .unsure-title { font-size:0.8125rem; font-weight:500; color:var(--accent-warning); margin-bottom:6px; }
+      .unsure-body { font-size:0.8125rem; color:var(--text-secondary); line-height:1.5; }
+      .unsure-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+      .unsure-chip { padding:7px 13px; border-radius:40px; border:1.5px solid rgba(212,160,23,.2); background:var(--bg-surface-raised); color:var(--text-secondary); font-size:0.8125rem; cursor:pointer; transition:all .12s; font-family:inherit; }
+      .unsure-chip:hover { border-color:var(--accent-warning); background:rgba(212,160,23,.06); }
+
       /* ─── Manual Correction Sheet ─── */
       .overlay {
         position: fixed;
@@ -2713,43 +2760,174 @@
 
         // Show confirmation step for ok/depreciation results
         if ((status === "ok" || status === "depreciation_estimate") && envelope.data) {
-          const name = getDetectedProductName(envelope.data) || "Okänd produkt";
-          const conf = el("div", "section-card");
-          conf.style.cssText = "text-align:center;padding:32px 20px;";
+          const d = envelope.data;
+          const name = getDetectedProductName(d) || "Okänd produkt";
+          const conf = d.confidence || 0;
+          const confPct = Math.round(conf * 100);
+          const isHigh = conf >= 0.75;
+          const category = d.category || "";
+          const brand = d.brand || "";
+          const valuation = d.valuation || {};
+          const fairEst = valuation.fair_estimate;
 
-          if (currentPhotoUrl) {
-            const img = document.createElement("img");
-            img.src = currentPhotoUrl;
-            img.alt = "Produktbild";
-            img.style.cssText = "width:80px;height:80px;object-fit:cover;border-radius:12px;margin-bottom:16px;";
-            conf.appendChild(img);
+          // Build similar product suggestions for correction
+          const candidates = (d.candidate_models || []).slice(0, 4);
+          const suggestionsData = candidates.map(c => ({ name: c, sub: `${brand} · Alternativ`, custom: false }));
+          suggestionsData.push({ name: "Annan produkt...", sub: "Skriv in manuellt", custom: true });
+
+          const card = document.createElement("div");
+          card.className = "confirm-card";
+          card.innerHTML = `
+            <div style="text-align:center;margin-bottom:4px;">
+              <span class="confirm-badge ${isHigh ? 'confirm-badge-high' : 'confirm-badge-med'}">
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${isHigh ? 'var(--accent-positive)' : 'var(--accent-warning)'};"></span>
+                ${isHigh ? 'Hög' : 'Medium'} träffsäkerhet · ${confPct}%
+              </span>
+            </div>
+            <div class="confirm-hero">
+              ${currentPhotoUrl ? `<img class="confirm-img" src="${currentPhotoUrl}" alt="${name}">` : ''}
+              <div style="flex:1;">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;">Vi identifierade:</div>
+                <div class="confirm-name">${name}</div>
+                <div class="confirm-tags">
+                  ${category ? `<span class="confirm-tag">${category}</span>` : ''}
+                  ${brand ? `<span class="confirm-tag">${brand}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div class="confirm-specs">
+              <div class="confirm-spec"><div class="confirm-spec-label">Kategori</div><div class="confirm-spec-value">${category || '—'}</div></div>
+              <div class="confirm-spec"><div class="confirm-spec-label">Märke</div><div class="confirm-spec-value">${brand || '—'}</div></div>
+              <div class="confirm-spec confirm-spec-teaser"><div class="confirm-spec-label">Begagnatvärde</div><div class="confirm-spec-value blurred">${fairEst ? Math.round(fairEst).toLocaleString('sv-SE') + ' kr' : '— kr'}</div></div>
+              <div class="confirm-spec confirm-spec-teaser"><div class="confirm-spec-label">Marknadstrend</div><div class="confirm-spec-value blurred">Stabil</div></div>
+            </div>
+            <div class="confirm-teaser-hint">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Bekräfta produkten för att låsa upp din värdering
+            </div>
+            <div id="confirmQuestionArea">
+              <div class="confirm-question">Är det här din produkt?</div>
+              <div class="confirm-sub">Bekräfta så visar vi vad den faktiskt är värd.</div>
+            </div>
+            <div class="confirm-btns" id="confirmMainBtns">
+              <button class="btn-primary" id="confirmYes">Ja, det stämmer</button>
+              <button class="btn-secondary" id="confirmNo" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border-medium);background:transparent;cursor:pointer;font-size:0.9375rem;">Nej, inte riktigt</button>
+            </div>
+            <button class="btn-unsure" id="confirmUnsure">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+              Vet inte riktigt vad det är
+            </button>
+            <div class="confirm-correction" id="confirmCorrection">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="font-size:0.8125rem;color:var(--text-muted);">Vad är det <strong style="color:var(--text-primary)">egentligen</strong> för produkt?</div>
+                <button id="confirmCancelCorrection" style="font-size:0.75rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;">Avbryt</button>
+              </div>
+              <div class="confirm-search">
+                <svg class="confirm-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="confirmSearchInput" placeholder="Sök produkt, märke eller modell...">
+              </div>
+              <div class="confirm-suggestions" id="confirmSuggestions"></div>
+              <div class="confirm-selected" id="confirmSelected"><span style="font-size:1.125rem;">&#10003;</span> <span id="confirmSelectedText">Produkt vald</span></div>
+              <button class="btn-primary" id="confirmProceed" style="display:none;width:100%;margin-top:10px;">Visa värdering</button>
+              <div id="confirmWriteOwn" style="display:none;display:none;gap:8px;align-items:center;margin-top:8px;">
+                <input id="confirmOwnInput" type="text" placeholder="Skriv in produktnamnet..." style="flex:1;padding:11px 13px;border:1.5px dashed var(--border-medium);border-radius:10px;font-family:inherit;font-size:0.875rem;background:transparent;color:var(--text-primary);outline:none;">
+                <button id="confirmOwnBtn" class="btn-primary" style="padding:11px 16px;white-space:nowrap;">Bekräfta</button>
+              </div>
+            </div>
+            <div class="unsure-panel" id="confirmUnsurePanel">
+              <div class="unsure-title">Ingen fara — vi hjälper dig!</div>
+              <div class="unsure-body">Välj det alternativ som stämmer bäst, så justerar vi identifieringen.</div>
+              <div class="unsure-chips" id="confirmUnsureChips">
+                ${category ? `<button class="unsure-chip" data-cat="${category}">${category}</button>` : ''}
+                <button class="unsure-chip" data-action="search">Sök produkt</button>
+              </div>
+            </div>
+          `;
+
+          resultScreen.appendChild(card);
+
+          // Wire up confirmation buttons
+          let selectedCorrection = null;
+
+          card.querySelector("#confirmYes").addEventListener("click", () => _showFinalResult(envelope));
+          card.querySelector("#confirmNo").addEventListener("click", () => {
+            card.querySelector("#confirmQuestionArea").style.display = "none";
+            card.querySelector("#confirmMainBtns").style.display = "none";
+            card.querySelector("#confirmUnsure").style.display = "none";
+            card.querySelector("#confirmCorrection").classList.add("open");
+            _renderConfirmSuggestions(suggestionsData);
+            setTimeout(() => card.querySelector("#confirmSearchInput").focus(), 50);
+          });
+          card.querySelector("#confirmCancelCorrection").addEventListener("click", () => {
+            card.querySelector("#confirmCorrection").classList.remove("open");
+            card.querySelector("#confirmQuestionArea").style.display = "";
+            card.querySelector("#confirmMainBtns").style.display = "";
+            card.querySelector("#confirmUnsure").style.display = "";
+          });
+          card.querySelector("#confirmUnsure").addEventListener("click", () => {
+            const panel = card.querySelector("#confirmUnsurePanel");
+            const isOpen = panel.classList.toggle("open");
+            card.querySelector("#confirmMainBtns").style.display = isOpen ? "none" : "";
+            card.querySelector("#confirmQuestionArea").style.display = isOpen ? "none" : "";
+          });
+          card.querySelectorAll(".unsure-chip").forEach(chip => {
+            chip.addEventListener("click", () => {
+              card.querySelector("#confirmUnsurePanel").classList.remove("open");
+              card.querySelector("#confirmQuestionArea").style.display = "none";
+              card.querySelector("#confirmMainBtns").style.display = "none";
+              card.querySelector("#confirmUnsure").style.display = "none";
+              card.querySelector("#confirmCorrection").classList.add("open");
+              const cat = chip.dataset.cat;
+              if (cat) card.querySelector("#confirmSearchInput").value = cat;
+              _renderConfirmSuggestions(suggestionsData);
+            });
+          });
+          card.querySelector("#confirmSearchInput").addEventListener("input", (e) => {
+            const q = e.target.value.toLowerCase();
+            const filtered = q ? suggestionsData.filter(s => s.name.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q)) : suggestionsData;
+            _renderConfirmSuggestions(filtered.length ? filtered : [suggestionsData[suggestionsData.length - 1]]);
+          });
+          card.querySelector("#confirmProceed").addEventListener("click", () => {
+            if (selectedCorrection) {
+              openCorrectionSheet({ brand: "", model: selectedCorrection });
+            }
+          });
+          card.querySelector("#confirmOwnBtn").addEventListener("click", () => {
+            const val = card.querySelector("#confirmOwnInput").value.trim();
+            if (val) { selectedCorrection = val; openCorrectionSheet({ brand: "", model: val }); }
+          });
+
+          function _renderConfirmSuggestions(items) {
+            const list = card.querySelector("#confirmSuggestions");
+            list.style.display = items.length ? "" : "none";
+            list.innerHTML = items.map((s, i) => `
+              <div class="confirm-sug-item" data-idx="${i}">
+                <div class="confirm-sug-icon">${s.custom ? '&#9998;' : '&#128247;'}</div>
+                <div style="flex:1"><div class="confirm-sug-name">${s.name}</div><div class="confirm-sug-sub">${s.sub}</div></div>
+                <span style="color:var(--text-muted);">&#8250;</span>
+              </div>
+            `).join("");
+            list.querySelectorAll(".confirm-sug-item").forEach(item => {
+              item.addEventListener("click", () => {
+                const idx = parseInt(item.dataset.idx);
+                const s = items[idx];
+                if (s.custom) {
+                  list.style.display = "none";
+                  const wo = card.querySelector("#confirmWriteOwn");
+                  wo.style.display = "flex";
+                  card.querySelector("#confirmOwnInput").focus();
+                  return;
+                }
+                selectedCorrection = s.name;
+                card.querySelector("#confirmSelectedText").textContent = s.name + " vald";
+                card.querySelector("#confirmSelected").classList.add("open");
+                card.querySelector("#confirmProceed").style.display = "block";
+                list.style.display = "none";
+                card.querySelector("#confirmSearchInput").value = s.name;
+              });
+            });
           }
 
-          conf.appendChild(el("div", "product-sub", "Vi identifierade:"));
-          const nameEl = el("div", "product-name", name);
-          nameEl.style.cssText = "font-size:1.25rem;margin:8px 0 4px;";
-          conf.appendChild(nameEl);
-
-          const parts = [envelope.data.category, envelope.data.brand].filter(Boolean);
-          conf.appendChild(el("div", "product-sub", parts.join(" · ")));
-
-          const q = el("div", "", "Stämmer detta?");
-          q.style.cssText = "margin-top:20px;font-size:0.9375rem;color:var(--text-secondary);";
-          conf.appendChild(q);
-
-          const btnRow = el("div", "");
-          btnRow.style.cssText = "display:flex;gap:12px;margin-top:16px;justify-content:center;";
-          const yesBtn = el("button", "btn-primary", "Ja, visa värdering");
-          yesBtn.style.cssText += ";flex:1;max-width:200px;";
-          yesBtn.addEventListener("click", () => _showFinalResult(envelope));
-          const noBtn = el("button", "btn-secondary", "Nej, rätta");
-          noBtn.style.cssText = "flex:1;max-width:200px;padding:12px;border-radius:12px;border:1px solid var(--border-medium);background:transparent;cursor:pointer;font-size:0.9375rem;";
-          noBtn.addEventListener("click", () => openCorrectionSheet(envelope.data));
-          btnRow.appendChild(yesBtn);
-          btnRow.appendChild(noBtn);
-          conf.appendChild(btnRow);
-
-          resultScreen.appendChild(conf);
           lucide.createIcons();
           return;
         }
