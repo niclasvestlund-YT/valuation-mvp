@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import requests
 
 from backend.app.core.config import settings
+from backend.app.utils import api_counter
 
 logger = logging.getLogger(__name__)
 
@@ -121,12 +122,15 @@ class NewPriceSearchClient:
             payload = response.json()
         except requests.RequestException as exc:
             logger.warning("new_price_search.request_failed query=%s reason=%s", query, exc)
+            api_counter.increment_error("serpapi_new_price")
             return NewPriceSearchResponse(results=[], available=False, reason="request_failed")
         except ValueError as exc:
             logger.warning("new_price_search.invalid_response query=%s reason=%s", query, exc)
+            api_counter.increment_error("serpapi_new_price")
             return NewPriceSearchResponse(results=[], available=False, reason="invalid_response")
 
         results = self._extract_results(payload)
+        api_counter.increment("serpapi_new_price")
         return NewPriceSearchResponse(results=results, available=True, reason="ok")
 
     def _build_query(self, *, brand: str, model: str, category: str | None = None) -> str:

@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from backend.app.db.database import async_session
+from backend.app.utils import api_counter
 
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "").strip()
 
@@ -481,3 +482,9 @@ async def data_quality():
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@admin_router.get("/api-usage")
+async def api_usage():
+    """In-memory API call statistics per source. No DB query."""
+    return api_counter.get_stats()

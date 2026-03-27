@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from backend.app.schemas.market_comparable import MarketComparable
+from backend.app.utils import api_counter
 from backend.app.utils.cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class BlocketClient:
             response = api.search(query)
         except Exception as exc:
             logger.warning("blocket.search_failed query=%s reason=%s", query, exc)
+            api_counter.increment_error("blocket")
             return []
 
         docs: list[dict[str, Any]] = response.get("docs") or []
@@ -42,6 +44,7 @@ class BlocketClient:
             len(docs),
             len(results),
         )
+        api_counter.increment("blocket")
         set_cached(cache_key, results)
         return results
 

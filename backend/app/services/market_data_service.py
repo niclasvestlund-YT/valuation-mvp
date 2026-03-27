@@ -1,10 +1,12 @@
 import re
 from datetime import UTC, datetime
 
+import asyncio
+
 from backend.app.integrations.blocket_client import BlocketClient
-from backend.app.integrations.facebook_marketplace_client import FacebookMarketplaceClient
 from backend.app.integrations.serpapi_used_market_client import SerpApiUsedMarketClient
 from backend.app.integrations.tradera_client import TraderaClient
+from backend.app.integrations.vinted_client import fetch_vinted
 from backend.app.schemas.market_comparable import MarketComparable
 from backend.app.utils.logger import get_logger
 
@@ -97,12 +99,10 @@ class MarketDataService:
         tradera_client: TraderaClient | None = None,
         blocket_client: BlocketClient | None = None,
         serpapi_used_market_client: SerpApiUsedMarketClient | None = None,
-        facebook_marketplace_client: FacebookMarketplaceClient | None = None,
     ) -> None:
         self.tradera_client = tradera_client or TraderaClient()
         self.blocket_client = blocket_client or BlocketClient()
         self.serpapi_used_market_client = serpapi_used_market_client or SerpApiUsedMarketClient()
-        self.facebook_marketplace_client = facebook_marketplace_client or FacebookMarketplaceClient()
 
     def get_comparables(
         self,
@@ -132,19 +132,30 @@ class MarketDataService:
             len(blocket_results),
         )
 
-        # ── Facebook Marketplace (via DuckDuckGo, no API key) ─────────────────
-        fb_results: list[MarketComparable] = []
+        # ── Vinted (no API key, uses curl_cffi browser impersonation) ─────────
+        vinted_results: list[MarketComparable] = []
         try:
-            fb_results = self.facebook_marketplace_client.search(exact_query, category=category)
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+            if loop and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    vinted_results = pool.submit(
+                        asyncio.run, fetch_vinted(exact_query, category=category)
+                    ).result(timeout=12)
+            else:
+                vinted_results = asyncio.run(fetch_vinted(exact_query, category=category))
             logger.info(
-                "market_data.facebook.results brand=%s model=%s count=%s",
+                "market_data.vinted.results brand=%s model=%s count=%s",
                 brand,
                 model,
-                len(fb_results),
+                len(vinted_results),
             )
         except Exception as exc:
             logger.warning(
-                "market_data.facebook.failed brand=%s model=%s error=%s",
+                "market_data.vinted.failed brand=%s model=%s error=%s",
                 brand,
                 model,
                 exc,
@@ -191,7 +202,7 @@ class MarketDataService:
             )
 
         # ── Merge primary sources ─────────────────────────────────────────────
-        deduped_results = self._dedupe_by_listing_id([*tradera_results, *blocket_results, *fb_results])
+        deduped_results = self._dedupe_by_listing_id([*tradera_results, *blocket_results, *vinted_results])
 
         # ── SerpAPI fallback — only when primary sources returned nothing ────
         # Skipped entirely when SERPAPI_API_KEY is absent.

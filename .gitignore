@@ -1,4 +1,6 @@
 .env
+gcp-vision-key.json
+*-credentials.json
 .venv/
 .python/
 .pip-cache/

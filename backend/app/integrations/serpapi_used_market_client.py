@@ -7,6 +7,7 @@ import requests
 
 from backend.app.core.config import settings
 from backend.app.schemas.market_comparable import MarketComparable
+from backend.app.utils import api_counter
 
 logger = logging.getLogger(__name__)
 
@@ -348,6 +349,7 @@ class SerpApiUsedMarketClient:
             category,
             len(comparables),
         )
+        api_counter.increment("serpapi_used")
         return comparables
 
     def _build_queries(self, *, brand: str, model: str) -> list[str]:
@@ -399,9 +401,11 @@ class SerpApiUsedMarketClient:
             payload = response.json()
         except requests.RequestException as exc:
             logger.warning("serpapi_used_market.request_failed query=%s reason=%s", query, exc)
+            api_counter.increment_error("serpapi_used")
             return []
         except ValueError as exc:
             logger.warning("serpapi_used_market.invalid_response query=%s reason=%s", query, exc)
+            api_counter.increment_error("serpapi_used")
             return []
 
         results = payload.get("organic_results", []) or []

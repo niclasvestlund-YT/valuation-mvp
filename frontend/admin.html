@@ -426,26 +426,13 @@
     </div>
   </div>
 
-  <!-- Sources -->
+  <!-- API-användning -->
   <div class="sources-section">
-    <div class="section-label">DATAKÄLLOR</div>
-    <div class="status-bar-container" id="sources-container">
-      <div class="source-row">
-        <span class="source-name">Tradera</span>
-        <div class="source-stats"><span class="source-success">—</span></div>
-      </div>
-      <div class="source-row">
-        <span class="source-name">Blocket</span>
-        <div class="source-stats"><span class="source-success">—</span></div>
-      </div>
-      <div class="source-row">
-        <span class="source-name">Google Shopping</span>
-        <div class="source-stats"><span class="source-success">—</span></div>
-      </div>
-      <div class="source-row">
-        <span class="source-name">SerpAPI (fallback)</span>
-        <div class="source-stats"><span class="source-success">—</span></div>
-      </div>
+    <div class="section-label">API-ANVÄNDNING <button onclick="fetchApiUsage()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.6875rem;margin-left:8px;">Uppdatera</button></div>
+    <div class="status-bar-container" id="api-usage-container">
+      <div id="api-usage-header" style="font-size:0.75rem;color:var(--text-muted);padding:0 16px 10px;">Laddar...</div>
+      <div id="api-usage-table"></div>
+      <div style="font-size:0.6875rem;color:var(--text-faint);padding:10px 16px 4px;border-top:1px solid var(--border-subtle);">Räknarna nollställs vid omstart av servern.</div>
     </div>
   </div>
 
@@ -597,6 +584,48 @@ async function fetchData() {
   }
 }
 
+async function fetchApiUsage() {
+  const sourceLabels = {
+    tradera: 'Tradera', blocket: 'Blocket', vinted: 'Vinted',
+    serper_new_price: 'Google Shopping (Serper)', serpapi_used: 'SerpAPI (used)',
+    serpapi_new_price: 'SerpAPI (new price)', vision_openai: 'OpenAI Vision'
+  };
+  try {
+    const res = await fetch('/admin/api-usage', { headers });
+    if (!res.ok) throw new Error(res.statusText);
+    const data = await res.json();
+    const hdr = document.getElementById('api-usage-header');
+    hdr.textContent = `Totalt ${data.total_all_sources} anrop sedan servern startade ${data.since ? data.since.split('T')[0] : '—'}`;
+    const tbl = document.getElementById('api-usage-table');
+    let html = '';
+    for (const [key, s] of Object.entries(data.sources || {})) {
+      const label = sourceLabels[key] || key;
+      let rateColor = 'var(--text-muted)';
+      let rateText = '—';
+      if (s.success_rate_pct != null) {
+        rateText = s.success_rate_pct + '%';
+        if (s.success_rate_pct >= 90) rateColor = 'var(--accent-positive)';
+        else if (s.success_rate_pct >= 70) rateColor = 'var(--accent-warning)';
+        else rateColor = 'var(--accent-danger)';
+      }
+      const lastCall = s.last_called ? new Date(s.last_called).toLocaleTimeString('sv-SE') : '—';
+      html += `<div class="source-row">
+        <span class="source-name">${label}</span>
+        <div class="source-stats">
+          <span class="source-success">${s.total_calls}</span>
+          <span class="source-fail">${s.error_calls}</span>
+          <span style="color:${rateColor};font-weight:500;">${rateText}</span>
+          <span style="color:var(--text-muted)">${s.today}d</span>
+          <span style="color:var(--text-faint);font-size:0.6875rem;">${lastCall}</span>
+        </div>
+      </div>`;
+    }
+    tbl.innerHTML = html;
+  } catch (e) {
+    document.getElementById('api-usage-header').textContent = 'Kunde inte hämta API-statistik';
+  }
+}
+
 function renderStats(m) {
   const statusBreakdown = m.status_breakdown || {};
   const total = Object.values(statusBreakdown).reduce((a, b) => a + b, 0);
@@ -708,6 +737,7 @@ function closeDetail() {
 
 // Init
 fetchData();
+fetchApiUsage();
 </script>
 
 </body>

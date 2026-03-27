@@ -7,6 +7,7 @@ from uuid import uuid4
 import requests
 
 from backend.app.core.config import settings
+from backend.app.utils import api_counter
 
 # Load product knowledge from JSON (editable without code changes)
 _PRODUCT_KNOWLEDGE_PATH = Path(__file__).resolve().parent.parent / "data" / "product_knowledge.json"
@@ -423,6 +424,7 @@ class VisionService:
             result.model,
             result.confidence,
         )
+        api_counter.increment("vision_openai")
         set_cached(cache_key, result)
         return result
 
@@ -735,6 +737,7 @@ class VisionService:
             retryable,
             message,
         )
+        api_counter.increment_error("vision_openai")
         return VisionServiceError(
             request_id=request_id,
             code=code,

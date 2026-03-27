@@ -4,6 +4,7 @@ from xml.etree import ElementTree as ET
 import requests
 
 from backend.app.core.config import settings
+from backend.app.utils import api_counter
 from backend.app.utils.cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
@@ -108,9 +109,11 @@ class TraderaClient:
                     exc.response.status_code if exc.response is not None else "N/A",
                     exc,
                 )
+            api_counter.increment_error("tradera")
             return []
         except requests.RequestException as exc:
             logger.warning("tradera.search.request_failed query=%s reason=%s", normalized_query, exc)
+            api_counter.increment_error("tradera")
             return []
 
         try:
@@ -130,9 +133,11 @@ class TraderaClient:
                 normalized_query,
                 len(raw_results),
             )
+            api_counter.increment("tradera")
             return raw_results
         except ET.ParseError as exc:
             logger.warning("tradera.search.parse_failed query=%s reason=%s", normalized_query, exc)
+            api_counter.increment_error("tradera")
             return []
 
     def _parse_search_response(self, xml_text: str) -> list[dict]:

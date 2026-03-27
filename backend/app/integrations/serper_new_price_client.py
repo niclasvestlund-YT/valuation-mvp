@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import requests
 
 from backend.app.core.config import settings
+from backend.app.utils import api_counter
 from backend.app.utils.cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
@@ -140,13 +141,16 @@ class SerperNewPriceClient:
             payload = response.json()
         except requests.RequestException as exc:
             logger.warning("serper_new_price.request_failed query=%s reason=%s", query, exc)
+            api_counter.increment_error("serper_new_price")
             return SerperNewPriceSearchResponse(results=[], available=False, reason="request_failed")
         except ValueError as exc:
             logger.warning("serper_new_price.invalid_response query=%s reason=%s", query, exc)
+            api_counter.increment_error("serper_new_price")
             return SerperNewPriceSearchResponse(results=[], available=False, reason="invalid_response")
 
         results = self._extract_results(payload)
         logger.info("serper_new_price.results query=%s count=%s", query, len(results))
+        api_counter.increment("serper_new_price")
         set_cached(cache_key, results)
         return SerperNewPriceSearchResponse(results=results, available=True, reason="ok")
 
