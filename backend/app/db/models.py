@@ -1,8 +1,14 @@
 import uuid
 from datetime import datetime, timezone
 
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+
+try:
+    from pgvector.sqlalchemy import Vector
+except ImportError:
+    # pgvector not installed — define a placeholder so model classes can be imported
+    # for tests/scripts that don't touch the embedding column at runtime.
+    from sqlalchemy.types import LargeBinary as Vector  # type: ignore[assignment]
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 from .database import Base

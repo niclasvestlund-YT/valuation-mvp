@@ -26,8 +26,18 @@ request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 # ---------------------------------------------------------------------------
 # JSON formatter
 # ---------------------------------------------------------------------------
-REPO_ROOT = Path(__file__).resolve().parents[4]
-LOG_DIR = REPO_ROOT / "logs"
+# Compute log directory — prefer explicit LOG_DIR env var, fall back to repo-relative.
+# On Railway / containers the repo structure may differ, so file logging is best-effort.
+import os as _os
+_log_dir_env = _os.getenv("LOG_DIR")
+if _log_dir_env:
+    LOG_DIR = Path(_log_dir_env)
+else:
+    # parents[4] = utils -> app -> backend -> project root  (works for local dev)
+    try:
+        LOG_DIR = Path(__file__).resolve().parents[4] / "logs"
+    except IndexError:
+        LOG_DIR = Path("/tmp/valor-logs")
 
 
 class _JsonFormatter(logging.Formatter):
@@ -83,17 +93,20 @@ def _configure_root() -> None:
     stdout_handler.setLevel(logging.DEBUG)
     root.addHandler(stdout_handler)
 
-    # Rotating file sink
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.handlers.RotatingFileHandler(
-        LOG_DIR / "app.jsonl",
-        maxBytes=10 * 1024 * 1024,  # 10 MB
-        backupCount=5,
-        encoding="utf-8",
-    )
-    file_handler.setFormatter(formatter)
-    file_handler.setLevel(logging.DEBUG)
-    root.addHandler(file_handler)
+    # Rotating file sink — best-effort; Railway uses stdout, file is for local dev
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.handlers.RotatingFileHandler(
+            LOG_DIR / "app.jsonl",
+            maxBytes=10 * 1024 * 1024,  # 10 MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(logging.DEBUG)
+        root.addHandler(file_handler)
+    except OSError:
+        pass  # File logging unavailable (read-only FS, container, etc.) — stdout is sufficient
 
     # Silence noisy third-party loggers
     for noisy in ("httpx", "httpcore", "urllib3", "asyncio"):

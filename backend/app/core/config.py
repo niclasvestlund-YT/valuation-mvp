@@ -38,6 +38,28 @@ def _read_int_env(name: str, default: int) -> int:
         return default
 
 
+def _normalize_database_url(raw: str | None) -> str:
+    """Normalize DATABASE_URL for asyncpg.
+
+    Railway injects postgres:// — we need postgresql+asyncpg://.
+    Also handles postgresql:// (no driver) and postgresql+psycopg2://.
+    Returns empty string if no URL → has_database=False.
+    """
+    if not raw:
+        # Fail closed on Railway: no localhost fallback
+        if os.getenv("RAILWAY_ENVIRONMENT"):
+            return ""
+        return "postgresql+asyncpg://postgres:dev@localhost:5432/valuation"
+    url = raw.strip()
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql+psycopg2://"):
+        url = url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    return url
+
+
 def _read_optional_int_env(name: str) -> int | None:
     value = _read_env(name)
     if value is None:
@@ -144,7 +166,7 @@ settings = Settings(
     serpapi_location=_read_env("SERPAPI_LOCATION") or "Sweden",
     serpapi_gl=_read_env("SERPAPI_GL") or "se",
     serpapi_hl=_read_env("SERPAPI_HL") or "sv",
-    database_url=_read_env("DATABASE_URL") or "postgresql+asyncpg://postgres:dev@localhost:5432/valuation",
+    database_url=_normalize_database_url(_read_env("DATABASE_URL")),
     allowed_origins=_read_env("ALLOWED_ORIGINS"),
     admin_secret_key=_read_env("ADMIN_SECRET_KEY"),
     google_vision_enabled=_read_bool_env("GOOGLE_VISION_ENABLED", default=True),

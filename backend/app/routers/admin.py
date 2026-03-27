@@ -37,11 +37,17 @@ def _validate_identifier(name: str) -> str:
     return name
 
 
+_IS_DEPLOYED = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("ENVIRONMENT"))
+
+
 async def verify_admin_key(x_admin_key: str = Header(default="")) -> None:
     """Reject requests without a valid ADMIN_SECRET_KEY header.
-    Skip auth on localhost when ADMIN_SECRET_KEY is not configured."""
+    Skip auth ONLY in local dev when ADMIN_SECRET_KEY is not configured.
+    On Railway (staging/production), missing key = locked out (fail closed)."""
     if not ADMIN_SECRET_KEY:
-        return  # Allow unauthenticated access when no key is configured (local dev)
+        if _IS_DEPLOYED:
+            raise HTTPException(status_code=403, detail="ADMIN_SECRET_KEY not configured — admin locked")
+        return  # Allow unauthenticated access in local dev only
     if x_admin_key != ADMIN_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Invalid or missing admin key")
 

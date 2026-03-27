@@ -67,7 +67,10 @@ async def lifespan(app: FastAPI):
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 import os as _os
-_is_production = _os.getenv("RAILWAY_ENVIRONMENT") or _os.getenv("ENVIRONMENT") == "production"
+_environment = _os.getenv("RAILWAY_ENVIRONMENT") or _os.getenv("ENVIRONMENT") or "local"
+_is_production = _environment == "production"
+_is_staging = _environment == "staging"
+_is_deployed = _environment != "local"
 
 app = FastAPI(
     title="valuation-mvp",
@@ -113,6 +116,7 @@ def health_check():
     return {
         "status": "ok",
         "version": VERSION,
+        "environment": _environment,
         "dependencies": {
             "vision": "mock" if settings.is_mock_mode else ("configured" if settings.openai_api_key else "missing_key"),
             "tradera": "configured" if settings.has_tradera_credentials else "unconfigured",

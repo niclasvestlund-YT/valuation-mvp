@@ -19,12 +19,25 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+def _to_sync_url(raw: str) -> str:
+    """Normalize any PostgreSQL URL variant to psycopg2 for Alembic.
+
+    Handles Railway's postgres://, plain postgresql://, asyncpg, and psycopg2.
+    """
+    url = raw.strip()
+    # Order matters: check most specific first
+    url = url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgresql://") and "+psycopg2" not in url:
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
 # Allow DATABASE_URL env var to override alembic.ini (use sync psycopg2 URL for migrations)
 _db_url = os.getenv("DATABASE_URL", "")
 if _db_url:
-    # Normalize any async driver to sync psycopg2 for Alembic
-    _sync_url = _db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-    config.set_main_option("sqlalchemy.url", _sync_url)
+    config.set_main_option("sqlalchemy.url", _to_sync_url(_db_url))
 else:
     import warnings
     warnings.warn(

@@ -19,3 +19,4 @@ automation/review_runs/*
 automation/logs/review_swarm.log
 models/*.pkl
 models/valor_features.json
+data/snapshots/
