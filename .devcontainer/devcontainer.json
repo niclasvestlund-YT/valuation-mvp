@@ -1,0 +1,39 @@
+{
+  "name": "usevalor.com",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+
+  "forwardPorts": [8000, 5432],
+
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && cd backend && alembic upgrade head",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy"
+      ]
+    }
+  },
+
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql+asyncpg://postgres:dev@db:5432/valuation",
+    "ALLOWED_ORIGINS": "http://localhost:8000,https://*.preview.app.github.dev",
+    "USE_MOCK_VISION": "true",
+    "USE_MOCK_EASYOCR": "true",
+    "USE_MOCK_EMBEDDING": "true",
+    "CRAWLER_ENABLED": "false"
+  }
+}

@@ -75,11 +75,12 @@ backend/app/utils/cache.py — simple in-memory TTL cache (1h default); used by 
 backend/app/utils/error_reporting.py — structured JSON error logging to logs/errors.jsonl
 backend/app/utils/logger.py — centralised JSON logger factory with request_id context var; two sinks (stdout + logs/app.jsonl)
 backend/app/utils/normalization.py — text normalization utilities
+backend/app/utils/admin_errors.py — structured admin errors with copy-paste-for-Claude-Code context
 backend/app/middleware/__init__.py — empty
 backend/app/middleware/request_id.py — RequestIdMiddleware: injects UUID per request, sets request_id_var, adds X-Request-ID header
 tests/test_logger.py — 10 tests: JSON fields, request_id propagation, log levels, exc_info
 frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
-frontend/admin.html — vanilla JS admin dashboard; tabs: DB overview, valuations, crawl, OCR, agent (körhistorik + datakvalitet)
+frontend/admin.html — admin UI v12: 6 tabs (Översikt/Crawler/Vibe/Ekonomi/Valor/Hälsokoll), responsive, skeleton loaders, structured errors with copy-to-clipboard
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
@@ -97,12 +98,15 @@ tests/test_data_quality.py — 12 data quality invariant tests (thresholds, seed
 tests/test_ocr_service.py — 11 tests for OCR clients and service (mock mode, fallback chain)
 tests/test_ocr_verification.py — 14 tests for OCR cross-verification (brand/model match, contradictions)
 tests/test_valor_service.py — 7 tests for VALOR ML service (mock mode, sanity checks, no-crash)
+tests/test_outlier_filter.py — 21 tests for IQR/MAD outlier removal (trust-critical statistical filtering)
+tests/test_config.py — 17 tests for config URL normalization, env reading, Railway fail-closed behavior
 tests/test_ingest_endpoint.py — 8 tests for /api/ingest validation (price limits, accessory flags, truncation)
 tests/test_training_pipeline.py — 10 tests for VALOR training ETL (quality scores, encoding, inclusion criteria)
 tests/test_promote_reference_data.py — 21 tests for promotion safety (URL guards, localhost rejection, manifest, dry-run, env var mapping)
 tests/test_assistant_context.py — 33 tests for Prisassistent (confirmation normalization, phase derivation, quick replies, guardrails)
 tests/test_valor_pipeline.py — 29 tests for VALOR pipeline (quality scores, ETL null guard, feature consistency, dry-run, response fields)
 tests/test_admin_ui_data.py — 26 tests for admin endpoint shapes, auth behavior, metrics normalization, no-local-history
+tests/test_admin_html.py — 26 structure tests + 2 integration tests for admin.html (tabs, responsive, security, XSS)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -112,6 +116,9 @@ automation/history/IMPROVEMENTS.md — improvement history
 TASKS.md — prioriterad uppgiftslista (3 nivåer)
 KVALL_RAPPORT.md — kvällsrapport 2026-03-25 med alla fynd
 .claude/settings.json — Claude Code permissions (block push main/staging, rm -rf)
+scripts/collect_vibe_stats.py — collects git + test stats to vibe_stats.json
+scripts/pre-push — pre-push git hook (runs pytest before push)
+scripts/install_hook.sh — installs pre-push hook to .git/hooks
 CONTRIBUTING.md — branch workflow and commit conventions
 ARCHITECTURE_REVIEW.md — full technical review: code quality, architecture, DB, security, risks, next steps
 DB_GIT_REVIEW.md — database schema + git workflow review with prioritized fixes
@@ -122,7 +129,8 @@ POST /feedback — JSON body: `{valuation_id, feedback, corrected_product?}`; sa
 GET / — serves frontend/index.html
 GET /admin — serves frontend/admin.html
 GET /admin/overview — DB size, version, uptime, connections, table list
-GET /admin/metrics — valuation counts, confidence, status/brand/category breakdowns
+GET /admin/metrics — valuation counts, confidence, status/brand/category breakdowns + recent_valuations, valor_stats, source_stats
+GET /admin/assistant-stats — Prisassistent conversation stats (phases, corrections, confirmed rate, 7-day window)
 GET /admin/table/{name} — paginated rows for any public table (25/page)
 GET /admin/index-health — seq scan ratios to spot missing indexes
 GET /admin/slow-queries — currently running queries >500ms
@@ -172,6 +180,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-28 — feat: admin.html full rewrite — 6 tabs (Oversikt/Crawler/Vibe/Ekonomi/Valor/Halsokoll), Scandinavian design system, XSS-safe esc(), memory-only auth, skeleton loaders, Chart.js, responsive mobile tab bar, assistant-stats fallback
+2026-03-28 — review: test + deploy audit — outlier_filter tests (21), config tests (17), Makefile fixed (develop→staging→main, test gate), pytest in requirements.txt, golden cases verified
 2026-03-28 — feat: replace Serper.dev with Webhallen+Inet for new prices — webhallen_client.py (JSON API), inet_client.py (JSON API), serper disabled, priority chain Webhallen→Inet→SerpAPI, 18 new tests, 461 pass
 2026-03-28 — test: TDZ regression guard for VALOR admin UI — 2 tests in test_admin_ui_data.py assert declaration order + explanatory copy
 2026-03-28 — fix: admin VALOR UI temporal-dead-zone bug — moved `const t` before first use, updated no-model copy to explain market_comparable vs training_sample distinction
@@ -180,20 +190,11 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-28 — fix: admin phase 1 security — admin key memory-only (no localStorage), auth gate before fetches, 401/403 re-auth, demo fallback removed, status_breakdown metrics bug fixed, local valuation_history removed from admin, 7 new tests
 2026-03-28 — feat: VALOR production activation — Railway volume config, VALOR_MODEL_DIR env var, production threshold gate (50 samples), admin UI threshold display + training state, 405 tests pass
 2026-03-28 — feat: VALOR production readiness — ETL null brand/model guard, ETL summary logging, feature consistency tests, admin VALOR health cell + detail panel estimate + training CTA, 400 tests pass
-2026-03-27 — fix: promotion safety v2 — strict env vars (no DATABASE_URL fallback), localhost rejection, comparable recency filter, valuation_count excluded, DB name warning, 21 promotion tests, migration/URL path docs, weekly runbook
-2026-03-27 — feat: idempotent reference data promotion — promote_reference_data.py (export/import/verify), UPSERT-based, manifest+audit, ENVIRONMENT_AND_DATA_PROMOTION.md operating model
-2026-03-27 — fix: Railway staging safety — DATABASE_URL fail-closed + auto-normalize postgres://, admin auth locked on Railway, logger file sink best-effort, proper staging/production env detection, seed export/import/verify scripts, RAILWAY_STAGING_SETUP.md runbook
-2026-03-27 — feat: Prisassistent slice 1 — AssistantContext on ValueEnvelope, confirmation normalization (ja/japp/stämmer→yes), phase derivation (confirming/correcting/complete/unsupported), quick_replies, frontend data-driven confirm buttons, 236 tests pass
-2026-03-27 — feat: VALOR ML complete — 6 new tables, XGBoost training pipeline, ValorService, /api/ingest + /valor/train + /valor/rollback, VALOR section in frontend, VALOR & Agent admin tab, web-agent exporter, 203 tests pass
-2026-03-27 — feat: agent integration — Alembic migration (price_observation + agent_job tables), POST /api/ingest with validation/suspicious flagging, GET /admin/agent-stats, Agent tab in admin UI
-2026-03-27 — feat: Facebook Marketplace client via DuckDuckGo — no API key, integrated into market_data_service
-2026-03-27 — feat: Phase 4 OCR — Google Vision + EasyOCR clients, OCR service, cross-verification, pipeline integration (169 tests)
-2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
+2026-03-27 — fix: promotion safety v2 — strict env vars, localhost rejection, 21 promotion tests, weekly runbook
+2026-03-27 — feat: idempotent reference data promotion — promote_reference_data.py, UPSERT-based, ENVIRONMENT_AND_DATA_PROMOTION.md
+2026-03-27 — fix: Railway staging safety — DATABASE_URL fail-closed, admin auth locked, logger best-effort, env detection, RAILWAY_STAGING_SETUP.md
 
 ## Next Up
 - Backfill price observations from existing comparables to bootstrap VALOR training data toward 50-sample threshold
 - Replace f-string SQL in admin table browser with parameterized queries
 - Wire up scheduled agent jobs to continuously feed price observations into ingest pipeline
-
----
-How to use: copy this file and attach it when starting a new AI conversation about this project.
