@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
   <style>
     :root {
       --bg: #F7F5F0; --sf: #EDEAE3; --w: #FFFFFF;
@@ -430,8 +430,7 @@
       font-size: 0.8125rem;
     }
 
-    /* ── Chart container ── */
-    .chart-container {
+    .chart-container-legacy {
       position: relative;
       height: 200px;
       margin: 12px 0;
@@ -607,6 +606,7 @@
       .mobile-tab-bar { display: block; }
       .kpi-row { grid-template-columns: repeat(2, 1fr); }
       .overview-grid { grid-template-columns: 1fr; }
+      .overview-three-col { grid-template-columns: 1fr !important; }
       .content-area { max-width: 100%; }
       .data-table { font-size: 0.75rem; }
       .data-table th, .data-table td { padding: 6px 8px; }
@@ -701,30 +701,19 @@
 
           <div id="ov-health-banner" class="health-banner"></div>
           <div id="ov-kpis"></div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Statusfordelning</span>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px" class="overview-three-col">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Senaste värderingar</span></div>
+              <div id="ov-recent"></div>
             </div>
-            <div class="chart-container"><canvas id="statusChart"></canvas></div>
-            <div id="ov-status-breakdown"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Senaste varderingar</span>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Datakällor</span></div>
+              <div id="ov-sources"></div>
             </div>
-            <div id="ov-recent"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Prisassistent</span>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Prisassistent</span></div>
+              <div id="ov-assistant"></div>
             </div>
-            <div id="ov-assistant"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Kallstatistik</span>
-            </div>
-            <div id="ov-sources"></div>
           </div>
         </div>
 
@@ -1104,10 +1093,19 @@
     /*  TAB: Översikt                                   */
     /* ════════════════════════════════════════════════ */
 
-    var statusChartInstance = null;
+    function abstractSource(name) {
+      var n = (name || '').toLowerCase().trim();
+      if (n === 'tradera') return 'Källa A';
+      if (n === 'blocket') return 'Källa B';
+      if (n === 'pipeline' || n === 'facebook' || n === 'fb') return 'Källa C';
+      if (n === 'webhallen') return 'Nypris-källa';
+      if (n === 'inet') return 'Nypris-fallback';
+      if (n.includes('serper') || n.includes('serpapi') || n.includes('google')) return 'Prisjämförelse-källa';
+      return 'Källa';
+    }
 
     async function loadOverview() {
-      var sections = ['ov-health-banner', 'ov-kpis', 'ov-recent', 'ov-assistant', 'ov-sources', 'ov-status-breakdown'];
+      var sections = ['ov-health-banner', 'ov-kpis', 'ov-recent', 'ov-assistant', 'ov-sources'];
       sections.forEach(function(s) { renderSectionState(s, 'loading'); });
 
       try {
@@ -1183,22 +1181,6 @@
             '<div style="flex:' + erN + ';background:#c4432a;border-radius:1px"></div>' +
           '</div>';
 
-        // Status chart
-        renderStatusChart(metrics.status_breakdown || []);
-
-        // Status breakdown text
-        var sbEl = document.getElementById('ov-status-breakdown');
-        if (metrics.status_breakdown && metrics.status_breakdown.length > 0) {
-          sbEl.innerHTML = metrics.status_breakdown.map(function(s) {
-            return '<div class="stat-row">' +
-              '<span class="stat-label">' + statusBadge(s.status) + '</span>' +
-              '<span class="stat-value">' + formatNum(s.count) + ' (' + formatPct(s.pct) + ')</span>' +
-              '</div>';
-          }).join('');
-        } else {
-          sbEl.innerHTML = '<div class="empty-state">Ingen data</div>';
-        }
-
         // Recent valuations
         var recEl = document.getElementById('ov-recent');
         if (metrics.recent_valuations && metrics.recent_valuations.length > 0) {
@@ -1224,13 +1206,35 @@
         var srcEl = document.getElementById('ov-sources');
         var ss = metrics.source_stats || {};
         srcEl.innerHTML =
-          '<div class="stat-row">' +
-            '<span class="stat-label">Senaste vardering</span>' +
-            '<span class="stat-value">' + (ss.last_valuation_at ? timeAgo(ss.last_valuation_at) : '-') + '</span>' +
+          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Begagnat</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:#34a873;flex-shrink:0"></div>' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Källa A</div><div style="font-size:10px;color:var(--t3)">Officiellt avtal · realtid</div></div>' +
+            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">' + (ss.source_a_count != null ? ss.source_a_count : '—') + '</div><div style="font-size:9px;color:var(--t3)">annonser</div></div>' +
           '</div>' +
-          '<div class="stat-row">' +
-            '<span class="stat-label">Snitt jamforelser/vardering</span>' +
-            '<span class="stat-value">' + (ss.avg_comparables_per_valuation != null ? ss.avg_comparables_per_valuation : '-') + '</span>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:8px">' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:#34a873;flex-shrink:0"></div>' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Källa B</div><div style="font-size:10px;color:var(--t3)">1h cache</div></div>' +
+            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">' + (ss.source_b_count != null ? ss.source_b_count : '—') + '</div><div style="font-size:9px;color:var(--t3)">annonser</div></div>' +
+          '</div>' +
+          '<div style="height:0.5px;background:var(--bd);margin-bottom:7px"></div>' +
+          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Nypris</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:#34a873;flex-shrink:0"></div>' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Nypris-källa</div><div style="font-size:10px;color:var(--t3)">Primär · gratis</div></div>' +
+            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">' + (ss.new_price_sek != null ? formatSEK(ss.new_price_sek) : '—') + '</div><div style="font-size:9px;color:var(--t3)">senaste</div></div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;opacity:0.45">' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:#B0AA9E;flex-shrink:0"></div>' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Nypris-fallback</div><div style="font-size:10px;color:var(--t3)">Ej behövd</div></div>' +
+            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;color:var(--t4)">—</div><div style="font-size:9px;color:var(--t3)">standby</div></div>' +
+          '</div>' +
+          '<div style="height:0.5px;background:var(--bd);margin:7px 0"></div>' +
+          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Prisjämförelse</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;opacity:0.45">' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:#B0AA9E;flex-shrink:0"></div>' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Google Shopping-källa</div><div style="font-size:10px;color:var(--t3)">Ej behövd · renewal 21/4</div></div>' +
+            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;color:var(--t4)">—</div><div style="font-size:9px;color:var(--t3)">standby</div></div>' +
           '</div>';
 
       } catch (err) {
@@ -1284,42 +1288,6 @@
             'Kunde inte hämta assistentstatistik. Data visas när anslutningen återupprättas.' +
           '</div>';
       }
-    }
-
-    function renderStatusChart(breakdown) {
-      var ctx = document.getElementById('statusChart');
-      if (!ctx) return;
-      if (statusChartInstance) statusChartInstance.destroy();
-      if (!breakdown || breakdown.length === 0) return;
-
-      statusChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: breakdown.map(function(s) { return s.status; }),
-          datasets: [{
-            data: breakdown.map(function(s) { return s.count; }),
-            backgroundColor: breakdown.map(function(s) { return STATUS_COLORS[s.status] || '#B0AA9E'; }),
-            borderWidth: 0,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '65%',
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: { family: 'Inter', size: 11 },
-                color: '#5C5850',
-                padding: 12,
-                usePointStyle: true,
-                pointStyleWidth: 8,
-              }
-            }
-          }
-        }
-      });
     }
 
     /* ════════════════════════════════════════════════ */
