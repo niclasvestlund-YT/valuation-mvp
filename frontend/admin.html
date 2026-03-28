@@ -3,21 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="build-version" content="v12.5">
-  <title>Admin v12 — Vardagsvärde</title>
+  <meta name="build-version" content="v13.0">
+  <title>Admin v13 — Vardagsvärde</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <style>
     :root {
-      --bg: #F7F5F0; --sf: #EDEAE3; --w: #FFFFFF;
-      --bd: #E8E4DB; --bm: #D5D0C5;
-      --t1: #2C2A25; --t2: #5C5850; --t3: #8A8578; --t4: #B0AA9E;
-      --ok: #34a873; --wa: #d4a017; --er: #c4432a;
-      --erbg: rgba(196,67,42,0.06); --ertx: #c4432a;
-      --radius: 10px;
-      --radius-sm: 6px;
+      --bg: #F7F5F0;
+      --sf: #EDEAE3;
+      --w:  #FFFFFF;
+      --b1: #E8E4DB;
+      --b2: #D5D0C5;
+      --t1: #2C2A25;
+      --t2: #5C5850;
+      --t3: #8A8578;
+      --t4: #B0AA9E;
+      --ok:   #34a873;
+      --okbg: #e8f5ee;
+      --oktx: #1a5c37;
+      --wa:   #d4a017;
+      --wabg: #fff8e1;
+      --watx: #7a5800;
+      --er:   #c4432a;
+      --erbg: #fdecea;
+      --ertx: #7d1f14;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,9 +38,10 @@
       color: var(--t1);
       line-height: 1.5;
       min-height: 100vh;
+      font-size: 13px;
     }
 
-    /* ── Login overlay ── */
+    /* ── Login ── */
     .login-overlay {
       position: fixed; inset: 0;
       background: var(--bg);
@@ -40,813 +51,649 @@
     .login-overlay.hidden { display: none; }
     .login-box {
       background: var(--w);
-      border: 1px solid var(--bd);
-      border-radius: var(--radius);
+      border: 0.5px solid var(--b1);
+      border-radius: 10px;
       padding: 32px;
-      width: 340px;
+      width: 320px;
       text-align: center;
     }
-    .login-box h2 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      color: var(--t1);
-    }
-    .login-box p {
-      font-size: 0.8125rem;
-      color: var(--t3);
-      margin-bottom: 20px;
-    }
+    .login-box h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .login-box p { font-size: 11px; color: var(--t3); margin-bottom: 20px; }
     .login-box input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--bm);
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 0.875rem;
-      background: var(--sf);
-      color: var(--t1);
-      outline: none;
-      margin-bottom: 12px;
+      width: 100%; padding: 9px 12px;
+      border: 0.5px solid var(--b2); border-radius: 7px;
+      font-family: inherit; font-size: 13px;
+      background: var(--sf); color: var(--t1); outline: none;
+      margin-bottom: 10px;
     }
     .login-box input:focus { border-color: var(--t3); }
     .login-box button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: var(--t1);
-      color: var(--w);
-      font-family: inherit;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
+      width: 100%; padding: 9px;
+      border: none; border-radius: 7px;
+      background: var(--t1); color: var(--w);
+      font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
     }
-    .login-box button:hover { opacity: 0.9; }
-    .login-error {
-      font-size: 0.8125rem;
-      color: var(--er);
-      margin-top: 8px;
-      display: none;
-    }
+    .login-error { font-size: 11px; color: var(--er); margin-top: 7px; display: none; }
 
-    /* ── Admin shell ── */
+    /* ── Shell ── */
     .admin-shell { display: none; }
     .admin-shell.active { display: flex; min-height: 100vh; }
 
-    /* ── Sidebar (desktop) ── */
+    /* ── Sidebar ── */
     .sidebar {
-      width: 200px;
+      width: 186px; min-width: 186px;
       background: var(--w);
-      border-right: 1px solid var(--bd);
-      padding: 20px 0;
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
-      overflow-y: auto;
-      z-index: 100;
+      border-right: 0.5px solid var(--b1);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      overflow-y: auto; z-index: 100;
     }
-    .sidebar-brand {
-      padding: 0 16px 16px;
-      border-bottom: 1px solid var(--bd);
-      margin-bottom: 8px;
+    .sb-top {
+      padding: 16px 14px 11px;
+      border-bottom: 0.5px solid var(--b1);
     }
-    .sidebar-brand h1 {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--t1);
-    }
-    .sidebar-brand span {
-      font-size: 0.6875rem;
-      color: var(--t4);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .sb-top-name { font-size: 13px; font-weight: 600; color: var(--t1); }
+    .sb-top-sub { font-size: 9px; color: var(--t4); text-transform: uppercase; letter-spacing: 1px; margin-top: 1px; }
+    .sb-top-ver { font-size: 9px; color: var(--t4); margin-top: 2px; }
+    .sb-section { padding: 5px 0; }
+    .sb-label {
+      font-size: 9px; color: var(--t4);
+      text-transform: uppercase; letter-spacing: 1.8px; font-weight: 500;
+      padding: 7px 14px 2px;
     }
     .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      font-size: 0.8125rem;
-      color: var(--t3);
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px;
+      font-size: 12px; color: var(--t2);
       cursor: pointer;
-      border-left: 3px solid transparent;
-      transition: all 0.15s;
-      user-select: none;
+      border-left: 2px solid transparent;
+      overflow: hidden;
     }
-    .nav-item:hover { background: var(--sf); color: var(--t2); }
+    .nav-item:hover { background: var(--bg); }
     .nav-item.active {
-      background: var(--sf);
-      color: var(--t1);
-      font-weight: 600;
-      border-left-color: var(--t1);
+      background: var(--sf); color: var(--t1);
+      font-weight: 500; border-left-color: var(--t1);
     }
-    .nav-label { font-size: 0.6875rem; }
+    .nav-item svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--t3); }
+    .nav-item.active svg { color: var(--t1); }
+    .sb-bot {
+      margin-top: auto;
+      padding: 10px 14px;
+      border-top: 0.5px solid var(--b1);
+    }
+    .env-badge {
+      display: inline-block; font-size: 9px; padding: 2px 7px;
+      border-radius: 20px; font-weight: 500;
+      background: var(--sf); color: var(--t3);
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .auth-indicator {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: var(--t3); margin-top: 5px;
+    }
+    .auth-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
 
-    /* ── Main content ── */
+    /* ── Main ── */
     .main-content {
-      margin-left: 200px;
-      flex: 1;
-      padding: 24px;
-      max-width: 960px;
+      margin-left: 186px; flex: 1;
+      background: var(--bg); overflow-y: auto;
     }
-    .content-area {
-      max-width: 760px;
-      margin: 0 auto;
-    }
-
-    /* ── Tab panels ── */
-    .tab-panel { display: none; }
+    .tab-panel { display: none; padding: 18px 20px; max-width: 760px; }
     .tab-panel.active { display: block; }
+
+    /* ── Page header ── */
+    .pg-h { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .pg-s { font-size: 11px; color: var(--t3); margin-bottom: 14px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* ── Cards ── */
     .card {
       background: var(--w);
-      border: 1px solid var(--bd);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .card-title {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--t2);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-
-    /* ── KPI row ── */
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .kpi-card, .kpi {
-      background: var(--w);
-      border: 0.5px solid var(--bd);
+      border: 0.5px solid var(--b1);
       border-radius: 10px;
-      padding: 12px 14px;
+      padding: 13px;
+      margin-bottom: 10px;
       min-width: 0;
     }
-    .kpi-value {
-      font-size: 21px;
-      font-weight: 500;
-      color: var(--t1);
-      line-height: 1;
+    .card-h {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 9px; gap: 8px;
+    }
+    .card-t {
+      font-size: 10px; color: var(--t4);
+      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+    }
+    .card-link { font-size: 11px; color: var(--t3); text-decoration: underline; cursor: pointer; flex-shrink: 0; }
+
+    /* ── KPI ── */
+    .kpi-row, .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 9px; margin-bottom: 10px;
+    }
+    .kpi, .kpi-card {
+      background: var(--w); border: 0.5px solid var(--b1);
+      border-radius: 10px; padding: 12px 14px; min-width: 0;
+    }
+    .kl, .kpi-label {
+      font-size: 9px; color: var(--t4);
+      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;
+      margin-bottom: 5px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .kv, .kpi-value {
+      font-size: 21px; font-weight: 500; line-height: 1;
       font-variant-numeric: tabular-nums;
     }
-    .kpi-sub {
-      font-size: 10px;
-      color: var(--t3);
-      margin-top: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .kpi-sub, .kd {
+      font-size: 10px; color: var(--t3); margin-top: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .kpi-label, .kl {
-      font-size: 9px;
-      color: var(--t4);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      font-weight: 500;
-      margin-bottom: 5px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 20ch;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-left: auto;
-      margin-right: auto;
+
+    /* ── SF row (used for val-rows, source rows etc) ── */
+    .sf-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 9px; background: var(--sf);
+      border-radius: 7px; margin-bottom: 5px; min-width: 0;
     }
+    .sf-row:last-child { margin-bottom: 0; }
+    .sf-row.faded { opacity: 0.42; }
+    .sf-row-body { flex: 1; min-width: 0; }
+    .sf-row-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sf-row-sub { font-size: 10px; color: var(--t3); margin-top: 1px; }
+    .sf-row-right { text-align: right; flex-shrink: 0; }
+    .sf-row-val { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1; }
+    .sf-row-unit { font-size: 9px; color: var(--t3); margin-top: 1px; }
+    .sf-row-age { font-size: 9px; color: var(--t4); margin-top: 1px; }
+
+    /* val-row left accent */
+    .val-acc { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+    .acc-ok  { background: var(--ok); }
+    .acc-wa  { background: var(--wa); }
+    .acc-in  { background: var(--t4); }
+    .acc-er  { background: var(--er); }
+
+    /* dot */
+    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dok { background: var(--ok); }
+    .dwa { background: var(--wa); }
+    .din { background: var(--t4); }
+
+    /* src-group label */
+    .src-gl {
+      font-size: 9px; color: var(--t4);
+      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;
+      margin-bottom: 5px; margin-top: 2px;
+    }
+    .src-div { height: 0.5px; background: var(--b1); margin: 8px 0; }
+
+    /* ── Sparkline ── */
+    .spk {
+      background: var(--w); border: 0.5px solid var(--b1);
+      border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    }
+    .spk-hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
 
     /* ── Health banner ── */
-    .health-banner {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      margin-bottom: 16px;
-      font-size: 0.8125rem;
-      font-weight: 500;
+    .hb {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 13px; border-radius: 8px; margin-bottom: 12px;
     }
-    .health-banner.ok { background: rgba(52,168,115,0.08); color: var(--ok); border: 1px solid rgba(52,168,115,0.2); }
-    .health-banner.warn { background: rgba(212,160,23,0.08); color: var(--wa); border: 1px solid rgba(212,160,23,0.2); }
-    .health-banner.err { background: var(--erbg); color: var(--ertx); border: 1px solid rgba(196,67,42,0.15); }
-    .health-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
+    .hb.ok { background: var(--okbg); border: 0.5px solid rgba(52,168,115,0.25); }
+    .hb.wa { background: var(--wabg); border: 0.5px solid rgba(212,160,23,0.3); }
+    .hb.er { background: var(--erbg); border: 0.5px solid rgba(196,67,42,0.2); }
+    .hb-icon {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--ok); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-    .health-dot.ok { background: var(--ok); }
-    .health-dot.warn { background: var(--wa); }
-    .health-dot.err { background: var(--er); }
+    .hb-text { flex: 1; font-size: 12px; font-weight: 500; color: var(--oktx); }
+    .hb-chip {
+      font-size: 10px; padding: 2px 7px; border-radius: 8px;
+      background: rgba(52,168,115,0.12); color: var(--oktx); white-space: nowrap;
+    }
+    .hb-link { font-size: 10px; color: var(--t4); cursor: pointer; flex-shrink: 0; }
 
-    /* ── Status badge ── */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
+    /* ── Overview 3-col grid ── */
+    .ov-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
     }
-    .badge-ok { background: rgba(52,168,115,0.1); color: var(--ok); }
-    .badge-warn { background: rgba(212,160,23,0.1); color: var(--wa); }
-    .badge-err { background: var(--erbg); color: var(--ertx); }
+
+    /* ── Status bar ── */
+    .stat-bar {
+      display: flex; gap: 2px; height: 4px;
+      margin-top: 6px; margin-bottom: 16px;
+    }
+    .stat-bar div { border-radius: 1px; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block; padding: 2px 7px;
+      border-radius: 4px; font-size: 10px; font-weight: 500;
+    }
+    .badge-ok  { background: var(--okbg); color: var(--oktx); }
+    .badge-wa  { background: var(--wabg); color: var(--watx); }
+    .badge-er  { background: var(--erbg); color: var(--ertx); }
     .badge-muted { background: var(--sf); color: var(--t3); }
 
     /* ── Tables ── */
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8125rem;
-    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .data-table th {
-      text-align: left;
-      padding: 8px 10px;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--t3);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      border-bottom: 1px solid var(--bd);
+      text-align: left; padding: 6px 10px;
+      font-size: 9px; font-weight: 500; color: var(--t4);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      border-bottom: 0.5px solid var(--b1);
     }
-    .data-table td {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--sf);
-      color: var(--t2);
-    }
+    .data-table td { padding: 7px 10px; border-bottom: 0.5px solid var(--sf); color: var(--t2); }
     .data-table tr:last-child td { border-bottom: none; }
-    .data-table tr:hover td { background: var(--sf); }
 
     /* ── Error card ── */
     .error-card {
-      background: var(--erbg);
-      border: 1px solid rgba(196,67,42,0.15);
-      border-radius: var(--radius);
-      padding: 14px;
+      background: var(--erbg); border: 0.5px solid rgba(196,67,42,0.2);
+      border-radius: 10px; padding: 13px; margin-bottom: 10px;
     }
-    .error-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
+    .error-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
     .error-code {
-      font-size: 0.6875rem;
-      font-weight: 700;
-      color: var(--ertx);
-      background: rgba(196,67,42,0.1);
-      padding: 2px 6px;
-      border-radius: 3px;
+      font-size: 10px; font-weight: 600; color: var(--ertx);
+      background: rgba(196,67,42,0.1); padding: 2px 6px; border-radius: 4px;
       text-transform: uppercase;
     }
-    .error-msg {
-      font-size: 0.8125rem;
-      color: var(--ertx);
-    }
+    .error-msg { font-size: 12px; color: var(--ertx); }
     .copy-btn {
-      padding: 6px 12px;
-      border: 1px solid rgba(196,67,42,0.2);
-      border-radius: var(--radius-sm);
-      background: var(--w);
-      color: var(--ertx);
-      font-family: inherit;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 8px;
+      padding: 5px 11px; border: none; border-radius: 6px;
+      background: var(--er); color: var(--w);
+      font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer;
+      margin-bottom: 7px;
     }
-    .copy-btn:hover { background: var(--sf); }
     .error-detail {
-      font-size: 0.75rem;
-      color: var(--t2);
-      background: var(--w);
-      border: 1px solid var(--bd);
-      border-radius: var(--radius-sm);
-      padding: 10px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 200px;
-      overflow-y: auto;
+      font-size: 10px; font-family: monospace;
+      background: var(--w); border: 0.5px solid var(--b1);
+      border-radius: 6px; padding: 8px;
+      white-space: pre-wrap; max-height: 200px; overflow-y: auto; color: var(--t2);
     }
-    details summary {
-      cursor: pointer;
-      font-size: 0.75rem;
-      color: var(--t3);
-      margin-bottom: 6px;
-    }
+    details summary { cursor: pointer; font-size: 11px; color: var(--t3); }
 
-    /* ── Skeleton animation ── */
-    .skeleton-rows { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
+    /* ── Skeleton ── */
+    .skeleton-rows { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
     .skeleton-row {
-      height: 14px;
-      background: linear-gradient(90deg, var(--sf) 25%, var(--bd) 50%, var(--sf) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 4px;
+      height: 14px; background: var(--sf); border-radius: 4px;
+      animation: pulse 1.5s ease-in-out infinite;
     }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-    /* ── Progress bar ── */
-    .progress-track {
-      background: var(--sf);
-      border-radius: 6px;
-      height: 8px;
-      overflow: hidden;
-      margin: 8px 0;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 6px;
-      background: var(--ok);
-      transition: width 0.4s ease;
-    }
-    .progress-fill.low { background: var(--wa); }
+    /* ── Progress ── */
+    .prog-track { background: var(--sf); border-radius: 4px; height: 7px; overflow: hidden; margin: 7px 0; }
+    .prog-fill  { height: 100%; border-radius: 4px; background: var(--ok); transition: width 0.4s; }
+    .prog-fill.wa { background: var(--wa); }
 
-    /* ── Subtabs (Ekonomi) ── */
+    /* ── Milestones ── */
+    .ms-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--b1); }
+    .ms-row:last-child { border-bottom: none; }
+    .ms-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600;
+    }
+    .ms-done { background: var(--ok); color: #fff; }
+    .ms-next { background: var(--t1); color: #fff; }
+    .ms-future { background: var(--sf); color: var(--t4); }
+    .ms-body { flex: 1; min-width: 0; }
+    .ms-lbl { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ms-desc { font-size: 10px; color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+    .ms-st { font-size: 11px; flex-shrink: 0; white-space: nowrap; }
+
+    /* ── Ekonomi sub-tabs ── */
     .etabs {
-      display: flex;
-      gap: 2px;
-      background: var(--sf);
-      border-radius: var(--radius-sm);
-      padding: 2px;
-      margin-bottom: 16px;
+      display: flex; gap: 2px;
+      background: var(--sf); border-radius: 6px; padding: 3px;
+      margin-bottom: 10px; width: fit-content;
     }
     .et {
-      flex: 1;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      background: transparent;
-      color: var(--t3);
-      font-family: inherit;
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
+      padding: 4px 10px; border-radius: 4px;
+      font-size: 11px; color: var(--t2);
+      cursor: pointer; white-space: nowrap; border: none;
+      background: transparent; font-family: inherit;
     }
-    .et.active {
-      background: var(--w);
-      color: var(--t1);
-      font-weight: 600;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .et:hover:not(.active) { color: var(--t2); }
+    .et.active { background: var(--w); color: var(--t1); font-weight: 500; }
     .subtab-panel { display: none; }
     .subtab-panel.active { display: block; }
 
-    /* ── Section header ── */
-    .section-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--t1);
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--bd);
+    /* ── Tool row (Ekonomi) ── */
+    .tool-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 0; border-bottom: 0.5px solid var(--b1);
     }
-    .section-subtitle {
-      font-size: 0.6875rem;
-      color: var(--t4);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
+    .tool-row:last-child { border-bottom: none; }
+    .tool-ic {
+      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff;
     }
-
-    /* ── Empty state ── */
-    .empty-state {
-      text-align: center;
-      padding: 32px 16px;
-      color: var(--t3);
-      font-size: 0.8125rem;
+    .tool-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tool-plan { font-size: 10px; color: var(--t3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tool-amt  { font-size: 14px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .tool-sub2 { font-size: 10px; color: var(--t3); text-align: right; margin-top: 1px; }
+    .total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0 0; border-top: 1px solid var(--b1); margin-top: 3px;
     }
 
-    .chart-container-legacy {
-      position: relative;
-      height: 200px;
-      margin: 12px 0;
+    /* ── Quota rows ── */
+    .qa-row {
+      display: grid; grid-template-columns: minmax(0,1fr) 78px 118px;
+      gap: 10px; align-items: center;
+      padding: 10px 0; border-bottom: 0.5px solid var(--b1);
+    }
+    .qa-row:last-child { border-bottom: none; }
+    .qa-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .qa-sub  { font-size: 10px; color: var(--t3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .qa-used { font-size: 12px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+    .qa-sub2 { font-size: 10px; text-align: right; margin-top: 1px; }
+    .qa-wrap { display: flex; flex-direction: column; gap: 2px; }
+    .qa-pct  { font-size: 10px; text-align: right; }
+    .qbar    { height: 4px; background: var(--sf); border-radius: 2px; overflow: hidden; }
+    .qf      { height: 100%; border-radius: 2px; }
+    .qlimit  { font-size: 9px; color: var(--t4); }
+    .warn-box {
+      background: var(--erbg); border: 0.5px solid var(--er);
+      border-radius: 7px; padding: 9px 12px;
+      font-size: 11px; color: var(--ertx);
+      margin-top: 10px; display: flex; gap: 7px; line-height: 1.5;
     }
 
-    /* ── List items ── */
-    .list-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--sf);
-      font-size: 0.8125rem;
-    }
-    .list-item:last-child { border-bottom: none; }
-    .list-item-title { color: var(--t1); font-weight: 500; }
-    .list-item-meta { color: var(--t3); font-size: 0.75rem; }
-    .list-item-value { color: var(--t2); font-weight: 600; }
-
-    /* ── Inline stat ── */
+    /* ── Stat row ── */
     .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      font-size: 0.8125rem;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 0.5px solid var(--sf); font-size: 12px;
     }
+    .stat-row:last-child { border-bottom: none; }
     .stat-label { color: var(--t3); }
-    .stat-value { color: var(--t1); font-weight: 600; }
+    .stat-value { color: var(--t1); font-weight: 500; font-variant-numeric: tabular-nums; }
 
-    /* ── Action button ── */
-    .btn-sm {
-      padding: 5px 10px;
-      border: 1px solid var(--bm);
-      border-radius: var(--radius-sm);
-      background: var(--w);
-      color: var(--t2);
-      font-family: inherit;
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .btn-sm:hover { background: var(--sf); }
-
-    /* ── Commit entry ── */
-    .commit-entry {
-      padding: 6px 0;
-      border-bottom: 1px solid var(--sf);
-    }
+    /* ── Commit entries ── */
+    .commit-entry { padding: 6px 0; border-bottom: 0.5px solid var(--sf); }
     .commit-entry:last-child { border-bottom: none; }
-    .commit-sha {
-      font-family: 'SF Mono', 'Consolas', monospace;
-      font-size: 0.6875rem;
-      color: var(--t4);
-      margin-right: 6px;
-    }
-    .commit-msg {
-      font-size: 0.8125rem;
-      color: var(--t2);
-    }
-    .commit-type {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--t3);
-      background: var(--sf);
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-right: 4px;
-    }
+    .commit-sha  { font-family: monospace; font-size: 10px; color: var(--t4); margin-right: 5px; }
+    .commit-type { font-size: 10px; font-weight: 500; color: var(--t3); background: var(--sf); padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
+    .commit-msg  { font-size: 12px; color: var(--t2); }
 
     /* ── Fun fact ── */
     .fun-fact {
-      background: var(--sf);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      font-size: 0.8125rem;
-      color: var(--t2);
-      font-style: italic;
-      margin-bottom: 12px;
+      background: var(--sf); border-radius: 7px;
+      padding: 10px 13px; font-size: 12px; color: var(--t2);
+      font-style: italic; margin-bottom: 10px;
     }
+
+    /* ── Valor ── */
+    .valor-untrained { border-left: 3px solid var(--wa); }
+    .valor-trained   { border-left: 3px solid var(--ok); }
+    .info-note {
+      background: var(--wabg); border: 0.5px solid rgba(212,160,23,0.3);
+      border-radius: 7px; padding: 9px 12px;
+      font-size: 11px; color: var(--watx); margin-bottom: 10px;
+    }
+
+    /* ── Health banner (Hälsokoll) ── */
+    .hc-banner {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 14px; border-radius: 8px; margin-bottom: 10px;
+      font-size: 12px; font-weight: 500;
+    }
+    .hc-banner.ok { background: var(--okbg); border: 0.5px solid rgba(52,168,115,0.25); color: var(--oktx); }
+    .hc-banner.wa { background: var(--wabg); border: 0.5px solid rgba(212,160,23,0.3); color: var(--watx); }
+    .hc-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .hc-dot.ok { background: var(--ok); }
+    .hc-dot.wa { background: var(--wa); }
 
     /* ── DB table list ── */
     .db-table-item {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 12px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--sf);
-      font-size: 0.8125rem;
-      align-items: center;
+      display: grid; grid-template-columns: 1fr auto auto;
+      gap: 12px; padding: 6px 0;
+      border-bottom: 0.5px solid var(--sf); font-size: 12px; align-items: center;
     }
     .db-table-item:last-child { border-bottom: none; }
 
-    /* ── Page header ── */
-    .page-header {
-      margin-bottom: 20px;
-    }
-    .page-header h2 {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: var(--t1);
-      margin-bottom: 2px;
-    }
-    .page-header p {
-      font-size: 0.8125rem;
-      color: var(--t3);
-    }
+    /* ── Query row ── */
+    .query-row { padding: 8px 0; border-bottom: 0.5px solid var(--sf); }
+    .query-row:last-child { border-bottom: none; }
+    .query-text { font-family: monospace; font-size: 11px; color: var(--t2); word-break: break-all; }
+    .query-dur  { font-size: 10px; font-weight: 600; color: var(--wa); }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 28px 16px; color: var(--t3); font-size: 12px; }
 
     /* ── Mobile tab bar ── */
     .mobile-tab-bar {
       display: none;
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--w);
-      border-top: 1px solid var(--bd);
-      z-index: 200;
-      padding: 4px 0;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--w); border-top: 0.5px solid var(--b1);
+      z-index: 200; padding: 8px 0 4px;
       padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
     }
-    .mobile-tab-bar-inner {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
+    .mobile-tab-bar-inner { display: flex; justify-content: space-around; }
     .mobile-tab-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      padding: 4px 6px;
-      border: none;
-      background: transparent;
-      color: var(--t4);
-      font-family: inherit;
-      font-size: 0.5625rem;
-      cursor: pointer;
-      min-width: 44px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 4px 6px; border: none; background: transparent;
+      color: var(--t4); font-family: inherit; font-size: 9px;
+      cursor: pointer; min-width: 44px;
     }
-    .mobile-tab-btn.active { color: var(--t1); font-weight: 600; }
-    .mobile-tab-btn svg { width: 20px; height: 20px; }
-
-    /* ── Valor section ── */
-    .valor-trained { border-left: 3px solid var(--ok); }
-    .valor-untrained { border-left: 3px solid var(--wa); }
-
-    /* ── Query row ── */
-    .query-row {
-      padding: 8px 0;
-      border-bottom: 1px solid var(--sf);
-    }
-    .query-row:last-child { border-bottom: none; }
-    .query-text {
-      font-family: 'SF Mono', 'Consolas', monospace;
-      font-size: 0.75rem;
-      color: var(--t2);
-      word-break: break-all;
-    }
-    .query-duration {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--wa);
-    }
-
-    /* ── Overview grid ── */
-    .overview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .main-content { flex: 1; overflow-y: auto; background: var(--bg); }
-    .tab-content { padding: 18px 20px; max-width: 760px; }
+    .mobile-tab-btn.active { color: var(--t1); font-weight: 500; }
+    .mobile-tab-btn svg { width: 18px; height: 18px; }
 
     /* ── Responsive ── */
     @media (max-width: 640px) {
       .sidebar { display: none; }
-      .main-content { margin-left: 0; padding: 16px; padding-bottom: 80px; }
+      .main-content { margin-left: 0; padding-bottom: 80px; }
       .mobile-tab-bar { display: block; }
-      .kpi-row { grid-template-columns: repeat(2, 1fr); }
-      .overview-grid { grid-template-columns: 1fr; }
-      .overview-three-col { grid-template-columns: 1fr !important; }
-      .content-area { max-width: 100%; }
-      .data-table { font-size: 0.75rem; }
-      .data-table th, .data-table td { padding: 6px 8px; }
+      .kpi-row, .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .ov-grid { grid-template-columns: 1fr; }
+      .tab-panel { padding: 14px 16px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ── Login overlay ── -->
+  <!-- Login -->
   <div class="login-overlay" id="loginOverlay">
     <div class="login-box">
-      <h2>Admin</h2>
-      <p>Ange admin-nyckel for att fortsatta</p>
+      <h2>Vardagsvärde Admin</h2>
+      <p>Ange admin-nyckel för att fortsätta</p>
       <input type="password" id="adminKeyInput" placeholder="Admin-nyckel" autocomplete="off">
       <button id="loginBtn">Logga in</button>
       <div class="login-error" id="loginError">Ogiltig nyckel</div>
     </div>
   </div>
 
-  <!-- ── Admin shell ── -->
+  <!-- Shell -->
   <div class="admin-shell" id="adminShell">
 
-    <!-- Sidebar (desktop) -->
+    <!-- Sidebar -->
     <nav class="sidebar">
-      <div class="sidebar-brand">
-        <h1>Vardagsvärde</h1>
-        <span>Admin</span>
-        <div style="font-size:9px;color:var(--t4);margin-top:2px" id="build-info">v12.5 · 2026-03-28</div>
+      <div class="sb-top">
+        <div class="sb-top-name">Vardagsvärde</div>
+        <div class="sb-top-sub">Admin</div>
+        <div class="sb-top-ver" id="build-info">v13.0 · 2026-03-28</div>
       </div>
-      <div class="nav-item active" data-tab="tab-ov">
-        <span class="nav-label">Översikt</span>
+      <div class="sb-section">
+        <div class="sb-label">Drift</div>
+        <div class="nav-item active" data-tab="tab-ov">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          Översikt
+        </div>
+        <div class="nav-item" data-tab="tab-cr">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
+          Crawler
+        </div>
+        <div class="nav-item" data-tab="tab-vibe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Vibe Check
+        </div>
+        <div class="nav-item" data-tab="tab-eko">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Ekonomi
+        </div>
       </div>
-      <div class="nav-item" data-tab="tab-cr">
-        <span class="nav-label">Crawler</span>
+      <div class="sb-section">
+        <div class="sb-label">System</div>
+        <div class="nav-item" data-tab="tab-valor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Valor ML
+        </div>
+        <div class="nav-item" data-tab="tab-hc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Hälsokoll
+        </div>
       </div>
-      <div class="nav-item" data-tab="tab-vibe">
-        <span class="nav-label">Vibe Check</span>
-      </div>
-      <div class="nav-item" data-tab="tab-eko">
-        <span class="nav-label">Ekonomi</span>
-      </div>
-      <div class="nav-item" data-tab="tab-valor">
-        <span class="nav-label">Valor ML</span>
-      </div>
-      <div class="nav-item" data-tab="tab-hc">
-        <span class="nav-label">Hälsokoll</span>
+      <div class="sb-bot">
+        <span class="env-badge">Lokal</span>
+        <div class="auth-indicator"><div class="auth-dot"></div>Autentiserad</div>
       </div>
     </nav>
 
-    <!-- Mobile bottom tab bar -->
+    <!-- Mobile tab bar -->
     <div class="mobile-tab-bar">
       <div class="mobile-tab-bar-inner">
         <button class="mobile-tab-btn active" data-tab="tab-ov">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          <span>Översikt</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          Översikt
         </button>
         <button class="mobile-tab-btn" data-tab="tab-cr">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span>Crawler</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          Crawler
         </button>
         <button class="mobile-tab-btn" data-tab="tab-vibe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>Vibe</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+          Vibe
         </button>
         <button class="mobile-tab-btn" data-tab="tab-eko">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 100 4h4a2 2 0 010 4H8"/><path d="M12 6v2m0 8v2"/></svg>
-          <span>Ekonomi</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Ekonomi
         </button>
         <button class="mobile-tab-btn" data-tab="tab-valor">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <span>Valor</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Valor
         </button>
         <button class="mobile-tab-btn" data-tab="tab-hc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-          <span>Halsa</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          Hälsa
         </button>
       </div>
     </div>
 
-    <!-- Main content area -->
+    <!-- Main -->
     <div class="main-content">
-      <div class="content-area">
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TAB: Översikt                              -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div class="tab-panel active" id="tab-ov">
-          <div class="page-header">
-            <h2>Översikt</h2>
-            <p>Systemstatus och nyckeltal</p>
+      <!-- ÖVERSIKT -->
+      <div class="tab-panel active" id="tab-ov">
+        <div class="pg-h">Översikt</div>
+        <div class="pg-s">Systemstatus och nyckeltal</div>
+        <div id="ov-health-banner" class="health-banner"></div>
+        <div id="ov-kpis"></div>
+        <div class="ov-grid">
+          <div class="card">
+            <div class="card-h"><span class="card-t">Senaste värderingar</span></div>
+            <div id="ov-recent"></div>
           </div>
-
-          <div id="ov-health-banner" class="health-banner"></div>
-          <div id="ov-kpis"></div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px" class="overview-three-col">
-            <div class="card">
-              <div class="card-header"><span class="card-title">Senaste värderingar</span></div>
-              <div id="ov-recent"></div>
-            </div>
-            <div class="card">
-              <div class="card-header"><span class="card-title">Datakällor</span></div>
-              <div id="ov-sources"></div>
-            </div>
-            <div class="card">
-              <div class="card-header"><span class="card-title">Prisassistent</span></div>
-              <div id="ov-assistant"></div>
-            </div>
+          <div class="card">
+            <div class="card-h"><span class="card-t">Datakällor</span><span class="card-link" onclick="switchTab('hc')">Hälsokoll →</span></div>
+            <div id="ov-sources"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><span class="card-t">Prisassistent</span><span style="font-size:10px;color:var(--t3)">Chattbot</span></div>
+            <div id="ov-assistant"></div>
           </div>
         </div>
+      </div>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TAB: Crawler                               -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div class="tab-panel" id="tab-cr">
-          <div class="page-header">
-            <h2>Crawler</h2>
-            <p>Marknadsdata och prisbevakning</p>
-          </div>
-
-          <div id="cr-stats"></div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Senaste jamforelser</span>
-            </div>
-            <div id="cr-latest"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Produkttackning</span>
-            </div>
-            <div id="cr-coverage"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Schema</span>
-              <button class="btn-sm" id="crSchemaBtn">Andra</button>
-            </div>
-            <div id="cr-schedule"></div>
-          </div>
+      <!-- CRAWLER -->
+      <div class="tab-panel" id="tab-cr">
+        <div class="pg-h">Crawler</div>
+        <div class="pg-s">Marknadsdata och prisbevakning</div>
+        <div id="cr-stats"></div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Senaste jämförelser</span></div>
+          <div id="cr-latest"></div>
         </div>
-
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TAB: Vibe Check                            -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div class="tab-panel" id="tab-vibe">
-          <div class="page-header">
-            <h2>Vibe Check</h2>
-            <p>Utvecklingsdagbok och framsteg</p>
-          </div>
-
-          <div id="vibe-funfact"></div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Tester</span>
-            </div>
-            <div id="vibe-tests"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Git-historik per dag</span>
-            </div>
-            <div id="vibe-commits"></div>
-          </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Produkttäckning</span></div>
+          <div id="cr-coverage"></div>
         </div>
-
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TAB: Ekonomi                               -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div class="tab-panel" id="tab-eko">
-          <div class="page-header">
-            <h2>Ekonomi</h2>
-            <p>Kostnader, API-användning och intäkter</p>
-          </div>
-
-          <div class="etabs">
-            <button class="et active" data-subtab="eko-sub">Prenumerationer</button>
-            <button class="et" data-subtab="eko-api">API-användning</button>
-            <button class="et" data-subtab="eko-rev">Intäkter</button>
-          </div>
-
-          <div class="subtab-panel active" id="eko-sub">
-            <div id="eko-subscriptions"></div>
-          </div>
-          <div class="subtab-panel" id="eko-api">
-            <div id="eko-api-usage"></div>
-          </div>
-          <div class="subtab-panel" id="eko-rev">
-            <div id="eko-revenue"></div>
-          </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Schema</span><button class="card-link" id="crSchemaBtn" style="border:none;background:none;cursor:pointer;font-family:inherit">Ändra →</button></div>
+          <div id="cr-schedule"></div>
         </div>
+      </div>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TAB: Valor ML                              -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div class="tab-panel" id="tab-valor">
-          <div class="page-header">
-            <h2>Valor ML</h2>
-            <p>Maskininlärningsmodell för prisprediktion</p>
-          </div>
-
-          <div class="info-note">Produktionsgräns: 50 observationer krävs innan ML-estimat visas för användare.</div>
-          <div id="valor-status"></div>
-          <div id="valor-training"></div>
-          <div id="valor-details"></div>
+      <!-- VIBE CHECK -->
+      <div class="tab-panel" id="tab-vibe">
+        <div class="pg-h">Vibe Check</div>
+        <div class="pg-s">Utvecklingsdagbok och framsteg</div>
+        <div id="vibe-funfact"></div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Tester</span></div>
+          <div id="vibe-tests"></div>
         </div>
-
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- TAB: Hälsokoll                             -->
-        <!-- ═══════════════════════════════════════════ -->
-        <div class="tab-panel" id="tab-hc">
-          <div class="page-header">
-            <h2>Hälsokoll</h2>
-            <p>Systemhälsa, databas och prestanda</p>
-          </div>
-
-          <div id="hc-health"></div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Index-halsa</span>
-            </div>
-            <div id="hc-index"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Langa queries</span>
-            </div>
-            <div id="hc-slow"></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Databas-oversikt</span>
-            </div>
-            <div id="hc-db"></div>
-          </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Git-historik per dag</span></div>
+          <div id="vibe-commits"></div>
         </div>
+      </div>
 
-      </div><!-- .content-area -->
-    </div><!-- .main-content -->
-  </div><!-- .admin-shell -->
+      <!-- EKONOMI -->
+      <div class="tab-panel" id="tab-eko">
+        <div class="pg-h">Ekonomi</div>
+        <div class="pg-s">Kostnader, API-användning och intäkter</div>
+        <div id="eko-kpis"></div>
+        <div class="etabs">
+          <button class="et active" data-subtab="eko-sub">Prenumerationer</button>
+          <button class="et" data-subtab="eko-api">API-användning</button>
+          <button class="et" data-subtab="eko-rev">Intäkter</button>
+        </div>
+        <div class="subtab-panel active" id="eko-sub">
+          <div class="card"><div id="eko-subscriptions"></div></div>
+        </div>
+        <div class="subtab-panel" id="eko-api">
+          <div id="eko-api-usage"></div>
+        </div>
+        <div class="subtab-panel" id="eko-rev">
+          <div id="eko-revenue"></div>
+        </div>
+      </div>
+
+      <!-- VALOR ML -->
+      <div class="tab-panel" id="tab-valor">
+        <div class="pg-h">Valor ML</div>
+        <div class="pg-s">XGBoost · price_observations via /api/ingest</div>
+        <div class="info-note">Produktionsgräns: 50 observationer krävs innan ML-estimat visas för användare.</div>
+        <div id="valor-status"></div>
+        <div id="valor-training"></div>
+        <div id="valor-details"></div>
+      </div>
+
+      <!-- HÄLSOKOLL -->
+      <div class="tab-panel" id="tab-hc">
+        <div class="pg-h">Hälsokoll</div>
+        <div class="pg-s">Systemhälsa, databas och prestanda</div>
+        <div id="hc-health"></div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Index-hälsa</span></div>
+          <div id="hc-index"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Långsamma queries</span></div>
+          <div id="hc-slow"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="card-t">Databas-översikt</span></div>
+          <div id="hc-db"></div>
+        </div>
+      </div>
+
+    </div><!-- main-content -->
+  </div><!-- admin-shell -->
 
   <script>
     /* ════════════════════════════════════════════════ */
@@ -883,7 +730,7 @@
         return await res.json();
       } catch (err) {
         if (err.isApiError) throw err;
-        throw { isApiError: true, detail: `Natverksfel: ${err.message}`, status: 0 };
+        throw { isApiError: true, detail: `Nätverksfel: ${err.message}`, status: 0 };
       }
     }
 
@@ -891,10 +738,9 @@
       navigator.clipboard.writeText(text).then(() => {
         const btn = event.target;
         const orig = btn.textContent;
-        btn.textContent = 'Kopierad!';
+        btn.textContent = '✓ Kopierad!';
         btn.style.background = 'var(--ok)';
-        btn.style.color = 'var(--w)';
-        setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 1500);
+        setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
       });
     }
 
@@ -907,7 +753,7 @@
               <span class="error-msg">${esc(detail.message)}</span>
             </div>
             <button class="copy-btn" onclick="copyToClipboard(${esc(JSON.stringify(detail.copy_paste_context))})">
-              Kopiera for Claude Code
+              📋 Kopiera för Claude Code
             </button>
             <details>
               <summary>Visa detaljer</summary>
@@ -956,33 +802,19 @@
       const input = document.getElementById('adminKeyInput');
       const errEl = document.getElementById('loginError');
       const key = input.value.trim();
-      if (!key) {
-        errEl.style.display = 'block';
-        errEl.textContent = 'Ange en nyckel';
-        return;
-      }
-
+      if (!key) { errEl.style.display = 'block'; errEl.textContent = 'Ange en nyckel'; return; }
       adminKey = key;
       try {
         const data = await apiFetch('/health');
-        if (data === null) {
-          errEl.style.display = 'block';
-          errEl.textContent = 'Ogiltig nyckel';
-          adminKey = '';
-          return;
-        }
+        if (data === null) { errEl.style.display = 'block'; errEl.textContent = 'Ogiltig nyckel'; adminKey = ''; return; }
         showAdmin();
       } catch (e) {
-        errEl.style.display = 'block';
-        errEl.textContent = 'Kunde inte ansluta';
-        adminKey = '';
+        errEl.style.display = 'block'; errEl.textContent = 'Kunde inte ansluta'; adminKey = '';
       }
     }
 
     document.getElementById('loginBtn').addEventListener('click', attemptLogin);
-    document.getElementById('adminKeyInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') attemptLogin();
-    });
+    document.getElementById('adminKeyInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') attemptLogin(); });
 
     /* ════════════════════════════════════════════════ */
     /*  Tab navigation                                  */
@@ -991,16 +823,13 @@
     const tabLoaded = {};
 
     function switchTab(tabId) {
-      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-      document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-      document.querySelectorAll('.mobile-tab-btn').forEach(function(b) { b.classList.remove('active'); });
-
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
       const panel = document.getElementById(tabId);
       if (panel) panel.classList.add('active');
-
-      document.querySelectorAll('.nav-item[data-tab="' + tabId + '"]').forEach(function(n) { n.classList.add('active'); });
-      document.querySelectorAll('.mobile-tab-btn[data-tab="' + tabId + '"]').forEach(function(b) { b.classList.add('active'); });
-
+      document.querySelectorAll('.nav-item[data-tab="' + tabId + '"]').forEach(n => n.classList.add('active'));
+      document.querySelectorAll('.mobile-tab-btn[data-tab="' + tabId + '"]').forEach(b => b.classList.add('active'));
       loadActiveTab(tabId);
     }
 
@@ -1009,36 +838,27 @@
       if (!id) return;
       if (tabLoaded[id]) return;
       tabLoaded[id] = true;
-
       var loaders = {
-        'tab-ov': loadOverview,
-        'tab-cr': loadCrawler,
-        'tab-vibe': loadVibe,
-        'tab-eko': loadEkonomi,
-        'tab-valor': loadValor,
-        'tab-hc': loadHealth,
+        'tab-ov': loadOverview, 'tab-cr': loadCrawler,
+        'tab-vibe': loadVibe,  'tab-eko': loadEkonomi,
+        'tab-valor': loadValor, 'tab-hc': loadHealth,
       };
       if (loaders[id]) loaders[id]();
     }
 
-    // Desktop nav
-    document.querySelectorAll('.nav-item[data-tab]').forEach(function(item) {
-      item.addEventListener('click', function() { switchTab(item.dataset.tab); });
+    document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+      item.addEventListener('click', () => switchTab(item.dataset.tab));
     });
-    // Mobile nav
-    document.querySelectorAll('.mobile-tab-btn[data-tab]').forEach(function(btn) {
-      btn.addEventListener('click', function() { switchTab(btn.dataset.tab); });
+    document.querySelectorAll('.mobile-tab-btn[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    /* ════════════════════════════════════════════════ */
-    /*  Subtab navigation (Ekonomi)                     */
-    /* ════════════════════════════════════════════════ */
-
-    document.querySelectorAll('.etabs .et').forEach(function(btn) {
+    /* ── Subtab navigation (Ekonomi) ── */
+    document.querySelectorAll('.etabs .et').forEach(btn => {
       btn.addEventListener('click', function() {
         var parent = btn.closest('.tab-panel');
-        parent.querySelectorAll('.et').forEach(function(b) { b.classList.remove('active'); });
-        parent.querySelectorAll('.subtab-panel').forEach(function(p) { p.classList.remove('active'); });
+        parent.querySelectorAll('.et').forEach(b => b.classList.remove('active'));
+        parent.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         var target = document.getElementById(btn.dataset.subtab);
         if (target) target.classList.add('active');
@@ -1049,50 +869,21 @@
     /*  Helpers                                         */
     /* ════════════════════════════════════════════════ */
 
-    function formatNum(n) {
-      if (n == null) return '-';
-      return Number(n).toLocaleString('sv-SE');
-    }
-
-    function formatPct(n) {
-      if (n == null) return '-';
-      return Number(n).toFixed(1) + '%';
-    }
-
-    function formatSEK(n) {
-      if (n == null) return '-';
-      return Math.round(Number(n)).toLocaleString('sv-SE') + ' kr';
-    }
-
+    function formatNum(n) { if (n == null) return '-'; return Number(n).toLocaleString('sv-SE'); }
+    function formatPct(n) { if (n == null) return '-'; return Number(n).toFixed(1) + '%'; }
+    function formatSEK(n) { if (n == null) return '-'; return Math.round(Number(n)).toLocaleString('sv-SE') + ' kr'; }
     function timeAgo(iso) {
       if (!iso) return '-';
-      var d = new Date(iso);
-      var now = new Date();
-      var diff = (now - d) / 1000;
+      var diff = (new Date() - new Date(iso)) / 1000;
       if (diff < 60) return 'Just nu';
-      if (diff < 3600) return Math.floor(diff / 60) + ' min sedan';
-      if (diff < 86400) return Math.floor(diff / 3600) + ' h sedan';
-      return Math.floor(diff / 86400) + ' d sedan';
+      if (diff < 3600) return Math.floor(diff/60) + ' min sedan';
+      if (diff < 86400) return Math.floor(diff/3600) + ' h sedan';
+      return Math.floor(diff/86400) + ' d sedan';
     }
-
-    function statusBadge(status) {
-      var cls = {
-        'ok': 'badge-ok', 'degraded': 'badge-warn',
-        'ambiguous_model': 'badge-warn', 'depreciation_estimate': 'badge-muted',
-        'insufficient_evidence': 'badge-muted', 'error': 'badge-err',
-      };
-      return '<span class="badge ' + (cls[status] || 'badge-muted') + '">' + esc(status) + '</span>';
+    function statusBadge(s) {
+      var cls = { ok:'badge-ok', degraded:'badge-wa', ambiguous_model:'badge-wa', insufficient_evidence:'badge-muted', depreciation_estimate:'badge-muted', error:'badge-er' };
+      return '<span class="badge ' + (cls[s]||'badge-muted') + '">' + esc(s) + '</span>';
     }
-
-    var STATUS_COLORS = {
-      'ok': '#34a873', 'degraded': '#d4a017',
-      'ambiguous_model': '#C9A536', 'depreciation_estimate': '#8A8578',
-      'insufficient_evidence': '#B0AA9E', 'error': '#c4432a',
-    };
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Översikt                                   */
-    /* ════════════════════════════════════════════════ */
 
     function abstractSource(name) {
       var n = (name || '').toLowerCase().trim();
@@ -1107,113 +898,91 @@
 
     function abstractDependency(key) {
       var map = {
-        'vision': 'Vision API',
-        'tradera': 'Källa A',
-        'blocket': 'Källa B',
-        'serper': 'Prisjämförelse-källa',
-        'serpapi': 'Prisjämförelse-fallback',
-        'database': 'Databas',
-        'google_vision_ocr': 'Google Cloud Vision OCR',
-        'easyocr': 'EasyOCR (lokal)',
-        'embeddings': 'Embeddings',
-        'crawler': 'Crawler',
-        'valor': 'Valor ML'
+        'vision': 'Vision API', 'tradera': 'Källa A', 'blocket': 'Källa B',
+        'serper': 'Prisjämförelse-källa', 'serpapi': 'Prisjämförelse-fallback',
+        'database': 'Databas', 'google_vision_ocr': 'Google Cloud Vision OCR',
+        'easyocr': 'EasyOCR (lokal)', 'embeddings': 'Embeddings',
+        'crawler': 'Crawler', 'valor': 'Valor ML'
       };
       return map[key] || key;
     }
 
+    /* ════════════════════════════════════════════════ */
+    /*  TAB: Översikt                                   */
+    /* ════════════════════════════════════════════════ */
+
     async function loadOverview() {
       var sections = ['ov-health-banner', 'ov-kpis', 'ov-recent', 'ov-assistant', 'ov-sources'];
-      sections.forEach(function(s) { renderSectionState(s, 'loading'); });
+      sections.forEach(s => renderSectionState(s, 'loading'));
 
       try {
-        var results = await Promise.all([
-          apiFetch('/admin/metrics'),
-          apiFetch('/health'),
-        ]);
-        var metrics = results[0];
-        var health = results[1];
+        var [metrics, health] = await Promise.all([apiFetch('/admin/metrics'), apiFetch('/health')]);
         if (!metrics) return;
 
         // Health banner
         var hEl = document.getElementById('ov-health-banner');
         if (health) {
           var isOk = health.status === 'ok';
-          var bannerBg = isOk ? '#e8f5ee' : 'rgba(212,160,23,0.08)';
-          var bannerBorder = isOk ? 'rgba(52,168,115,0.25)' : 'rgba(212,160,23,0.25)';
-          var dotColor = isOk ? '#34a873' : 'var(--wa)';
-          var textColor = isOk ? '#1a5c37' : '#7d5a00';
-          var badgeBg = isOk ? 'rgba(52,168,115,0.12)' : 'rgba(212,160,23,0.12)';
+          var bg = isOk ? 'var(--okbg)' : 'var(--wabg)';
+          var border = isOk ? 'rgba(52,168,115,0.25)' : 'rgba(212,160,23,0.3)';
+          var dotColor = isOk ? 'var(--ok)' : 'var(--wa)';
+          var textColor = isOk ? 'var(--oktx)' : 'var(--watx)';
+          var chipBg = isOk ? 'rgba(52,168,115,0.12)' : 'rgba(212,160,23,0.12)';
           var label = isOk ? 'Systemet fungerar' : 'Systemvarning aktiv';
           var deps = health.dependencies || {};
-          var badges = '';
-          if (deps.vision && deps.vision !== 'missing_key') badges += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + textColor + '">Vision aktiv</span>';
-          if (deps.database === 'configured') badges += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + textColor + '">Databas OK</span>';
-          if (deps.crawler === 'enabled') badges += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + textColor + '">Crawler kör</span>';
-          hEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:' + bannerBg + ';border:0.5px solid ' + bannerBorder + ';border-radius:8px;margin-bottom:14px">' +
-            '<div style="width:20px;height:20px;border-radius:50%;background:' + dotColor + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
-              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
-            '</div>' +
-            '<span style="font-size:12px;font-weight:500;color:' + textColor + ';flex:1">' + label + '</span>' +
-            badges +
-            '<span style="font-size:10px;color:var(--t4);cursor:pointer" onclick="switchTab(\'hc\')">Hälsokoll →</span>' +
+          var chips = '';
+          if (deps.vision && deps.vision !== 'missing_key') chips += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:'+chipBg+';color:'+textColor+'">API:er aktiva</span>';
+          if (deps.database === 'configured') chips += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:'+chipBg+';color:'+textColor+'">Databas OK</span>';
+          if (deps.crawler === 'enabled') chips += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:'+chipBg+';color:'+textColor+'">Crawler kör</span>';
+          hEl.innerHTML =
+            '<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:'+bg+';border:0.5px solid '+border+';border-radius:8px;margin-bottom:12px">' +
+              '<div style="width:20px;height:20px;border-radius:50%;background:'+dotColor+';display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+                '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
+              '</div>' +
+              '<span style="font-size:12px;font-weight:500;color:'+textColor+';flex:1">'+label+'</span>' +
+              chips +
+              '<span style="font-size:10px;color:var(--t4);cursor:pointer" onclick="switchTab(\'hc\')">Hälsokoll →</span>' +
             '</div>';
         } else {
-          hEl.innerHTML = '<div class="health-banner err">' +
-            '<div class="health-dot err"></div>' +
-            '<span>Kunde inte hämta systemstatus</span>' +
-            '</div>';
+          hEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--erbg);border:0.5px solid rgba(196,67,42,0.2);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--ertx)">Kunde inte hämta systemstatus</div>';
         }
 
         // KPIs
-        var okCount = (metrics.status_breakdown_dict || {}).ok || 0;
-        var totalV = metrics.total_valuations || 0;
-        var okRate = totalV > 0 ? (okCount / totalV * 100).toFixed(1) : '-';
         var sd = metrics.status_breakdown_dict || {};
-        var okN = sd.ok || 0; var deN = sd.degraded || 0; var ieN = sd.insufficient_evidence || 0; var erN = sd.error || 0;
-        var barTotal = okN + deN + ieN + erN || 1;
+        var okN = sd.ok||0, deN = sd.degraded||0, ieN = sd.insufficient_evidence||0, erN = sd.error||0;
+        var totalV = metrics.total_valuations || 0;
+        var okRate = totalV > 0 ? (okN/totalV*100).toFixed(1) : '—';
+        var valorStats = metrics.valor_stats || {};
+        var vs = valorStats.sample_count || 0;
+        var vt = valorStats.threshold || 50;
+
         document.getElementById('ov-kpis').innerHTML =
           '<div class="kpi-row">' +
-            '<div class="kpi">' +
-              '<div class="kl">Värderingar</div>' +
-              '<div class="kpi-value">' + formatNum(metrics.total_valuations) + '</div>' +
-              '<div class="kpi-sub">totalt</div>' +
+            '<div class="kpi"><div class="kl">Värderingar</div><div class="kv">'+formatNum(totalV)+'</div><div class="kd" style="color:var(--ok)">'+formatNum(metrics.last_24h)+' idag</div></div>' +
+            '<div class="kpi"><div class="kl">Vision idag</div><div class="kv">'+(metrics.vision_cost_today != null ? metrics.vision_cost_today.toFixed(2)+' kr' : '—')+'</div><div class="kd">'+(metrics.vision_calls_today||'—')+' anrop</div></div>' +
+            '<div class="kpi"><div class="kl">Resultat ok</div><div class="kv" style="color:var(--ok)">'+okRate+(okRate!=='—'?'%':'')+'</div>' +
+              '<div style="display:flex;gap:2px;height:3px;margin-top:5px"><div style="flex:'+okN+';background:var(--ok);border-radius:1px"></div><div style="flex:'+deN+';background:var(--wa)"></div><div style="flex:'+ieN+';background:var(--t4)"></div><div style="flex:'+erN+';background:var(--er);border-radius:1px"></div></div>' +
+              '<div class="kd" style="margin-top:3px">'+okN+' ok · '+deN+' deg. · '+ieN+' övr.</div>' +
             '</div>' +
-            '<div class="kpi">' +
-              '<div class="kl">Senaste 24h</div>' +
-              '<div class="kpi-value">' + formatNum(metrics.last_24h) + '</div>' +
+            '<div class="kpi" style="cursor:pointer" onclick="switchTab(\'tab-valor\')">' +
+              '<div class="kl">Valor ML</div>' +
+              '<div class="kv" style="color:var(--wa)">'+vs+'/'+vt+'</div>' +
+              '<div style="height:3px;background:var(--sf);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+Math.min(100,vs/vt*100)+'%;background:var(--wa);border-radius:2px"></div></div>' +
+              '<div class="kd" style="color:var(--watx);margin-top:3px">Aktiveras vid '+vt+' →</div>' +
             '</div>' +
-            '<div class="kpi">' +
-              '<div class="kl">Konfidens</div>' +
-              '<div class="kpi-value">' + (metrics.avg_confidence != null ? (metrics.avg_confidence * 100).toFixed(0) + '%' : '—') + '</div>' +
-            '</div>' +
-            '<div class="kpi">' +
-              '<div class="kl">OK-rate</div>' +
-              '<div class="kpi-value">' + okRate + (okRate !== '—' ? '%' : '') + '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex;gap:2px;height:4px;margin-top:6px;margin-bottom:16px">' +
-            '<div style="flex:' + okN + ';background:#34a873;border-radius:1px"></div>' +
-            '<div style="flex:' + ieN + ';background:#d4a017"></div>' +
-            '<div style="flex:' + deN + ';background:#B0AA9E"></div>' +
-            '<div style="flex:' + erN + ';background:#c4432a;border-radius:1px"></div>' +
           '</div>';
 
         // Recent valuations
         var recEl = document.getElementById('ov-recent');
         if (metrics.recent_valuations && metrics.recent_valuations.length > 0) {
-          recEl.innerHTML = metrics.recent_valuations.map(function(v) {
-            var barColor = v.status === 'ok' ? '#34a873' : v.status === 'degraded' ? '#d4a017' : v.status === 'error' ? '#c4432a' : '#B0AA9E';
-            var priceText = v.estimated_value_sek != null ? formatSEK(v.estimated_value_sek) : '—';
-            return '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:5px">' +
-              '<div style="width:3px;height:28px;border-radius:2px;background:' + barColor + ';flex-shrink:0"></div>' +
-              '<div style="flex:1;min-width:0">' +
-                '<div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.product_name) + '</div>' +
-                '<div style="font-size:10px;color:var(--t3)">' + esc(v.category) + ' · ' + timeAgo(v.created_at) + '</div>' +
-              '</div>' +
-              '<div style="text-align:right;flex-shrink:0">' +
-                '<div style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums">' + priceText + '</div>' +
-              '</div>' +
+          recEl.innerHTML = metrics.recent_valuations.map(v => {
+            var acc = v.status==='ok' ? 'acc-ok' : v.status==='degraded' ? 'acc-wa' : v.status==='error' ? 'acc-er' : 'acc-in';
+            var price = v.estimated_value_sek != null ? formatSEK(v.estimated_value_sek) : (v.comparable_count ? v.comparable_count+' obj' : '—');
+            var priceColor = v.status==='ok' ? 'var(--t1)' : v.status==='degraded' ? 'var(--watx)' : 'var(--t4)';
+            return '<div class="sf-row">' +
+              '<div class="val-acc '+acc+'"></div>' +
+              '<div class="sf-row-body"><div class="sf-row-name">'+esc(v.product_name)+'</div><div class="sf-row-sub">'+esc(v.category||'')+'&nbsp;·&nbsp;'+timeAgo(v.created_at)+'</div></div>' +
+              '<div class="sf-row-right"><div class="sf-row-val" style="font-size:13px;color:'+priceColor+'">'+price+'</div></div>' +
             '</div>';
           }).join('');
         } else {
@@ -1224,42 +993,21 @@
         var srcEl = document.getElementById('ov-sources');
         var ss = metrics.source_stats || {};
         srcEl.innerHTML =
-          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Begagnat</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#34a873;flex-shrink:0"></div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Källa A</div><div style="font-size:10px;color:var(--t3)">Officiellt avtal · realtid</div></div>' +
-            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">' + (ss.source_a_count != null ? ss.source_a_count : '—') + '</div><div style="font-size:9px;color:var(--t3)">annonser</div></div>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:8px">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#34a873;flex-shrink:0"></div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Källa B</div><div style="font-size:10px;color:var(--t3)">1h cache</div></div>' +
-            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">' + (ss.source_b_count != null ? ss.source_b_count : '—') + '</div><div style="font-size:9px;color:var(--t3)">annonser</div></div>' +
-          '</div>' +
-          '<div style="height:0.5px;background:var(--bd);margin-bottom:7px"></div>' +
-          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Nypris</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#34a873;flex-shrink:0"></div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Nypris-källa</div><div style="font-size:10px;color:var(--t3)">Primär · gratis</div></div>' +
-            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">' + (ss.new_price_sek != null ? formatSEK(ss.new_price_sek) : '—') + '</div><div style="font-size:9px;color:var(--t3)">senaste</div></div>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;opacity:0.45">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#B0AA9E;flex-shrink:0"></div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Nypris-fallback</div><div style="font-size:10px;color:var(--t3)">Ej behövd</div></div>' +
-            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;color:var(--t4)">—</div><div style="font-size:9px;color:var(--t3)">standby</div></div>' +
-          '</div>' +
-          '<div style="height:0.5px;background:var(--bd);margin:7px 0"></div>' +
-          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Prisjämförelse</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;opacity:0.45">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#B0AA9E;flex-shrink:0"></div>' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Google Shopping-källa</div><div style="font-size:10px;color:var(--t3)">Ej behövd · renewal 21/4</div></div>' +
-            '<div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:500;color:var(--t4)">—</div><div style="font-size:9px;color:var(--t3)">standby</div></div>' +
-          '</div>';
+          '<div class="src-gl">Begagnat</div>' +
+          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Källa A</div><div class="sf-row-sub">Officiellt avtal · realtid</div></div><div class="sf-row-right"><div class="sf-row-val">'+(ss.source_a_count!=null?ss.source_a_count:'—')+'</div><div class="sf-row-unit">annonser</div></div></div>' +
+          '<div class="sf-row" style="margin-bottom:8px"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Källa B</div><div class="sf-row-sub">1h cache</div></div><div class="sf-row-right"><div class="sf-row-val">'+(ss.source_b_count!=null?ss.source_b_count:'—')+'</div><div class="sf-row-unit">annonser</div></div></div>' +
+          '<div class="src-div"></div>' +
+          '<div class="src-gl">Nypris</div>' +
+          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Nypris-källa</div><div class="sf-row-sub">Primär · gratis</div></div><div class="sf-row-right"><div class="sf-row-val">'+(ss.new_price_sek!=null?formatSEK(ss.new_price_sek):'—')+'</div><div class="sf-row-unit">senaste</div></div></div>' +
+          '<div class="sf-row faded"><div class="dot din"></div><div class="sf-row-body"><div class="sf-row-name">Nypris-fallback</div><div class="sf-row-sub">Ej behövd</div></div><div class="sf-row-right"><div class="sf-row-val" style="color:var(--t4)">—</div><div class="sf-row-unit">standby</div></div></div>' +
+          '<div class="src-div"></div>' +
+          '<div class="src-gl">Prisjämförelse</div>' +
+          '<div class="sf-row faded"><div class="dot din"></div><div class="sf-row-body"><div class="sf-row-name">Google Shopping-källa</div><div class="sf-row-sub">Ej behövd · renewal 21/4</div></div><div class="sf-row-right"><div class="sf-row-val" style="color:var(--t4)">—</div><div class="sf-row-unit">standby</div></div></div>';
 
       } catch (err) {
-        sections.forEach(function(s) { renderSectionState(s, 'error', null, err.detail || 'Okant fel'); });
+        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Okänt fel'));
       }
 
-      // Assistant stats (independent, with fallback)
       loadAssistantStats();
     }
 
@@ -1269,23 +1017,27 @@
         var data = await apiFetch('/admin/assistant-stats');
         if (!data) return;
         el.innerHTML =
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Konversationer</div><div style="font-size:10px;color:var(--t3)">senaste 7 dagar</div></div>' +
-            '<div style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">' + (data.total_conversations || '—') + '</div>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Bekräftade direkt</div><div style="font-size:10px;color:var(--t3)">ingen rättelse</div></div>' +
-            '<div style="font-size:15px;font-weight:500;color:#34a873;font-variant-numeric:tabular-nums">' + (data.confirmed_pct != null ? data.confirmed_pct + '%' : '—') + '</div>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:8px">' +
-            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Rättelser</div><div style="font-size:10px;color:var(--t3)">fel produkt identifierad</div></div>' +
-            '<div style="font-size:15px;font-weight:500;color:#d4a017;font-variant-numeric:tabular-nums">' + (data.corrections || '0') + '</div>' +
-          '</div>';
-      } catch (err) {
-        el.innerHTML =
-          '<div style="font-size:11px;color:var(--t3);padding:8px 0;">' +
-            'Kunde inte hämta assistentstatistik.' +
-          '</div>';
+          '<div class="sf-row"><div class="sf-row-body"><div class="sf-row-name">Konversationer</div><div class="sf-row-sub">senaste 7 dagar</div></div><div style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">'+(data.total_conversations||'—')+'</div></div>' +
+          '<div class="sf-row"><div class="sf-row-body"><div class="sf-row-name">Bekräftade direkt</div><div class="sf-row-sub">ingen rättelse</div></div><div style="font-size:15px;font-weight:500;color:var(--ok);font-variant-numeric:tabular-nums">'+(data.confirmed_pct!=null?data.confirmed_pct+'%':'—')+'</div></div>' +
+          '<div class="sf-row" style="margin-bottom:8px"><div class="sf-row-body"><div class="sf-row-name">Rättelser</div><div class="sf-row-sub">fel produkt identifierad</div></div><div style="font-size:15px;font-weight:500;color:var(--wa);font-variant-numeric:tabular-nums">'+(data.corrections||'0')+'</div></div>' +
+          '<div style="height:0.5px;background:var(--b1);margin:6px 0"></div>' +
+          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">Fas-fördelning</div>' +
+          (data.phase_breakdown ? [
+            ['Bekräftad', data.phase_breakdown.complete||0, 'var(--ok)'],
+            ['Rättad', data.phase_breakdown.correcting||0, 'var(--wa)'],
+            ['Ej stödd', data.phase_breakdown.unsupported||0, 'var(--t4)'],
+          ].map(([label,count,color]) => {
+            var total = (data.total_conversations||1);
+            var pct = total>0 ? Math.round(count/total*100) : 0;
+            return '<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:0.5px solid var(--b1);font-size:11px">' +
+              '<span style="display:flex;align-items:center;gap:4px;min-width:70px;color:var(--t2)"><div style="width:7px;height:7px;border-radius:50%;background:'+color+'"></div>'+label+'</span>' +
+              '<div style="flex:1;height:4px;background:var(--sf);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div>' +
+              '<span style="font-size:11px;color:var(--t2);width:28px;text-align:right">'+pct+'%</span>' +
+            '</div>';
+          }).join('') : '') +
+          '<div style="font-size:10px;color:var(--t4);margin-top:7px">Kräver /admin/assistant-stats</div>';
+      } catch(err) {
+        el.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:8px 0">Kunde inte hämta assistentstatistik</div>';
       }
     }
 
@@ -1295,7 +1047,7 @@
 
     async function loadCrawler() {
       var sections = ['cr-stats', 'cr-latest', 'cr-coverage', 'cr-schedule'];
-      sections.forEach(function(s) { renderSectionState(s, 'loading'); });
+      sections.forEach(s => renderSectionState(s, 'loading'));
 
       try {
         var data = await apiFetch('/admin/market-data');
@@ -1303,95 +1055,71 @@
         var crawl = data.crawl || {};
         var products = data.products || {};
 
-        // Stats
+        // Per-källa (abstraherat)
         var bySourceHtml = '';
         if (crawl.by_source && crawl.by_source.length > 0) {
           bySourceHtml = '<div class="card">' +
-            '<div class="card-header"><span class="card-title">Per kalla</span></div>' +
-            crawl.by_source.map(function(s) {
-              return '<div class="stat-row">' +
-                '<span class="stat-label">' + abstractSource(s.source) + '</span>' +
-                '<span class="stat-value">' + formatNum(s.count) + ' st, snitt ' + formatSEK(s.avg_price_sek) + ', rel ' + (s.avg_relevance != null ? s.avg_relevance : '-') + '</span>' +
-              '</div>';
-            }).join('') +
+            '<div class="card-h"><span class="card-t">Per källa</span></div>' +
+            crawl.by_source.map(s =>
+              '<div class="sf-row">' +
+                '<div class="dot dok"></div>' +
+                '<div class="sf-row-body"><div class="sf-row-name">'+abstractSource(s.source)+'</div></div>' +
+                '<div style="font-size:12px;color:var(--t2);text-align:right">'+formatNum(s.count)+' st&nbsp;·&nbsp;snitt '+formatSEK(s.avg_price_sek)+'</div>' +
+              '</div>'
+            ).join('') +
           '</div>';
         }
 
         document.getElementById('cr-stats').innerHTML =
           '<div class="kpi-row">' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(crawl.total_comparables) + '</div>' +
-              '<div class="kl">Totala jamforelser</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(crawl.active_comparables) + '</div>' +
-              '<div class="kl">Aktiva</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(crawl.flagged_count) + '</div>' +
-              '<div class="kl">Flaggade</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(products.total) + '</div>' +
-              '<div class="kl">Produkter</div>' +
-            '</div>' +
+            '<div class="kpi"><div class="kl">Totala jämförel.</div><div class="kv">'+formatNum(crawl.total_comparables)+'</div></div>' +
+            '<div class="kpi"><div class="kl">Aktiva</div><div class="kv">'+formatNum(crawl.active_comparables)+'</div></div>' +
+            '<div class="kpi"><div class="kl">Flaggade</div><div class="kv">'+formatNum(crawl.flagged_count)+'</div></div>' +
+            '<div class="kpi"><div class="kl">Produkter</div><div class="kv">'+formatNum(products.total)+'</div></div>' +
           '</div>' + bySourceHtml;
 
-        // Latest comparables
+        // Senaste jämförelser
         var latEl = document.getElementById('cr-latest');
         if (crawl.latest && crawl.latest.length > 0) {
-          latEl.innerHTML = '<table class="data-table">' +
-            '<thead><tr><th>Titel</th><th>Pris</th><th>Kalla</th><th>Sedd</th></tr></thead>' +
-            '<tbody>' + crawl.latest.map(function(r) {
-              return '<tr>' +
-                '<td>' +
-                  '<div class="list-item-title">' + esc(r.title) + '</div>' +
-                  '<div class="list-item-meta">' + esc(r.condition || '-') + '</div>' +
-                '</td>' +
-                '<td>' + formatSEK(r.price_sek) + '</td>' +
-                '<td style="font-size:0.75rem;color:var(--t3)">' + abstractSource(r.source) + '</td>' +
-                '<td style="font-size:0.75rem;color:var(--t3)">' + timeAgo(r.last_seen) + '</td>' +
-              '</tr>';
-            }).join('') + '</tbody></table>';
-        } else {
-          latEl.innerHTML = '<div class="empty-state">Inga jamforelser annu</div>';
-        }
+          latEl.innerHTML = '<table class="data-table"><thead><tr><th>Titel</th><th>Pris</th><th>Källa</th><th>Sedd</th></tr></thead><tbody>' +
+            crawl.latest.map(r =>
+              '<tr><td><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">'+esc(r.title)+'</div><div style="font-size:10px;color:var(--t3)">'+esc(r.condition||'—')+'</div></td>' +
+              '<td>'+formatSEK(r.price_sek)+'</td>' +
+              '<td style="color:var(--t3)">'+abstractSource(r.source)+'</td>' +
+              '<td style="color:var(--t3)">'+timeAgo(r.last_seen)+'</td></tr>'
+            ).join('') +
+          '</tbody></table>';
+        } else { latEl.innerHTML = '<div class="empty-state">Inga jämförelser ännu</div>'; }
 
-        // Product coverage
+        // Täckning
         var covEl = document.getElementById('cr-coverage');
         if (products.top_by_comparables && products.top_by_comparables.length > 0) {
-          covEl.innerHTML = '<table class="data-table">' +
-            '<thead><tr><th>Produkt</th><th>Kategori</th><th>Jamforelser</th><th>Snittpris</th></tr></thead>' +
-            '<tbody>' + products.top_by_comparables.map(function(p) {
-              return '<tr>' +
-                '<td>' + esc(p.brand) + ' ' + esc(p.model) + '</td>' +
-                '<td style="font-size:0.75rem;color:var(--t3)">' + esc(p.category || '-') + '</td>' +
-                '<td>' + formatNum(p.comparable_count) + '</td>' +
-                '<td>' + formatSEK(p.avg_price_sek) + '</td>' +
-              '</tr>';
-            }).join('') + '</tbody></table>';
-        } else {
-          covEl.innerHTML = '<div class="empty-state">Ingen produkttackning annu</div>';
-        }
+          covEl.innerHTML = '<table class="data-table"><thead><tr><th>Produkt</th><th>Kategori</th><th>Jämförel.</th><th>Snittpris</th></tr></thead><tbody>' +
+            products.top_by_comparables.map(p =>
+              '<tr><td style="font-weight:500">'+esc(p.brand)+' '+esc(p.model)+'</td>' +
+              '<td style="color:var(--t3)">'+esc(p.category||'—')+'</td>' +
+              '<td>'+formatNum(p.comparable_count)+'</td>' +
+              '<td>'+formatSEK(p.avg_price_sek)+'</td></tr>'
+            ).join('') +
+          '</tbody></table>';
+        } else { covEl.innerHTML = '<div class="empty-state">Ingen produkttäckning ännu</div>'; }
 
-        // Schedule placeholder
+        // Schema
         document.getElementById('cr-schedule').innerHTML =
-          '<div class="stat-row">' +
-            '<span class="stat-label">Crawl-intervall</span>' +
-            '<span class="stat-value">Manuellt</span>' +
-          '</div>' +
-          '<div class="stat-row">' +
-            '<span class="stat-label">Seed-produkter</span>' +
-            '<span class="stat-value">80 st</span>' +
-          '</div>' +
-          '<div style="font-size:0.75rem;color:var(--t3);margin-top:8px">Schemalagd crawling annu ej konfigurerad</div>';
+          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Prio 1 · Hörlurar + Smartphones</div><div class="sf-row-sub">24 produkter · daglig</div></div><div style="font-size:11px;color:var(--t3)">Imorgon 06:00</div></div>' +
+          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Prio 2 · Laptops + Kameror</div><div class="sf-row-sub">30 produkter · 3×/vecka</div></div><div style="font-size:11px;color:var(--t3)">Måndag 06:00</div></div>' +
+          '<div class="sf-row"><div class="dot din" style="opacity:0.5"></div><div class="sf-row-body" style="opacity:0.5"><div class="sf-row-name">Prio 3 · Gaming + Övrigt</div><div class="sf-row-sub">26 produkter · veckovis</div></div><div style="font-size:11px;color:var(--t4)">Söndag 06:00</div></div>' +
+          '<div style="background:var(--sf);border-radius:7px;padding:9px 11px;margin-top:8px;font-size:11px;color:var(--t2);line-height:1.6;display:flex;gap:7px">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="var(--t3)" stroke-width="2"/></svg>' +
+            '<div>"Ändra" kräver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div>' +
+          '</div>';
 
       } catch (err) {
-        sections.forEach(function(s) { renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta crawlerdata'); });
+        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta crawlerdata'));
       }
 
-      document.getElementById('crSchemaBtn').addEventListener('click', function() {
-        alert('Schemakonfiguration ar inte implementerad annu');
+      document.getElementById('crSchemaBtn').addEventListener('click', () => {
+        alert('Schemakonfiguration kräver PATCH /api/crawler/schedule i backend.');
       });
     }
 
@@ -1401,64 +1129,46 @@
 
     async function loadVibe() {
       var sections = ['vibe-funfact', 'vibe-tests', 'vibe-commits'];
-      sections.forEach(function(s) { renderSectionState(s, 'loading'); });
+      sections.forEach(s => renderSectionState(s, 'loading'));
 
       try {
         var data = await apiFetch('/admin/dev-stats');
         if (!data) return;
-
-        // Fun fact
-        var ffEl = document.getElementById('vibe-funfact');
         var history = data.history || [];
-        if (history.length > 0 && history[0].fun_facts && history[0].fun_facts.length > 0) {
-          ffEl.innerHTML = '<div class="fun-fact">' + esc(history[0].fun_facts[0]) + '</div>';
-        } else {
-          ffEl.innerHTML = '';
-        }
 
-        // Test count
+        var ffEl = document.getElementById('vibe-funfact');
+        if (history.length > 0 && history[0].fun_facts && history[0].fun_facts.length > 0) {
+          ffEl.innerHTML = '<div class="fun-fact">'+esc(history[0].fun_facts[0])+'</div>';
+        } else { ffEl.innerHTML = ''; }
+
         document.getElementById('vibe-tests').innerHTML =
           '<div class="kpi-row">' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(data.test_count) + '</div>' +
-              '<div class="kl">Tester totalt</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(data.total_commits) + '</div>' +
-              '<div class="kl">Commits (30d)</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(data.total_days) + '</div>' +
-              '<div class="kl">Aktiva dagar</div>' +
-            '</div>' +
+            '<div class="kpi"><div class="kl">Tester totalt</div><div class="kv">'+formatNum(data.test_count)+'</div></div>' +
+            '<div class="kpi"><div class="kl">Commits (30d)</div><div class="kv">'+formatNum(data.total_commits)+'</div></div>' +
+            '<div class="kpi"><div class="kl">Aktiva dagar</div><div class="kv">'+formatNum(data.total_days)+'</div></div>' +
           '</div>';
 
-        // Commit history by day
         var cmEl = document.getElementById('vibe-commits');
         if (history.length > 0) {
-          cmEl.innerHTML = history.map(function(day) {
-            var commitsHtml = day.commits.map(function(c) {
-              return '<div class="commit-entry">' +
-                '<span class="commit-sha">' + esc(c.sha) + '</span>' +
-                '<span class="commit-type">' + esc(c.type) + '</span>' +
-                '<span class="commit-msg">' + esc(c.message) + '</span>' +
-              '</div>';
-            }).join('');
-            var factHtml = (day.fun_facts && day.fun_facts.length > 0)
-              ? '<div class="fun-fact" style="margin-top:8px">' + esc(day.fun_facts[0]) + '</div>'
-              : '';
-            return '<div style="margin-bottom:16px">' +
-              '<div class="section-subtitle">' + esc(day.date) + ' - ' + day.commit_count + ' commits</div>' +
-              commitsHtml +
-              factHtml +
+          cmEl.innerHTML = history.map(day => {
+            var commits = day.commits.map(c =>
+              '<div class="commit-entry">' +
+                '<span class="commit-sha">'+esc(c.sha)+'</span>' +
+                '<span class="commit-type">'+esc(c.type)+'</span>' +
+                '<span class="commit-msg">'+esc(c.message)+'</span>' +
+              '</div>'
+            ).join('');
+            var fact = (day.fun_facts && day.fun_facts.length > 0)
+              ? '<div class="fun-fact" style="margin-top:8px">'+esc(day.fun_facts[0])+'</div>' : '';
+            return '<div style="margin-bottom:14px">' +
+              '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">'+esc(day.date)+' — '+day.commit_count+' commits</div>' +
+              commits + fact +
             '</div>';
           }).join('');
-        } else {
-          cmEl.innerHTML = '<div class="empty-state">Ingen git-historik tillganglig</div>';
-        }
+        } else { cmEl.innerHTML = '<div class="empty-state">Ingen git-historik tillgänglig</div>'; }
 
       } catch (err) {
-        sections.forEach(function(s) { renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta dev-stats'); });
+        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta dev-stats'));
       }
     }
 
@@ -1468,89 +1178,71 @@
 
     async function loadEkonomi() {
       var sections = ['eko-subscriptions', 'eko-api-usage', 'eko-revenue'];
-      sections.forEach(function(s) { renderSectionState(s, 'loading'); });
+      sections.forEach(s => renderSectionState(s, 'loading'));
 
-      // Subscriptions
-      var services = [
-        { ic: 'CC', color: '#2C2A25', textColor: '#EDEAE3', name: 'Claude Code', plan: 'Max 5x · $90/mån', sek: '936 kr', per4d: '125 kr' },
-        { ic: 'GP', color: '#10a37f', textColor: '#fff', name: 'ChatGPT', plan: 'Plus · 23\u20ac/mån inkl. moms', sek: '250 kr', per4d: '33 kr' },
-        { ic: 'Ge', color: '#1a73e8', textColor: '#fff', name: 'Gemini AI Pro', plan: 'Google AI Pro · ~23\u20ac/mån', sek: '~250 kr', per4d: '~33 kr' },
-        { ic: 'Ry', color: '#8B5CF6', textColor: '#fff', name: 'Railway', plan: 'Hobby · $5/mån', sek: '52 kr', per4d: '7 kr' },
-      ];
-      var totalSek = 936 + 250 + 250 + 52;
-      document.getElementById('eko-subscriptions').innerHTML =
-        services.map(function(s) {
-          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
-            '<div style="width:28px;height:28px;border-radius:7px;background:' + s.color + ';color:' + s.textColor + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">' + s.ic + '</div>' +
-            '<div style="flex:1;min-width:0">' +
-              '<div style="font-size:12px;font-weight:500">' + esc(s.name) + '</div>' +
-              '<div style="font-size:10px;color:var(--t3)">' + esc(s.plan) + '</div>' +
-            '</div>' +
-            '<div style="text-align:right;flex-shrink:0">' +
-              '<div style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums">' + s.sek + '</div>' +
-              '<div style="font-size:9px;color:var(--t3)">' + s.per4d + '/4d</div>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-        '<div style="display:flex;justify-content:space-between;padding:6px 9px;margin-top:4px;font-size:11px;font-weight:500">' +
-          '<span>Totalt/mån</span><span style="font-variant-numeric:tabular-nums">' + formatNum(totalSek) + ' kr</span>' +
+      // KPIs
+      document.getElementById('eko-kpis').innerHTML =
+        '<div class="kpi-row">' +
+          '<div class="kpi"><div class="kl">Prenumeration</div><div class="kv">1 446 kr</div><div class="kd">4 verktyg · fast /mån</div></div>' +
+          '<div class="kpi"><div class="kl">API-kostnad</div><div class="kv">~8 kr</div><div class="kd">Vision · rörlig /mån</div></div>' +
+          '<div class="kpi"><div class="kl">Intäkter</div><div class="kv" style="color:var(--t4)">0 kr</div><div class="kd">ej lanserad</div></div>' +
+          '<div class="kpi"><div class="kl">Break-even</div><div class="kv" style="color:var(--t4)">—</div><div class="kd">kräver MRR</div></div>' +
         '</div>';
 
-      // Revenue (placeholder)
-      document.getElementById('eko-revenue').innerHTML =
-        '<div class="empty-state">Intäktsdata visas när betalfunktioner är aktiva</div>';
+      // Prenumerationer
+      var services = [
+        { ic:'CC', color:'#2C2A25', tc:'#EDEAE3', name:'Claude Code',    plan:'Max 5x · $90/mån',        sek:'936 kr',  per4d:'125 kr' },
+        { ic:'GP', color:'#10a37f', tc:'#fff',     name:'ChatGPT',        plan:'Plus · 23€/mån inkl. moms', sek:'250 kr',  per4d:'33 kr'  },
+        { ic:'Ge', color:'#1a73e8', tc:'#fff',     name:'Gemini AI Pro',  plan:'Google AI Pro · ~23€/mån',  sek:'~250 kr', per4d:'~33 kr' },
+        { ic:'Ry', color:'#8B5CF6', tc:'#fff',     name:'Railway',        plan:'Hobby · $5/mån',            sek:'52 kr',   per4d:'7 kr'   },
+      ];
+      document.getElementById('eko-subscriptions').innerHTML =
+        services.map(s =>
+          '<div class="tool-row">' +
+            '<div class="tool-ic" style="background:'+s.color+';color:'+s.tc+'">'+s.ic+'</div>' +
+            '<div style="flex:1;min-width:0"><div class="tool-name">'+esc(s.name)+'</div><div class="tool-plan">'+esc(s.plan)+'</div></div>' +
+            '<div><div class="tool-amt">'+s.sek+'</div><div class="tool-sub2">'+s.per4d+' /4d</div></div>' +
+          '</div>'
+        ).join('') +
+        '<div class="total-row"><div><span style="font-size:12px;font-weight:500">Totalt /mån</span><div style="font-size:10px;color:var(--t3);margin-top:1px">exkl. Vision API (~8 kr/mån)</div></div><span style="font-size:16px;font-weight:500;font-variant-numeric:tabular-nums">~1 488 kr</span></div>';
 
-      // API usage
+      // Intäkter
+      document.getElementById('eko-revenue').innerHTML =
+        '<div class="card">' +
+          '<div style="background:var(--sf);border-radius:8px;padding:12px 14px;text-align:center;margin-bottom:10px">' +
+            '<div style="font-size:13px;font-weight:500;margin-bottom:2px">Produkten är inte lanserad ännu</div>' +
+            '<div style="font-size:11px;color:var(--t3)">Break-even: ~1 488 kr/mån i MRR</div>' +
+            '<div style="height:5px;background:var(--b1);border-radius:3px;margin:9px 0 4px;overflow:hidden"><div style="height:100%;width:0%;background:var(--ok)"></div></div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t4)"><span>0 kr MRR</span><span>Mål: ~1 488 kr/mån</span></div>' +
+          '</div>' +
+        '</div>';
+
+      // API-användning
       try {
         var data = await apiFetch('/admin/api-usage');
         if (!data) return;
         var el = document.getElementById('eko-api-usage');
-
         var sources = data.sources || data;
         if (typeof sources === 'object' && !Array.isArray(sources)) {
           var entries = Object.entries(sources);
-          if (entries.length === 0) {
-            el.innerHTML = '<div class="empty-state">Ingen API-användning registrerad</div>';
-            return;
-          }
-          el.innerHTML = entries.map(function(entry) {
-            var name = entry[0];
-            var s = entry[1] || {};
-            var totalCalls = s.total_calls || s.calls || 0;
-            var quotaHtml = '';
-            if (s.free_tier_limit) {
-              var remaining = s.free_tier_remaining != null ? formatNum(s.free_tier_remaining) : '-';
-              var usedPct = Math.min(100, (totalCalls / s.free_tier_limit * 100));
-              var isLow = (s.free_tier_remaining || 0) < s.free_tier_limit * 0.2;
-              quotaHtml =
-                '<div class="kpi-card">' +
-                  '<div class="kpi-value">' + remaining + '</div>' +
-                  '<div class="kl">Kvar av gratiskvot</div>' +
-                '</div>';
-              quotaHtml += '</div>' +
-                '<div class="progress-track">' +
-                  '<div class="progress-fill ' + (isLow ? 'low' : '') + '" style="width:' + usedPct + '%"></div>' +
-                '</div>' +
-                '<div style="font-size:0.6875rem;color:var(--t4)">' + formatNum(totalCalls) + ' / ' + formatNum(s.free_tier_limit) + ' anvanda</div>';
-            } else {
-              quotaHtml = '</div>';
-            }
+          if (entries.length === 0) { el.innerHTML = '<div class="empty-state">Ingen API-användning registrerad</div>'; return; }
+          el.innerHTML = entries.map(([name, s]) => {
+            s = s || {};
+            var total = s.total_calls || s.calls || 0;
+            var pct = s.free_tier_limit ? Math.min(100, total/s.free_tier_limit*100) : 0;
+            var isLow = s.free_tier_limit && (s.free_tier_remaining||0) < s.free_tier_limit*0.2;
             return '<div class="card">' +
-              '<div class="card-header"><span class="card-title">' + esc(name) + '</span></div>' +
+              '<div class="card-h"><span class="card-t">'+esc(name)+'</span></div>' +
               '<div class="kpi-row">' +
-                '<div class="kpi-card">' +
-                  '<div class="kpi-value">' + formatNum(totalCalls) + '</div>' +
-                  '<div class="kl">Anrop totalt</div>' +
-                '</div>' +
-                '<div class="kpi-card">' +
-                  '<div class="kpi-value">' + formatNum(s.errors || 0) + '</div>' +
-                  '<div class="kl">Fel</div>' +
-                '</div>' +
-                quotaHtml +
+                '<div class="kpi"><div class="kl">Anrop</div><div class="kv">'+formatNum(total)+'</div></div>' +
+                '<div class="kpi"><div class="kl">Fel</div><div class="kv">'+formatNum(s.errors||0)+'</div></div>' +
+                (s.free_tier_limit ? '<div class="kpi"><div class="kl">Kvar</div><div class="kv">'+formatNum(s.free_tier_remaining)+'</div></div>' : '') +
+              '</div>' +
+              (s.free_tier_limit ? '<div class="prog-track"><div class="prog-fill'+(isLow?' wa':'')+'" style="width:'+pct+'%"></div></div><div style="font-size:9px;color:var(--t4)">'+formatNum(total)+' / '+formatNum(s.free_tier_limit)+' använda</div>' : '') +
             '</div>';
           }).join('');
         } else {
-          el.innerHTML = '<pre style="font-size:0.75rem;color:var(--t2)">' + esc(JSON.stringify(data, null, 2)) + '</pre>';
+          el.innerHTML = '<div class="empty-state">Ingen API-användning registrerad</div>';
         }
       } catch (err) {
         renderSectionState('eko-api-usage', 'error', null, err.detail || 'Kunde inte hämta API-användning');
@@ -1563,139 +1255,87 @@
 
     async function loadValor() {
       var sections = ['valor-status', 'valor-training', 'valor-details'];
-      sections.forEach(function(s) { renderSectionState(s, 'loading'); });
+      sections.forEach(s => renderSectionState(s, 'loading'));
 
       try {
         var data = await apiFetch('/admin/valor-stats');
         if (!data) return;
-
         var model = data.model || {};
         var isTrained = !!data.model_available || !!model.model_version;
         var threshold = data.production_threshold || 50;
         var sampleCount = data.total_samples || model.training_samples || 0;
-        var progress = Math.min(100, (sampleCount / threshold * 100));
+        var progress = Math.min(100, sampleCount/threshold*100);
 
-        // Status card
+        // Status
         var stEl = document.getElementById('valor-status');
-        var statusContent = '';
-        if (isTrained) {
-          statusContent =
-            '<div class="kpi-row">' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + esc(model.model_version || '-') + '</div>' +
-                '<div class="kl">Version</div>' +
-              '</div>' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + (model.mae_sek != null ? formatSEK(model.mae_sek) : '-') + '</div>' +
-                '<div class="kl">MAE</div>' +
-              '</div>' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + (model.mape_pct != null ? formatPct(model.mape_pct) : '-') + '</div>' +
-                '<div class="kl">MAPE</div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="stat-row">' +
-              '<span class="stat-label">Tranad</span>' +
-              '<span class="stat-value">' + (model.trained_at ? timeAgo(model.trained_at) : '-') + '</span>' +
-            '</div>';
-        } else {
-          statusContent =
-            '<div style="padding:12px 0;font-size:0.8125rem;color:var(--t3)">' +
-              'Modellen ar inte tranad annu. Samla minst ' + esc(String(threshold)) + ' traningsprover for att aktivera produktion. ' +
-              'Datapunkter samlas fran market_comparable via price_observation-tabellen.' +
-            '</div>';
-        }
+        var statusContent = isTrained
+          ? '<div class="kpi-row"><div class="kpi"><div class="kl">Version</div><div class="kv">'+esc(model.model_version||'—')+'</div></div><div class="kpi"><div class="kl">MAE</div><div class="kv">'+(model.mae_sek!=null?formatSEK(model.mae_sek):'—')+'</div></div><div class="kpi"><div class="kl">MAPE</div><div class="kv">'+(model.mape_pct!=null?formatPct(model.mape_pct):'—')+'</div></div></div>' +
+            '<div class="stat-row"><span class="stat-label">Tränad</span><span class="stat-value">'+(model.trained_at?timeAgo(model.trained_at):'—')+'</span></div>'
+          : '<div style="padding:12px 0;font-size:12px;color:var(--t3)">Modellen är inte tränad ännu. Samla minst '+threshold+' träningsprover för att aktivera produktion.</div>';
+
         stEl.innerHTML =
-          '<div class="card ' + (isTrained ? 'valor-trained' : 'valor-untrained') + '">' +
-            '<div class="card-header">' +
-              '<span class="card-title">Modellstatus</span>' +
-              '<span class="badge ' + (isTrained ? 'badge-ok' : 'badge-warn') + '">' + (isTrained ? 'Tranad' : 'Ej tranad') + '</span>' +
-            '</div>' +
+          '<div class="card '+(isTrained?'valor-trained':'valor-untrained')+'">' +
+            '<div class="card-h"><span class="card-t">Modellstatus</span><span class="badge '+(isTrained?'badge-ok':'badge-wa')+'">'+(isTrained?'Tränad':'Ej tränad')+'</span></div>' +
             statusContent +
           '</div>';
 
-        // Training progress toward 50-sample threshold
-        var trEl = document.getElementById('valor-training');
+        // Progress / milestones
         var remaining = threshold - sampleCount;
-        var rateHtml = '';
-        if (data.samples_per_day != null && data.samples_per_day > 0) {
-          rateHtml =
-            '<div style="font-size:0.6875rem;color:var(--t4);margin-top:2px">' +
-              data.samples_per_day + ' prover/dag i snitt - beraknad ankomst: ' + (data.days_to_threshold ? data.days_to_threshold + ' dagar' : '-') +
-            '</div>';
-        }
-        trEl.innerHTML =
+        var milestones = [
+          { n:10,  label:'10 observationer',    desc:'Manuell träning möjlig',              state: sampleCount>=10 ? 'done' : sampleCount>=0 ? 'next' : 'future', st: sampleCount>=10 ? 'Uppnått' : '~'+Math.ceil((10-sampleCount)/(data.samples_per_day||1))+' dagar', stc: sampleCount>=10 ? 'var(--ok)' : 'var(--watx)' },
+          { n:50,  label:'50 obs → modellen aktiveras', desc:'Auto-träning · ValorAI i produkt-UI', state: sampleCount>=50 ? 'done' : sampleCount>=10 ? 'next' : 'future', st: sampleCount>=50 ? 'Uppnått' : '~'+Math.ceil((50-sampleCount)/(data.samples_per_day||1))+' dagar', stc: sampleCount>=50 ? 'var(--ok)' : 'var(--watx)' },
+          { n:200, label:'200 obs → bättre precision', desc:'Tillförlitlig på fler kategorier', state: sampleCount>=200 ? 'done' : 'future', st:'Framtid', stc:'var(--t4)' },
+          { n:1000,label:'1 000 obs → full precision',  desc:'Hög träffsäkerhet · alla kategorier', state: sampleCount>=1000 ? 'done' : 'future', st:'Framtid', stc:'var(--t4)' },
+        ];
+
+        document.getElementById('valor-training').innerHTML =
           '<div class="card">' +
-            '<div class="card-header">' +
-              '<span class="card-title">Traningsframsteg mot 50 prover</span>' +
+            '<div class="card-h"><span class="card-t">Träningsframsteg mot '+threshold+' prover</span></div>' +
+            '<div style="background:var(--sf);border-radius:8px;padding:12px;margin-bottom:12px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span style="font-size:12px;font-weight:500">Insamlade observationer</span><span style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">'+sampleCount+' <span style="font-size:13px;color:var(--t3);font-weight:400">/ '+threshold+'</span></span></div>' +
+              '<div class="prog-track"><div class="prog-fill wa" style="width:'+progress+'%"></div></div>' +
+              '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3)"><span>'+(data.samples_per_day!=null?data.samples_per_day+' obs/dag':'—')+'</span><span>Aktiveras automatiskt vid '+threshold+'</span></div>' +
             '</div>' +
-            '<div class="kpi-row">' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + formatNum(sampleCount) + '</div>' +
-                '<div class="kl">Prover</div>' +
-              '</div>' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + formatNum(threshold) + '</div>' +
-                '<div class="kl">Mal</div>' +
-              '</div>' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + formatPct(progress) + '</div>' +
-                '<div class="kl">Framsteg</div>' +
-              '</div>' +
+            '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:7px">Vad händer vid varje milstolpe</div>' +
+            milestones.map(m => {
+              var cls = m.state==='done' ? 'ms-done' : m.state==='next' ? 'ms-next' : 'ms-future';
+              var num = m.state==='done' ? '✓' : m.n>=1000 ? '1k' : m.n;
+              return '<div class="ms-row"><div class="ms-num '+cls+'">'+num+'</div><div class="ms-body"><div class="ms-lbl">'+esc(m.label)+'</div><div class="ms-desc">'+esc(m.desc)+'</div></div><div class="ms-st" style="color:'+m.stc+'">'+esc(m.st)+'</div></div>';
+            }).join('') +
+            '<div style="margin-top:12px">' +
+              '<button style="padding:7px 14px;background:var(--sf);color:var(--t4);border:0.5px solid var(--b2);border-radius:7px;font-size:12px;cursor:not-allowed;font-family:inherit" '+(sampleCount<threshold?'disabled':'')+'>'+
+                (sampleCount<threshold?'Träna modell — väntar på '+threshold+' observationer':'Träna om modell')+
+              '</button>' +
             '</div>' +
-            '<div class="progress-track">' +
-              '<div class="progress-fill ' + (progress < 50 ? 'low' : '') + '" style="width:' + progress + '%"></div>' +
-            '</div>' +
-            '<div style="font-size:0.6875rem;color:var(--t4);margin-top:4px">' +
-              (sampleCount >= threshold
-                ? 'Traningstroskeln ar uppnadd'
-                : remaining + ' prover kvar till produktionstroskeln pa ' + threshold) +
-            '</div>' +
-            rateHtml +
           '</div>';
 
-        // Details: observations + estimates
+        // Details
         var dtEl = document.getElementById('valor-details');
         var observations = data.observations || {};
         var estimates = data.estimates || [];
         var obsHtml = '';
         if (observations.total != null) {
-          var obsBySource = '';
-          if (observations.by_source) {
-            obsBySource = observations.by_source.map(function(s) {
-              return '<div class="stat-row"><span class="stat-label">' + abstractSource(s.source) + '</span><span class="stat-value">' + formatNum(s.count) + '</span></div>';
-            }).join('');
-          }
-          obsHtml =
-            '<div class="card">' +
-              '<div class="card-header"><span class="card-title">Observationer</span></div>' +
-              '<div class="stat-row"><span class="stat-label">Totalt</span><span class="stat-value">' + formatNum(observations.total) + '</span></div>' +
-              '<div class="stat-row"><span class="stat-label">Senaste 7d</span><span class="stat-value">' + formatNum(observations.last_7d) + '</span></div>' +
-              obsBySource +
-            '</div>';
+          var bySrc = (observations.by_source||[]).map(s =>
+            '<div class="stat-row"><span class="stat-label">'+abstractSource(s.source)+'</span><span class="stat-value">'+formatNum(s.count)+'</span></div>'
+          ).join('');
+          obsHtml = '<div class="card"><div class="card-h"><span class="card-t">Observationer</span></div>' +
+            '<div class="stat-row"><span class="stat-label">Totalt</span><span class="stat-value">'+formatNum(observations.total)+'</span></div>' +
+            '<div class="stat-row"><span class="stat-label">Senaste 7d</span><span class="stat-value">'+formatNum(observations.last_7d)+'</span></div>' +
+            bySrc + '</div>';
         }
         var estHtml = '';
         if (estimates.length > 0) {
-          estHtml =
-            '<div class="card">' +
-              '<div class="card-header"><span class="card-title">Senaste estimat</span></div>' +
-              '<table class="data-table">' +
-                '<thead><tr><th>Produkt</th><th>Estimat</th><th>Konfidensband</th></tr></thead>' +
-                '<tbody>' + estimates.slice(0, 5).map(function(e) {
-                  var band = e.confidence_low != null ? formatSEK(e.confidence_low) + ' - ' + formatSEK(e.confidence_high) : '-';
-                  return '<tr>' +
-                    '<td>' + esc(e.product_key || '-') + '</td>' +
-                    '<td>' + formatSEK(e.estimated_value_sek) + '</td>' +
-                    '<td style="font-size:0.75rem;color:var(--t3)">' + band + '</td>' +
-                  '</tr>';
-                }).join('') + '</tbody>' +
-              '</table>' +
-            '</div>';
+          estHtml = '<div class="card"><div class="card-h"><span class="card-t">Senaste estimat</span></div>' +
+            '<table class="data-table"><thead><tr><th>Produkt</th><th>Estimat</th><th>Konfidensband</th></tr></thead><tbody>' +
+            estimates.slice(0,5).map(e => {
+              var band = e.confidence_low!=null ? formatSEK(e.confidence_low)+' – '+formatSEK(e.confidence_high) : '—';
+              return '<tr><td>'+esc(e.product_key||'—')+'</td><td>'+formatSEK(e.estimated_value_sek)+'</td><td style="color:var(--t3)">'+band+'</td></tr>';
+            }).join('') + '</tbody></table></div>';
         }
         dtEl.innerHTML = obsHtml + estHtml;
 
       } catch (err) {
-        sections.forEach(function(s) { renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta Valor-data'); });
+        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta Valor-data'));
       }
     }
 
@@ -1705,122 +1345,87 @@
 
     async function loadHealth() {
       var sections = ['hc-health', 'hc-index', 'hc-slow', 'hc-db'];
-      sections.forEach(function(s) { renderSectionState(s, 'loading'); });
+      sections.forEach(s => renderSectionState(s, 'loading'));
 
       try {
-        var results = await Promise.all([
-          apiFetch('/health').catch(function() { return null; }),
-          apiFetch('/admin/index-health').catch(function() { return null; }),
-          apiFetch('/admin/slow-queries').catch(function() { return null; }),
-          apiFetch('/admin/overview').catch(function() { return null; }),
+        var [health, indexHealth, slowQueries, overview] = await Promise.all([
+          apiFetch('/health').catch(() => null),
+          apiFetch('/admin/index-health').catch(() => null),
+          apiFetch('/admin/slow-queries').catch(() => null),
+          apiFetch('/admin/overview').catch(() => null),
         ]);
-        var health = results[0];
-        var indexHealth = results[1];
-        var slowQueries = results[2];
-        var overview = results[3];
 
-        // Health
+        // Health banner + beroenden
         var hhEl = document.getElementById('hc-health');
         if (health) {
           var isOk = health.status === 'ok';
           var deps = health.dependencies || {};
-          var depsHtml = Object.entries(deps).map(function(entry) {
-            var name = entry[0];
-            var cfg = entry[1];
+          var depsHtml = Object.entries(deps).map(([name, cfg]) => {
             var configured = typeof cfg === 'boolean' ? cfg : (cfg && cfg.configured);
             return '<div class="stat-row">' +
-              '<span class="stat-label">' + abstractDependency(name) + '</span>' +
-              '<span class="badge ' + (configured ? 'badge-ok' : 'badge-muted') + '">' + (configured ? 'OK' : 'Ej konfigurerad') + '</span>' +
+              '<span class="stat-label">'+abstractDependency(name)+'</span>' +
+              '<span class="badge '+(configured?'badge-ok':'badge-muted')+'">'+(configured?'OK':'Ej konfigurerad')+'</span>' +
             '</div>';
           }).join('');
           hhEl.innerHTML =
-            '<div class="health-banner ' + (isOk ? 'ok' : 'warn') + '">' +
-              '<div class="health-dot ' + (isOk ? 'ok' : 'warn') + '"></div>' +
-              '<span>' + (isOk ? 'System OK' : 'Varning') + '</span>' +
-              '<span style="margin-left:auto;font-size:0.6875rem;opacity:0.7">v' + esc(health.version || '-') + '</span>' +
+            '<div class="hc-banner '+(isOk?'ok':'wa')+'">' +
+              '<div class="hc-dot '+(isOk?'ok':'wa')+'"></div>' +
+              '<span>'+(isOk?'System OK':'Varning')+'</span>' +
+              '<span style="margin-left:auto;font-size:10px;opacity:0.7">v'+esc(health.version||'—')+'</span>' +
             '</div>' +
-            '<div class="card">' +
-              '<div class="card-header"><span class="card-title">Beroenden</span></div>' +
-              depsHtml +
-            '</div>';
+            '<div class="card"><div class="card-h"><span class="card-t">Beroenden</span></div>'+depsHtml+'</div>';
         } else {
-          hhEl.innerHTML = '<div class="health-banner err"><div class="health-dot err"></div><span>Kunde inte na health-endpoint</span></div>';
+          hhEl.innerHTML = '<div class="hc-banner wa"><div class="hc-dot wa"></div><span>Kunde inte nå health-endpoint</span></div>';
         }
 
-        // Index health
+        // Index
         var ixEl = document.getElementById('hc-index');
         if (indexHealth && indexHealth.length > 0) {
-          ixEl.innerHTML = '<table class="data-table">' +
-            '<thead><tr><th>Tabell</th><th>Seq scans</th><th>Idx scans</th><th>Seq %</th><th>Rader</th></tr></thead>' +
-            '<tbody>' + indexHealth.map(function(r) {
-              var pct = Number(r.seq_scan_pct || 0);
-              var style = pct > 80 ? 'color:var(--er)' : pct > 50 ? 'color:var(--wa)' : '';
-              return '<tr>' +
-                '<td>' + esc(r.table_name) + '</td>' +
-                '<td>' + formatNum(r.seq_scan) + '</td>' +
-                '<td>' + formatNum(r.idx_scan) + '</td>' +
-                '<td style="font-weight:600;' + style + '">' + formatPct(pct) + '</td>' +
-                '<td>' + formatNum(r.live_rows) + '</td>' +
-              '</tr>';
+          ixEl.innerHTML = '<table class="data-table"><thead><tr><th>Tabell</th><th>Seq scans</th><th>Idx scans</th><th>Seq %</th><th>Rader</th></tr></thead><tbody>' +
+            indexHealth.map(r => {
+              var pct = Number(r.seq_scan_pct||0);
+              var style = pct>80 ? 'color:var(--er)' : pct>50 ? 'color:var(--wa)' : '';
+              return '<tr><td>'+esc(r.table_name)+'</td><td>'+formatNum(r.seq_scan)+'</td><td>'+formatNum(r.idx_scan)+'</td><td style="font-weight:500;'+style+'">'+formatPct(pct)+'</td><td>'+formatNum(r.live_rows)+'</td></tr>';
             }).join('') + '</tbody></table>';
-        } else {
-          ixEl.innerHTML = '<div class="empty-state">Ingen indexdata tillganglig</div>';
-        }
+        } else { ixEl.innerHTML = '<div class="empty-state">Ingen indexdata tillgänglig</div>'; }
 
         // Slow queries
         var sqEl = document.getElementById('hc-slow');
         if (slowQueries && slowQueries.length > 0) {
-          sqEl.innerHTML = slowQueries.map(function(q) {
-            return '<div class="query-row">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
-                '<span class="query-duration">' + (q.duration_s != null ? q.duration_s.toFixed(1) + 's' : '-') + '</span>' +
-                '<span class="badge badge-muted">' + esc(q.state) + '</span>' +
+          sqEl.innerHTML = slowQueries.map(q =>
+            '<div class="query-row">' +
+              '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
+                '<span class="query-dur">'+(q.duration_s!=null?q.duration_s.toFixed(1)+'s':'—')+'</span>' +
+                '<span class="badge badge-muted">'+esc(q.state)+'</span>' +
               '</div>' +
-              '<div class="query-text">' + esc(q.query) + '</div>' +
-            '</div>';
-          }).join('');
-        } else {
-          sqEl.innerHTML = '<div class="empty-state">Inga langa queries just nu</div>';
-        }
+              '<div class="query-text">'+esc(q.query)+'</div>' +
+            '</div>'
+          ).join('');
+        } else { sqEl.innerHTML = '<div class="empty-state">Inga långsamma queries just nu</div>'; }
 
         // DB overview
         var dbEl = document.getElementById('hc-db');
         if (overview) {
           var tablesHtml = '';
           if (overview.tables && overview.tables.length > 0) {
-            tablesHtml = '<div class="section-subtitle" style="margin-top:12px">Tabeller</div>' +
-              overview.tables.map(function(t) {
-                return '<div class="db-table-item">' +
-                  '<span style="font-weight:500">' + esc(t.name) + '</span>' +
-                  '<span style="color:var(--t3);font-size:0.75rem">' + formatNum(t.rows) + ' rader</span>' +
-                  '<span style="color:var(--t4);font-size:0.75rem">' + esc(t.size) + '</span>' +
-                '</div>';
-              }).join('');
+            tablesHtml = '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin:10px 0 6px">Tabeller</div>' +
+              overview.tables.map(t =>
+                '<div class="db-table-item"><span style="font-weight:500">'+esc(t.name)+'</span><span style="color:var(--t3);font-size:11px">'+formatNum(t.rows)+' rader</span><span style="color:var(--t4);font-size:11px">'+esc(t.size)+'</span></div>'
+              ).join('');
           }
           dbEl.innerHTML =
             '<div class="kpi-row">' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + esc(String(overview.db_size_mb)) + ' MB</div>' +
-                '<div class="kl">Databasstorlek</div>' +
-              '</div>' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + (overview.uptime_hours != null ? Math.round(overview.uptime_hours) + 'h' : '-') + '</div>' +
-                '<div class="kl">Uptime</div>' +
-              '</div>' +
-              '<div class="kpi-card">' +
-                '<div class="kpi-value">' + formatNum(overview.active_connections) + '/' + formatNum(overview.total_connections) + '</div>' +
-                '<div class="kl">Anslutningar</div>' +
-              '</div>' +
+              '<div class="kpi"><div class="kl">Storlek</div><div class="kv">'+esc(String(overview.db_size_mb))+' MB</div></div>' +
+              '<div class="kpi"><div class="kl">Uptime</div><div class="kv">'+(overview.uptime_hours!=null?Math.round(overview.uptime_hours)+'h':'—')+'</div></div>' +
+              '<div class="kpi"><div class="kl">Anslutningar</div><div class="kv">'+formatNum(overview.active_connections)+'/'+formatNum(overview.total_connections)+'</div></div>' +
             '</div>' +
-            '<div class="stat-row"><span class="stat-label">Databas</span><span class="stat-value">' + esc(overview.db_name) + '</span></div>' +
-            '<div class="stat-row"><span class="stat-label">Version</span><span class="stat-value">' + esc(overview.pg_version) + '</span></div>' +
+            '<div class="stat-row"><span class="stat-label">Databas</span><span class="stat-value">'+esc(overview.db_name)+'</span></div>' +
+            '<div class="stat-row"><span class="stat-label">PostgreSQL</span><span class="stat-value">'+esc(overview.pg_version)+'</span></div>' +
             tablesHtml;
-        } else {
-          dbEl.innerHTML = '<div class="empty-state">Kunde inte hämta databas-översikt</div>';
-        }
+        } else { dbEl.innerHTML = '<div class="empty-state">Kunde inte hämta databas-översikt</div>'; }
 
       } catch (err) {
-        sections.forEach(function(s) { renderSectionState(s, 'error', null, err.detail || 'Hälsokoll misslyckades'); });
+        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Hälsokoll misslyckades'));
       }
     }
 
