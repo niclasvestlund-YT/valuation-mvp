@@ -775,7 +775,7 @@ async function loadValor(){
     const training=d.training||{};
     const obs=d.observations||{};
     // Use training_sample count as the progression metric
-    const sampleCount = obs.total || training.total_samples || 0;
+    const sampleCount = obs.total || 0;
     const progress=Math.min(100,sampleCount/thresh*100);
 
     // Status card
@@ -870,7 +870,7 @@ async function loadHc(){
       const ok=hlt.status==='ok';
       const deps=hlt.dependencies||{};
       const depsHtml=Object.entries(deps).map(([k,v])=>{
-        const cfg=(()=>{if(typeof v==='boolean')return v;if(typeof v==='string')return['configured','enabled','ok','true'].includes(v);if(typeof v==='object'&&v!==null)return v.configured===true||v.status==='ok';return false})();
+        const cfg=(function(){if(v===true||v===false)return v;if(typeof v==='string')return v==='configured'||v==='enabled'||v==='ok';if(v&&typeof v==='object')return v.configured===true||v.status==='ok';return false})();
         return`<div class="stat-row"><span class="stat-label">${absDep(k)}</span><span class="badge ${cfg?'badge-ok':'badge-muted'}">${cfg?'OK':'Ej konfigurerad'}</span></div>`;
       }).join('');
       hhEl.innerHTML=`
