@@ -1453,7 +1453,11 @@ let valCategoryChartInst = null;
 async function loadMarketData() {
   try {
     const res = await fetch('/admin/market-data', { headers });
-    if (!res.ok) return;
+    if (!res.ok) {
+      ['crawl-total','crawl-active','crawl-flagged','crawl-avg-rel'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = '—'; });
+      const el = document.getElementById('crawl-latest'); if (el) el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--accent-danger);font-size:0.8125rem;">Kunde inte hämta data (${res.status})</div>`;
+      return;
+    }
     const d = await res.json();
     const c = d.crawl || {};
     document.getElementById('crawl-total').textContent = (c.total_comparables || 0).toLocaleString('sv-SE');
@@ -1527,7 +1531,12 @@ async function loadMarketData() {
 async function loadValuationsData() {
   try {
     const res = await fetch('/admin/valuations-data', { headers });
-    if (!res.ok) return;
+    if (!res.ok) {
+      document.getElementById('val-empty-msg').style.display = 'block';
+      document.getElementById('val-empty-msg').textContent = `Kunde inte hämta värderingsdata (${res.status})`;
+      document.getElementById('val-data-section').style.display = 'none';
+      return;
+    }
     const d = await res.json();
 
     if (d.empty) {
@@ -1626,7 +1635,14 @@ loadValuationsData();
 async function loadOcrStats() {
   try {
     const res = await fetch('/admin/ocr-stats', { headers });
-    if (!res.ok) return;
+    if (!res.ok) {
+      document.getElementById('ocr-val-google').textContent = '0';
+      document.getElementById('ocr-val-easyocr').textContent = '0';
+      document.getElementById('ocr-val-none').textContent = '0';
+      document.getElementById('ocr-val-hit').textContent = '—';
+      document.getElementById('ocr-recent-table').innerHTML = `<div style="text-align:center;padding:20px;color:var(--accent-danger);font-size:0.8125rem;">Kunde inte hämta data (${res.status})</div>`;
+      return;
+    }
     const d = await res.json();
     const gv = d.provider_counts?.google_vision || 0;
     const ez = d.provider_counts?.easyocr || 0;
@@ -1659,16 +1675,33 @@ async function loadOcrStats() {
       const t = r.created_at ? timeAgo(r.created_at) : '—';
       return `<div class="source-row">${dot} <span class="source-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span><span style="font-size:0.75rem;color:var(--text-muted);margin-right:8px;">${t}</span>${chip}</div>`;
     }).join('');
-  } catch (e) { console.warn('ocr-stats failed:', e); }
+  } catch (e) {
+    console.warn('ocr-stats failed:', e);
+    document.getElementById('ocr-val-google').textContent = '0';
+    document.getElementById('ocr-val-easyocr').textContent = '0';
+    document.getElementById('ocr-val-none').textContent = '0';
+    document.getElementById('ocr-val-hit').textContent = '—';
+    document.getElementById('ocr-recent-table').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Inga OCR-data tillgängliga</div>';
+  }
 }
 
 loadOcrStats();
 loadAgentStats();
 
+function showAgentEmpty(msg) {
+  document.getElementById('agent-total-obs').textContent = '0';
+  document.getElementById('agent-coverage').textContent = '0';
+  document.getElementById('agent-suspicious-rate').textContent = '—';
+  document.getElementById('agent-last-run').textContent = '—';
+  ['agent-source-table','agent-stale-table','agent-jobs-table','agent-top-products'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">${msg}</div>`;
+  });
+}
 async function loadAgentStats() {
   try {
     const res = await fetch('/admin/agent-stats', { headers });
-    if (!res.ok) return;
+    if (!res.ok) { showAgentEmpty(`Kunde inte hämta data (${res.status})`); return; }
     const d = await res.json();
 
     // Status cards
@@ -1751,15 +1784,25 @@ async function loadAgentStats() {
     } else {
       topEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Inga produkter ännu</div>';
     }
-  } catch (e) { console.warn('agent-stats failed:', e); }
+  } catch (e) { console.warn('agent-stats failed:', e); showAgentEmpty('Inga agent-data tillgängliga'); }
 }
 
 loadValorStats();
 
+function showValorEmpty(msg) {
+  const modelEl = document.getElementById('valor-model-status');
+  if (modelEl) modelEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">${msg}</div>`;
+  document.getElementById('valor-total-samples').textContent = '0';
+  document.getElementById('valor-included').textContent = '0';
+  document.getElementById('valor-avg-quality').textContent = '—';
+  document.getElementById('valor-estimates').textContent = '0';
+  const srcEl = document.getElementById('valor-source-breakdown');
+  if (srcEl) srcEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8125rem;">Inga training samples ännu</div>';
+}
 async function loadValorStats() {
   try {
     const res = await fetch('/admin/valor-stats', { headers });
-    if (!res.ok) return;
+    if (!res.ok) { showValorEmpty(`Kunde inte hämta data (${res.status})`); return; }
     const d = await res.json();
 
     // Model status
@@ -1798,7 +1841,7 @@ async function loadValorStats() {
     } else {
       srcEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8125rem;">Inga training samples ännu</div>';
     }
-  } catch (e) { console.warn('valor-stats failed:', e); }
+  } catch (e) { console.warn('valor-stats failed:', e); showValorEmpty('Inga VALOR-data tillgängliga'); }
 }
 
 async function trainValor() {

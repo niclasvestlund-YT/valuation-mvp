@@ -1460,8 +1460,10 @@
       .chat-bubble { position:fixed; bottom:24px; right:24px; width:56px; height:56px; border-radius:50%; background:var(--text-primary); color:var(--bg-base); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:1000; transition:transform 0.15s; }
       .chat-bubble:hover { transform:scale(1.08); }
       .chat-bubble svg { width:24px; height:24px; }
-      .chat-panel { position:fixed; bottom:92px; right:24px; width:380px; max-width:calc(100vw - 32px); height:520px; max-height:calc(100dvh - 120px); background:var(--bg-surface-raised); border-radius:20px; box-shadow:0 -4px 24px rgba(0,0,0,0.08); display:flex; flex-direction:column; z-index:1001; opacity:0; pointer-events:none; transform:translateY(16px); transition:opacity 0.2s, transform 0.2s; }
+      .chat-panel { position:fixed; bottom:92px; right:24px; width:380px; max-width:calc(100vw - 32px); height:520px; max-height:calc(100dvh - 120px); background:#FFFFFF; border-radius:20px; box-shadow:0 -4px 24px rgba(0,0,0,0.08); display:flex; flex-direction:column; z-index:1001; opacity:0; pointer-events:none; transform:translateY(16px); transition:opacity 0.2s, transform 0.2s; }
       .chat-panel.open { opacity:1; pointer-events:auto; transform:translateY(0); }
+      .chat-dimmer { display:none; position:fixed; inset:0; background:rgba(44,42,37,0.5); z-index:1000; }
+      .chat-dimmer.open { display:block; }
       .chat-header { padding:16px 20px; border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between; }
       .chat-header-title { font-size:0.9375rem; font-weight:600; color:var(--text-primary); }
       .chat-header-sub { font-size:0.6875rem; color:var(--text-faint); margin-top:2px; }
@@ -1480,14 +1482,19 @@
       .chat-send { width:42px; height:42px; border-radius:50%; background:var(--text-primary); color:var(--bg-base); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background 0.15s; }
       .chat-send:hover { background:var(--text-secondary); }
       .chat-send svg { width:18px; height:18px; }
-      @media (max-width: 480px) { .chat-panel { right:8px; bottom:80px; width:calc(100vw - 16px); height:calc(100dvh - 100px); } .chat-bubble { bottom:16px; right:16px; } }
+      @media (max-width: 480px) { .chat-panel { right:0; bottom:0; left:0; width:100%; max-width:100%; height:85dvh; max-height:85dvh; border-radius:20px 20px 0 0; transform:translateY(100%); } .chat-panel.open { transform:translateY(0); } .chat-bubble { bottom:16px; right:16px; } }
+      .chat-handle { display:none; }
+      @media (max-width: 480px) { .chat-handle { display:block; width:36px; height:4px; border-radius:2px; background:var(--border-subtle); margin:8px auto 0; } }
+      .chat-input-row { padding-bottom:max(14px, env(safe-area-inset-bottom)); }
       @media (min-width: 1024px) { .chat-panel { width:420px; height:560px; bottom:96px; right:32px; } .chat-bubble { bottom:28px; right:32px; width:60px; height:60px; } .chat-bubble svg { width:26px; height:26px; } }
     </style>
 
     <button class="chat-bubble" id="chat-bubble" aria-label="Prisassistenten">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
     </button>
+    <div class="chat-dimmer" id="chat-dimmer"></div>
     <div class="chat-panel" id="chat-panel">
+      <div class="chat-handle"></div>
       <div class="chat-header">
         <div>
           <div class="chat-header-title">Prisassistenten</div>
@@ -3099,12 +3106,13 @@
       const chatSend = document.getElementById('chat-send');
       const chatMessages = document.getElementById('chat-messages');
 
+      const chatDimmer = document.getElementById('chat-dimmer');
+      function openChat() { chatPanel.classList.add('open'); chatDimmer.classList.add('open'); chatInput.focus(); }
+      function closeChat() { chatPanel.classList.remove('open'); chatDimmer.classList.remove('open'); }
       if (chatBubble) {
-        chatBubble.addEventListener('click', () => {
-          chatPanel.classList.toggle('open');
-          if (chatPanel.classList.contains('open')) chatInput.focus();
-        });
-        chatClose.addEventListener('click', () => chatPanel.classList.remove('open'));
+        chatBubble.addEventListener('click', () => { chatPanel.classList.contains('open') ? closeChat() : openChat(); });
+        chatClose.addEventListener('click', closeChat);
+        chatDimmer.addEventListener('click', closeChat);
 
         async function sendMessage() {
           const msg = chatInput.value.trim();
@@ -3129,7 +3137,10 @@
               const meta = data.has_data ? `<span class="chat-meta">${data.comparables_count} jämförelseobjekt</span>` : '';
               chatMessages.innerHTML += `<div class="chat-msg chat-bot">${reply}${meta}</div>`;
             } else {
-              chatMessages.innerHTML += `<div class="chat-msg chat-bot">${data.detail || 'Kunde inte svara just nu.'}</div>`;
+              const errMsg = (data.detail || '').includes('not enabled')
+                ? 'Prisassistenten är inte tillgänglig just nu. Försök igen senare.'
+                : (data.detail || 'Kunde inte svara just nu.');
+              chatMessages.innerHTML += `<div class="chat-msg chat-bot">${errMsg}</div>`;
             }
           } catch (e) {
             const typing = chatMessages.querySelector('.chat-typing');
