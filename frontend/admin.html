@@ -415,7 +415,7 @@ function absDep(k){
 
 /* ── Auth ── */
 function showLogin(){ge('loginOverlay').classList.remove('hidden');ge('adminShell').classList.remove('active');ge('adminKeyInput').value='';ge('adminKeyInput').focus()}
-function showAdmin(){ge('loginOverlay').classList.add('hidden');ge('adminShell').classList.add('active');loadActiveTab()}
+function showAdmin(){ge('loginOverlay').classList.add('hidden');ge('adminShell').classList.add('active');Object.keys(tabLoaded).forEach(k=>delete tabLoaded[k]);loadActiveTab()}
 async function attemptLogin(){
   const inp=ge('adminKeyInput');const err=ge('loginError');const key=inp.value.trim();
   if(!key){err.style.display='block';err.textContent='Ange en nyckel';return}
