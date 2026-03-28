@@ -10,6 +10,7 @@ from typing import Any
 
 from backend.app.core.config import settings
 from backend.app.schemas.ocr_result import OcrResult
+from backend.app.utils import api_counter
 from backend.app.utils.cache import get_cached as get_cache, set_cached as set_cache
 from backend.app.utils.logger import get_logger
 
@@ -18,6 +19,13 @@ logger = get_logger(__name__)
 
 def _cache_key(image_hash: str) -> str:
     return f"google_vision:{image_hash}"
+
+
+def _quota_units_per_request() -> int:
+    units = 3  # TEXT_DETECTION + LOGO_DETECTION + LABEL_DETECTION
+    if settings.google_vision_use_web_detection:
+        units += 1
+    return units
 
 
 class GoogleVisionClient:
@@ -69,6 +77,15 @@ class GoogleVisionClient:
         try:
             from google.cloud import vision
 
+            quota = api_counter.reserve_quota("google_vision_ocr", amount=_quota_units_per_request())
+            if not quota["allowed"]:
+                logger.warning(
+                    "google_vision.quota_exhausted limit=%s remaining=%s",
+                    quota["quota_limit"],
+                    quota["quota_remaining"],
+                )
+                return OcrResult.empty()
+
             image = vision.Image(content=image_bytes)
             features = [
                 vision.Feature(type_=vision.Feature.Type.TEXT_DETECTION),
@@ -115,6 +132,7 @@ class GoogleVisionClient:
                 processing_time_ms=elapsed_ms,
             )
             set_cache(_cache_key(image_hash), result)
+            api_counter.increment("google_vision_ocr")
             logger.info("google_vision.detect_ok", extra={
                 "image_hash": image_hash[:12],
                 "text_count": len(detected_text),
@@ -125,6 +143,7 @@ class GoogleVisionClient:
             return result
 
         except Exception as exc:
+            api_counter.increment_error("google_vision_ocr")
             logger.error("google_vision.detect_failed", extra={"error": str(exc)})
             return OcrResult.empty()
 

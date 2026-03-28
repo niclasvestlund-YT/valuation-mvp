@@ -100,6 +100,7 @@ class Settings:
     google_vision_timeout_seconds: int
     google_vision_use_web_detection: bool
     use_mock_google_vision: bool
+    google_vision_free_monthly_units: int
     easyocr_enabled: bool
     easyocr_languages: str
     use_mock_easyocr: bool
@@ -120,6 +121,8 @@ class Settings:
     crawler_tradera_sleep: int
     crawler_use_serper: bool
     crawler_max_products_per_run: int
+    google_cse_free_daily_queries: int
+    tradera_free_daily_calls: int
 
     @property
     def is_mock_mode(self) -> bool:
@@ -173,6 +176,7 @@ settings = Settings(
     google_vision_timeout_seconds=_read_int_env("GOOGLE_VISION_TIMEOUT_SECONDS", default=10),
     google_vision_use_web_detection=_read_bool_env("GOOGLE_VISION_USE_WEB_DETECTION", default=False),
     use_mock_google_vision=_read_bool_env("USE_MOCK_GOOGLE_VISION", default=False),
+    google_vision_free_monthly_units=_read_int_env("GOOGLE_VISION_FREE_MONTHLY_UNITS", default=1000),
     easyocr_enabled=_read_bool_env("EASYOCR_ENABLED", default=True),
     easyocr_languages=_read_env("EASYOCR_LANGUAGES") or "en,sv",
     use_mock_easyocr=_read_bool_env("USE_MOCK_EASYOCR", default=False),
@@ -190,4 +194,6 @@ settings = Settings(
     crawler_tradera_sleep=_read_int_env("CRAWLER_TRADERA_SLEEP", default=3),
     crawler_use_serper=_read_bool_env("CRAWLER_USE_SERPER", default=False),
     crawler_max_products_per_run=_read_int_env("CRAWLER_MAX_PRODUCTS_PER_RUN", default=20),
+    google_cse_free_daily_queries=_read_int_env("GOOGLE_CSE_FREE_DAILY_QUERIES", default=100),
+    tradera_free_daily_calls=_read_int_env("TRADERA_FREE_DAILY_CALLS", default=100),
 )

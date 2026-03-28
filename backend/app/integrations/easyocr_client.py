@@ -16,6 +16,7 @@ from backend.app.utils.logger import get_logger
 logger = get_logger(__name__)
 
 _reader = None
+_reader_load_attempted = False
 
 
 def _cache_key(image_hash: str) -> str:
@@ -23,8 +24,12 @@ def _cache_key(image_hash: str) -> str:
 
 
 def _get_reader():
-    global _reader
+    global _reader, _reader_load_attempted
+    if _reader_load_attempted:
+        return _reader
+
     if _reader is None and not settings.use_mock_easyocr:
+        _reader_load_attempted = True
         try:
             import easyocr
             languages = [lang.strip() for lang in settings.easyocr_languages.split(",")]
@@ -40,7 +45,9 @@ class EasyOcrClient:
     def is_configured(self) -> bool:
         if settings.use_mock_easyocr:
             return True
-        return settings.easyocr_enabled
+        if not settings.easyocr_enabled:
+            return False
+        return _get_reader() is not None
 
     def detect(self, image_bytes: bytes) -> OcrResult:
         """Run EasyOCR on image bytes."""

@@ -18,6 +18,7 @@ from typing import Any
 import requests
 
 from backend.app.core.config import settings
+from backend.app.utils import api_counter
 from backend.app.utils.cache import get_cached, set_cached
 
 logger = logging.getLogger(__name__)
@@ -103,6 +104,16 @@ class GoogleCSEClient:
             logger.debug("google_cse.cache_hit query=%s", query)
             return GoogleCSESearchResponse(results=cached, available=True, reason="cache_hit")
 
+        quota = api_counter.reserve_quota("google_cse")
+        if not quota["allowed"]:
+            logger.warning(
+                "google_cse.quota_exhausted query=%s limit=%s remaining=%s",
+                query,
+                quota["quota_limit"],
+                quota["quota_remaining"],
+            )
+            return GoogleCSESearchResponse(results=[], available=False, reason="free_quota_exhausted")
+
         try:
             resp = requests.get(
                 GOOGLE_CSE_URL,
@@ -118,6 +129,7 @@ class GoogleCSEClient:
             )
             resp.raise_for_status()
         except requests.RequestException as exc:
+            api_counter.increment_error("google_cse")
             logger.warning("google_cse.request_failed query=%s reason=%s", query, exc)
             return GoogleCSESearchResponse(results=[], available=False, reason=str(exc))
 
@@ -125,6 +137,7 @@ class GoogleCSEClient:
         items = data.get("items") or []
         results = [self._normalize(item) for item in items]
         set_cached(cache_key, results)
+        api_counter.increment("google_cse")
 
         logger.info("google_cse.results query=%s count=%d", query, len(results))
         return GoogleCSESearchResponse(results=results, available=True, reason="ok")

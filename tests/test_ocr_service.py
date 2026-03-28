@@ -19,6 +19,7 @@ def _force_ocr_mocks():
     # Save originals
     orig_gv = settings.use_mock_google_vision
     orig_eo = settings.use_mock_easyocr
+    orig_attempted = easyocr_mod._reader_load_attempted
 
     # Force mock mode (bypass frozen dataclass)
     object.__setattr__(settings, "use_mock_google_vision", True)
@@ -29,12 +30,14 @@ def _force_ocr_mocks():
 
     # Reset EasyOCR singleton (prevents real model from being used)
     easyocr_mod._reader = None
+    easyocr_mod._reader_load_attempted = False
 
     yield
 
     # Restore originals
     object.__setattr__(settings, "use_mock_google_vision", orig_gv)
     object.__setattr__(settings, "use_mock_easyocr", orig_eo)
+    easyocr_mod._reader_load_attempted = orig_attempted
     _cache.clear()
 
 
@@ -92,23 +95,156 @@ class TestEasyOcrClient:
         assert result.has_text
         assert result.source == "easyocr_mock"
 
+    def test_reports_unconfigured_when_dependency_is_missing(self):
+        from backend.app.core.config import settings
+        import backend.app.integrations.easyocr_client as easyocr_mod
+        from backend.app.integrations.easyocr_client import EasyOcrClient
+
+        orig_mock = settings.use_mock_easyocr
+        orig_enabled = settings.easyocr_enabled
+        orig_attempted = easyocr_mod._reader_load_attempted
+        orig_reader = easyocr_mod._reader
+        try:
+            object.__setattr__(settings, "use_mock_easyocr", False)
+            object.__setattr__(settings, "easyocr_enabled", True)
+            easyocr_mod._reader = None
+            easyocr_mod._reader_load_attempted = False
+
+            client = EasyOcrClient()
+            assert not client.is_configured
+        finally:
+            object.__setattr__(settings, "use_mock_easyocr", orig_mock)
+            object.__setattr__(settings, "easyocr_enabled", orig_enabled)
+            easyocr_mod._reader = orig_reader
+            easyocr_mod._reader_load_attempted = orig_attempted
+
 
 class TestOcrService:
-    def test_uses_google_vision_first(self):
+    def test_prefers_easyocr_when_local_text_is_useful(self):
         from backend.app.services.ocr_service import OcrService
-        service = OcrService()
+
+        class StubGoogleVisionClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult(detected_text=["Sony WH-1000XM5"], detected_logos=["Sony"], source="google")
+
+        class StubEasyOcrClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult(detected_text=["Sony WH-1000XM5"], source="easy")
+
+        google = StubGoogleVisionClient()
+        easy = StubEasyOcrClient()
+        service = OcrService(google_client=google, easyocr_client=easy)
         result = service.detect(b"fake image bytes for service test")
-        assert "google_vision" in result.source
 
-    def test_returns_non_empty(self):
+        assert result.provider == "easyocr"
+        assert easy.calls == 1
+        assert google.calls == 0
+
+    def test_falls_back_to_google_vision_when_easyocr_is_empty(self):
         from backend.app.services.ocr_service import OcrService
-        service = OcrService()
+
+        class StubGoogleVisionClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult(detected_text=["Sony WH-1000XM5"], detected_logos=["Sony"], source="google")
+
+        class StubEasyOcrClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult.empty()
+
+        google = StubGoogleVisionClient()
+        easy = StubEasyOcrClient()
+        service = OcrService(google_client=google, easyocr_client=easy)
         result = service.detect(b"fake image bytes for non-empty test")
-        assert result.has_text or result.has_logos
 
-    def test_fallback_chain(self):
-        """Both mocks return results; first one (Google) wins."""
+        assert result.provider == "google_vision"
+        assert easy.calls == 1
+        assert google.calls == 1
+
+    def test_falls_back_to_google_vision_when_easyocr_text_is_weak(self):
         from backend.app.services.ocr_service import OcrService
-        service = OcrService()
+
+        class StubGoogleVisionClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult(detected_logos=["Sony"], source="google")
+
+        class StubEasyOcrClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult(detected_text=["Sony"], source="easy")
+
+        google = StubGoogleVisionClient()
+        easy = StubEasyOcrClient()
+        service = OcrService(google_client=google, easyocr_client=easy)
         result = service.detect(b"test bytes for fallback chain test")
-        assert result.source.startswith("google_vision")
+
+        assert result.provider == "google_vision"
+        assert easy.calls == 1
+        assert google.calls == 1
+
+    def test_returns_weak_easyocr_when_google_vision_is_empty(self):
+        from backend.app.services.ocr_service import OcrService
+
+        class StubGoogleVisionClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult.empty()
+
+        class StubEasyOcrClient:
+            is_configured = True
+
+            def __init__(self):
+                self.calls = 0
+
+            def detect(self, image_bytes):
+                self.calls += 1
+                return OcrResult(detected_text=["Sony"], source="easy")
+
+        google = StubGoogleVisionClient()
+        easy = StubEasyOcrClient()
+        service = OcrService(google_client=google, easyocr_client=easy)
+        result = service.detect(b"test bytes for weak easyocr fallback")
+
+        assert result.provider == "easyocr"
+        assert result.has_text
+        assert easy.calls == 1
+        assert google.calls == 1

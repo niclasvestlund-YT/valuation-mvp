@@ -69,6 +69,16 @@ class TraderaClient:
             )
             return []
 
+        quota = api_counter.reserve_quota("tradera")
+        if not quota["allowed"]:
+            logger.warning(
+                "tradera.search.free_quota_exhausted query=%s limit=%s remaining=%s",
+                normalized_query,
+                quota["quota_limit"],
+                quota["quota_remaining"],
+            )
+            return []
+
         logger.info(
             "tradera.search.request_start query=%s app_id_present=%s app_key_present=%s base_url=%s category_id=%s page_number=%s order_by=%s",
             normalized_query,
