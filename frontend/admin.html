@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="build-version" content="v12.4">
   <title>Admin v12 — Vardagsvärde</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -634,7 +635,7 @@
       <div class="sidebar-brand">
         <h1>Vardagsvärde</h1>
         <span>Admin</span>
-        <div style="font-size:9px;color:var(--t4);margin-top:2px">v12 · 2026-03-28</div>
+        <div style="font-size:9px;color:var(--t4);margin-top:2px" id="build-info">v12.4 · 2026-03-28</div>
       </div>
       <div class="nav-item active" data-tab="tab-ov">
         <span class="nav-label">Översikt</span>
@@ -1250,42 +1251,23 @@
       try {
         var data = await apiFetch('/admin/assistant-stats');
         if (!data) return;
-        var phaseHtml = '';
-        if (data.phase_breakdown) {
-          phaseHtml =
-            '<div class="section-subtitle">Fasfordelning</div>' +
-            '<div class="stat-row"><span class="stat-label">Bekraftar</span><span class="stat-value">' + formatNum(data.phase_breakdown.confirming) + '</span></div>' +
-            '<div class="stat-row"><span class="stat-label">Korrigerar</span><span class="stat-value">' + formatNum(data.phase_breakdown.correcting) + '</span></div>' +
-            '<div class="stat-row"><span class="stat-label">Klara</span><span class="stat-value">' + formatNum(data.phase_breakdown.complete) + '</span></div>' +
-            '<div class="stat-row"><span class="stat-label">Ej stodda</span><span class="stat-value">' + formatNum(data.phase_breakdown.unsupported) + '</span></div>';
-        }
         el.innerHTML =
-          '<div class="kpi-row">' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(data.total_conversations) + '</div>' +
-              '<div class="kl">Konversationer (7d)</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + (data.confirmed_pct != null ? data.confirmed_pct + '%' : '-') + '</div>' +
-              '<div class="kl">Bekraftade direkt</div>' +
-            '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(data.corrections) + '</div>' +
-              '<div class="kl">Korrigeringar</div>' +
-            '</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Konversationer</div><div style="font-size:10px;color:var(--t3)">senaste 7 dagar</div></div>' +
+            '<div style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">' + (data.total_conversations || '—') + '</div>' +
           '</div>' +
-          phaseHtml +
-          '<div style="margin-top:8px;font-size:0.6875rem;color:var(--t4)">' + esc(data.note || '') + '</div>';
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Bekräftade direkt</div><div style="font-size:10px;color:var(--t3)">ingen rättelse</div></div>' +
+            '<div style="font-size:15px;font-weight:500;color:#34a873;font-variant-numeric:tabular-nums">' + (data.confirmed_pct != null ? data.confirmed_pct + '%' : '—') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:8px">' +
+            '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">Rättelser</div><div style="font-size:10px;color:var(--t3)">fel produkt identifierad</div></div>' +
+            '<div style="font-size:15px;font-weight:500;color:#d4a017;font-variant-numeric:tabular-nums">' + (data.corrections || '0') + '</div>' +
+          '</div>';
       } catch (err) {
-        // Fallback: show placeholder data + error note
         el.innerHTML =
-          '<div class="kpi-row">' +
-            '<div class="kpi-card"><div class="kpi-value">-</div><div class="kl">Konversationer (7d)</div></div>' +
-            '<div class="kpi-card"><div class="kpi-value">-</div><div class="kl">Bekraftade direkt</div></div>' +
-            '<div class="kpi-card"><div class="kpi-value">-</div><div class="kl">Korrigeringar</div></div>' +
-          '</div>' +
-          '<div style="font-size:0.75rem;color:var(--t3);padding:8px 0;">' +
-            'Kunde inte hämta assistentstatistik. Data visas när anslutningen återupprättas.' +
+          '<div style="font-size:11px;color:var(--t3);padding:8px 0;">' +
+            'Kunde inte hämta assistentstatistik.' +
           '</div>';
       }
     }
