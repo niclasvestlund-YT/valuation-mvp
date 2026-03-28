@@ -107,6 +107,10 @@ class Product(Base):
     valuation_count = Column(Integer, default=0, server_default="0")
     first_seen = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), server_default=func.now())
     last_seen = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), server_default=func.now())
+    # Crawl scheduling
+    crawl_tier = Column(Text, default="warm", server_default="warm")  # "hot" | "warm" | "cold"
+    last_crawled_at = Column(DateTime(timezone=True), nullable=True)
+    crawl_enabled = Column(Boolean, default=True, server_default="true")
 
 
 class MarketComparable(Base):
@@ -150,24 +154,37 @@ class NewPriceSnapshot(Base):
 
 
 class AgentJob(Base):
-    """Tracks external agent/crawler job runs."""
+    """Tracks crawl/agent job runs with queue semantics."""
     __tablename__ = "agent_job"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    started_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), server_default=func.now())
+    started_at = Column(DateTime(timezone=True), nullable=True)
     finished_at = Column(DateTime(timezone=True), nullable=True)
+    scheduled_for = Column(DateTime(timezone=True), nullable=True)  # when to run (None = ASAP)
     product_key = Column(Text, nullable=False)
     search_terms = Column(ARRAY(Text), nullable=True)
     source = Column(Text, nullable=False)
+    task_type = Column(Text, default="crawl", server_default="crawl")  # "crawl" | "new_price" | "full"
+    # Queue state: pending → running → completed | failed | dead
+    status = Column(Text, nullable=False, default="pending", server_default="pending")
+    priority = Column(Integer, default=5, server_default="5")  # 1=highest, 10=lowest
+    # Retry
+    attempts = Column(Integer, default=0, server_default="0")
+    max_attempts = Column(Integer, default=3, server_default="3")
+    next_retry_at = Column(DateTime(timezone=True), nullable=True)
+    last_error = Column(Text, nullable=True)
+    # Results
     observations_added = Column(Integer, default=0, server_default="0")
     observations_rejected = Column(Integer, default=0, server_default="0")
-    status = Column(Text, nullable=False, default="running", server_default="running")
     summary = Column(Text, nullable=True)
     error_message = Column(Text, nullable=True)
 
     __table_args__ = (
+        Index("idx_agent_job_status_priority", "status", "priority"),
         Index("idx_agent_job_started", "started_at"),
         Index("idx_agent_job_product_started", "product_key", "started_at"),
+        Index("idx_agent_job_scheduled", "scheduled_for"),
     )
 
 

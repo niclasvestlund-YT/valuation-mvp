@@ -17,11 +17,15 @@ HEIC_IMAGE_MIME_TYPES = {
     "image/heic",
     "image/heif",
 }
+AVIF_IMAGE_MIME_TYPES = {
+    "image/avif",
+}
 OUTPUT_IMAGE_MIME_TYPE = "image/jpeg"
 MAX_LONGEST_SIDE = 1600
 JPEG_QUALITY = 82
 
 _HEIC_SUPPORT_REGISTERED = False
+_AVIF_SUPPORT_REGISTERED = False
 
 
 class ImagePreprocessError(ValueError):
@@ -74,6 +78,21 @@ def has_heic_support() -> bool:
     return True
 
 
+def has_avif_support() -> bool:
+    global _AVIF_SUPPORT_REGISTERED
+
+    if _AVIF_SUPPORT_REGISTERED:
+        return True
+
+    try:
+        import pillow_avif  # noqa: F401 — registers AVIF codec with Pillow on import
+    except ImportError:
+        return False
+
+    _AVIF_SUPPORT_REGISTERED = True
+    return True
+
+
 def is_supported_mime_type(mime_type: str) -> bool:
     return normalize_mime_type(mime_type) in SUPPORTED_IMAGE_MIME_TYPES
 
@@ -88,6 +107,12 @@ def ensure_decoder_support(source_mime_type: str) -> None:
         raise ImagePreprocessError(
             "HEIC/HEIF images require the optional 'pillow-heif' package. "
             "Install it with: python3 -m pip install pillow-heif"
+        )
+
+    if normalized in AVIF_IMAGE_MIME_TYPES and not has_avif_support():
+        raise ImagePreprocessError(
+            "AVIF images require the optional 'pillow-avif-plugin' package. "
+            "Install it with: python3 -m pip install pillow-avif-plugin"
         )
 
 

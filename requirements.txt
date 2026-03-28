@@ -6,6 +6,8 @@ pydantic
 Pillow
 # Optional but recommended for iPhone HEIC/HEIF uploads.
 pillow-heif
+# AVIF support — iPhone iOS 16+ can save photos as AVIF
+pillow-avif-plugin
 # Database
 asyncpg
 sqlalchemy[asyncio]
