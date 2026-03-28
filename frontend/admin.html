@@ -2,7 +2,13 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Värdekoll Admin">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F7F5F0">
 <title>VÄRDEKOLL — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -58,14 +64,52 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-base);
     color: var(--text-primary);
+    min-height: 100vh;
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     line-height: 1.5;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
   }
+
+  /* iOS tap delay removal */
+  a, button, [role="button"], input, select, textarea {
+    touch-action: manipulation;
+  }
+
+  /* Input focus — cross-platform */
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px rgba(44,42,37,0.08);
+  }
+
+  /* Prevent auto-zoom on focus (iOS) */
+  input, select, textarea {
+    font-size: max(16px, var(--text-base));
+  }
+
+  /* Focus-visible for keyboard nav (desktop only) */
+  @media (hover: hover) {
+    a:focus-visible, button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--text-primary);
+      outline-offset: 2px;
+    }
+  }
+  @media (hover: none) {
+    a:focus, button:focus { outline: none; }
+  }
+
+  /* Hide scrollbars in sidebar and drawer */
+  .sidebar::-webkit-scrollbar, .mobile-nav-drawer::-webkit-scrollbar { display: none; }
+  .sidebar, .mobile-nav-drawer { scrollbar-width: none; -ms-overflow-style: none; }
 
   /* ─── Layout shell ─── */
   .admin-shell {
     display: flex;
+    min-height: 100vh;
     min-height: 100dvh;
   }
 
@@ -78,8 +122,11 @@
     flex-shrink: 0;
     position: sticky;
     top: 0;
+    height: 100vh;
     height: 100dvh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: var(--space-6) var(--space-4);
   }
 
@@ -111,6 +158,7 @@
     text-decoration: none;
     min-height: var(--tap-min);
     transition: background 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .sidebar-nav a:hover,
@@ -148,6 +196,7 @@
   }
 
   .sidebar-back a:hover { color: var(--text-primary); }
+  .sidebar-back a { -webkit-tap-highlight-color: transparent; }
 
   /* ─── Mobile header ─── */
   .mobile-header {
@@ -235,6 +284,8 @@
     padding: var(--space-6) var(--space-4);
     padding-top: calc(var(--safe-top) + var(--space-6));
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
   }
@@ -295,6 +346,8 @@
     min-width: 0;
     padding: var(--space-4);
     padding-bottom: calc(var(--safe-bottom) + var(--space-8));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* ─── Section labels ─── */
@@ -733,8 +786,21 @@
     .source-stats { flex-wrap: nowrap; }
   }
 
+  /* ─── Responsive: tablet landscape (768px+) ─── */
+  @media (min-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .main-content { padding: var(--space-6) var(--space-8); }
+    .charts-row { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: var(--text-2xl); }
+  }
+
+  /* Source name overflow cap */
+  .source-name { max-width: 280px; }
+
   /* ─── Responsive: desktop (1024px+) ─── */
   @media (min-width: 1024px) {
+    .source-name { max-width: 400px; }
+    .source-row { min-height: 48px; }
     .mobile-header { display: none; }
     .hamburger-btn { display: none; }
 
@@ -756,6 +822,46 @@
       max-width: 1100px;
       padding: var(--space-10) var(--space-8);
     }
+  }
+
+  /* ─── Responsive: ultrawide (1440px+) ─── */
+  @media (min-width: 1440px) {
+    .main-content { max-width: 1200px; padding: var(--space-10) var(--space-10); }
+  }
+
+  /* ─── Bottom tab bar (mobile only) ─── */
+  .bottom-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 40;
+    border-top: 1px solid var(--border-subtle);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    background: rgba(247, 245, 240, 0.92);
+  }
+  .bottom-tab {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px;
+    padding: 8px 4px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.625rem; font-weight: 500;
+    min-height: 52px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 0.15s;
+  }
+  .bottom-tab.active { color: var(--text-primary); }
+  .bottom-tab svg { flex-shrink: 0; stroke-width: 1.5px; }
+  .bottom-tab.active svg { stroke-width: 2px; }
+  @media (min-width: 768px) { .bottom-tabs { display: none; } }
+  @media (max-width: 767px) {
+    .main-content { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px) + var(--space-4)); }
+    .mobile-nav-drawer { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-6)); }
   }
 
   /* ─── Reduce motion ─── */
@@ -871,8 +977,11 @@
           <div id="api-usage-header" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-3);">Laddar...</div>
           <div id="api-usage-table"></div>
           <div class="info-footer" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>Data sparas till disk och överlever omstarter.</span>
-            <button onclick="resetApiCounters()" style="font-size:0.6875rem;color:var(--accent-danger);background:none;border:1px solid var(--accent-danger);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Nollställ</button>
+            <span>Quota-data sparas till disk, överlever omstarter och rullar vidare tills ni nollställer manuellt eller perioden byter dag/månad.</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+              <button onclick="resetApiCounters('period')" style="font-size:0.6875rem;color:var(--accent-warning);background:none;border:1px solid var(--accent-warning);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Nollställ period</button>
+              <button onclick="resetApiCounters('all')" style="font-size:0.6875rem;color:var(--accent-danger);background:none;border:1px solid var(--accent-danger);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">Nollställ allt</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1131,11 +1240,73 @@
   <div class="detail-body" id="detail-body"></div>
 </div>
 
+<!-- Bottom tab bar (mobile) -->
+<nav class="bottom-tabs" id="bottom-tabs" aria-label="Navigering">
+  <a href="#overview" data-section="overview" class="bottom-tab active">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Översikt</span>
+  </a>
+  <a href="#api" data-section="api" class="bottom-tab">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    <span>API</span>
+  </a>
+  <a href="#crawl" data-section="crawl" class="bottom-tab">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Data</span>
+  </a>
+  <a href="#valuations" data-section="valuations" class="bottom-tab">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+    <span>Flöde</span>
+  </a>
+  <a href="#agent" data-section="agent" class="bottom-tab">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 12v6"/></svg>
+    <span>VALOR</span>
+  </a>
+</nav>
+
+<!-- Key gate (replaces prompt()) -->
+<div id="key-gate" style="display:none;position:fixed;inset:0;z-index:200;background:var(--bg-base);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-6);padding-top:calc(env(safe-area-inset-top,0px) + var(--space-6));padding-bottom:calc(env(safe-area-inset-bottom,0px) + var(--space-6));">
+  <div style="max-width:340px;width:100%;text-align:center;">
+    <div style="font-size:var(--text-xs);font-weight:700;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;margin-bottom:var(--space-6);">VÄRDEKOLL ADMIN</div>
+    <div style="font-size:var(--text-xl);font-weight:600;color:var(--text-primary);margin-bottom:var(--space-2);">Admin-nyckel krävs</div>
+    <div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-6);">Ange ADMIN_SECRET_KEY för att komma åt admin-panelen.</div>
+    <input id="key-input" type="password" placeholder="Admin-nyckel" autocomplete="current-password" style="width:100%;padding:14px 16px;border:1px solid var(--border-medium);border-radius:12px;background:var(--bg-surface-raised);font-size:var(--text-base);font-family:inherit;color:var(--text-primary);outline:none;margin-bottom:var(--space-3);-webkit-appearance:none;">
+    <button id="key-submit" style="width:100%;padding:14px;background:var(--text-primary);color:#fff;border:none;border-radius:12px;font-size:var(--text-base);font-weight:600;font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Fortsätt</button>
+    <div id="key-error" style="display:none;margin-top:var(--space-3);font-size:var(--text-sm);color:var(--accent-danger);">Fel nyckel — försök igen</div>
+  </div>
+</div>
+
 <script>
-/* ─── Admin key ─── */
-const ADMIN_KEY = localStorage.getItem('admin_key') || prompt('Admin-nyckel:');
-if (ADMIN_KEY) localStorage.setItem('admin_key', ADMIN_KEY);
-const headers = { 'X-Admin-Key': ADMIN_KEY || '' };
+/* ─── Admin key — inline UI instead of prompt() ─── */
+let ADMIN_KEY = localStorage.getItem('admin_key') || '';
+let headers = { 'X-Admin-Key': ADMIN_KEY };
+
+function showKeyGate() {
+  document.getElementById('key-gate').style.display = 'flex';
+  setTimeout(() => document.getElementById('key-input').focus(), 100);
+}
+function hideKeyGate() {
+  document.getElementById('key-gate').style.display = 'none';
+}
+document.getElementById('key-submit').addEventListener('click', () => {
+  const val = document.getElementById('key-input').value.trim();
+  if (!val) return;
+  ADMIN_KEY = val;
+  headers = { 'X-Admin-Key': ADMIN_KEY };
+  localStorage.setItem('admin_key', ADMIN_KEY);
+  hideKeyGate();
+  fetchData();
+  fetchApiUsage();
+  loadMarketData();
+  loadValuationsData();
+  loadOcrStats();
+  loadAgentStats();
+  loadValorStats();
+});
+document.getElementById('key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('key-submit').click();
+});
+if (!ADMIN_KEY) { showKeyGate(); }
 
 /* ─── Mobile nav ─── */
 function toggleMobileNav() {
@@ -1280,10 +1451,14 @@ async function fetchData() {
   }
 }
 
-async function resetApiCounters() {
-  if (!confirm('Nollställ alla API-räknare?')) return;
+async function resetApiCounters(scope = 'all') {
+  const isPeriodReset = scope === 'period';
+  const question = isPeriodReset
+    ? 'Nollställ aktiva dag- och månadsbudgetar för API:erna? Historiska totalsiffror behålls.'
+    : 'Nollställ alla API-räknare och historik?';
+  if (!confirm(question)) return;
   try {
-    await fetch('/admin/api-usage/reset', { method: 'POST', headers });
+    await fetch(`/admin/api-usage/reset?scope=${encodeURIComponent(scope)}`, { method: 'POST', headers });
     fetchApiUsage();
   } catch (e) { console.warn('Reset failed:', e); }
 }
@@ -1291,6 +1466,7 @@ async function resetApiCounters() {
 async function fetchApiUsage() {
   const sourceLabels = {
     tradera: 'Tradera', blocket: 'Blocket', vinted: 'Vinted',
+    google_cse: 'Google CSE', google_vision_ocr: 'Google Vision OCR',
     serper_new_price: 'Google Shopping (Serper)', serpapi_used: 'SerpAPI (used)',
     serpapi_new_price: 'SerpAPI (new price)', vision_openai: 'OpenAI Vision'
   };
@@ -1299,7 +1475,7 @@ async function fetchApiUsage() {
     if (!res.ok) throw new Error(res.statusText);
     const data = await res.json();
     const hdr = document.getElementById('api-usage-header');
-    hdr.textContent = `Totalt ${data.total_all_sources} anrop sedan servern startade ${data.since ? data.since.split('T')[0] : '—'}`;
+    hdr.textContent = `Lyckade anrop: ${data.total_all_sources}. Reserverad gratisbudget: ${data.total_quota_units_all_sources}. Sparat sedan ${data.since ? data.since.split('T')[0] : '—'}. Idag: ${data.today || '—'}. Månad: ${data.current_month || '—'}.`;
     const tbl = document.getElementById('api-usage-table');
     let html = '';
     for (const [key, s] of Object.entries(data.sources || {})) {
@@ -1312,14 +1488,34 @@ async function fetchApiUsage() {
         else if (s.success_rate_pct >= 70) rateColor = 'var(--accent-warning)';
         else rateColor = 'var(--accent-danger)';
       }
-      const lastCall = s.last_called ? new Date(s.last_called).toLocaleTimeString('sv-SE') : '—';
+      const lastCall = s.last_called ? timeAgo(s.last_called) : '—';
+      const currentBlocked = s.quota_period === 'month' ? s.blocked_this_month : s.blocked_today;
+      const quotaSummary = s.quota_limit != null
+        ? (s.quota_period === 'day'
+            ? `Idag ${s.quota_used}/${s.quota_limit} ${s.quota_unit_label}, månad ${s.quota_this_month}, blockerade idag ${currentBlocked}`
+            : `Månad ${s.quota_used}/${s.quota_limit} ${s.quota_unit_label}, blockerade denna månad ${currentBlocked}`)
+        : `Ingen gratisgräns satt. Totalt ok ${s.total_calls}, idag ${s.today}.`;
+      let quotaColor = 'var(--text-muted)';
+      if (s.quota_exhausted) quotaColor = 'var(--accent-danger)';
+      else if (s.quota_limit != null && s.quota_remaining <= Math.max(1, Math.round(s.quota_limit * 0.2))) quotaColor = 'var(--accent-warning)';
+      else if (s.quota_limit != null) quotaColor = 'var(--accent-positive)';
+      const quotaChip = s.quota_limit != null
+        ? `${s.quota_used}/${s.quota_limit} ${s.quota_unit_label}`
+        : `tot ${s.total_calls}`;
+      const quotaStatus = s.quota_exhausted ? 'stoppad' : s.quota_limit != null ? `kvar ${s.quota_remaining}` : 'ingen gräns';
+      const blockedText = s.blocked_total > 0 ? `block ${s.blocked_total}` : 'block 0';
       html += `<div class="source-row">
-        <span class="source-name">${label}</span>
+        <span class="source-name" style="white-space:normal;overflow:visible;text-overflow:unset;">
+          <strong style="display:block;color:var(--text-primary);font-weight:600;">${label}</strong>
+          <span style="font-size:var(--text-xs);color:var(--text-muted);">${quotaSummary}</span>
+        </span>
         <div class="source-stats">
-          <span class="source-success">${s.total_calls}</span>
-          <span class="source-fail">${s.error_calls}</span>
+          <span class="source-success">ok ${s.total_calls}</span>
+          <span class="source-fail">fel ${s.error_calls}</span>
           <span style="color:${rateColor};font-weight:500;">${rateText}</span>
-          <span style="color:var(--text-muted)">${s.today}d</span>
+          <span style="color:${quotaColor};font-weight:500;">${quotaChip}</span>
+          <span style="color:${s.blocked_total > 0 ? 'var(--accent-danger)' : 'var(--text-muted)'};">${blockedText}</span>
+          <span style="color:var(--text-muted)">${quotaStatus}</span>
           <span style="color:var(--text-faint);font-size:var(--text-xs);">${lastCall}</span>
         </div>
       </div>`;
@@ -1867,6 +2063,21 @@ async function rollbackValor() {
 }
 
 setTimeout(function refresh() { loadMarketData(); loadValuationsData(); loadOcrStats(); loadAgentStats(); loadValorStats(); setTimeout(refresh, 60000); }, 60000);
+
+/* ─── Bottom tabs + nav active state sync ─── */
+document.querySelectorAll('[data-section]').forEach(link => {
+  link.addEventListener('click', function(e) {
+    const section = this.dataset.section;
+    // Update all nav active states (sidebar + mobile drawer + bottom tabs)
+    document.querySelectorAll('[data-section]').forEach(a =>
+      a.classList.toggle('active', a.dataset.section === section)
+    );
+    // Close mobile drawer if open
+    if (document.getElementById('mobile-nav-drawer').classList.contains('active')) {
+      toggleMobileNav();
+    }
+  });
+});
 </script>
 
 </body>
