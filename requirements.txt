@@ -31,3 +31,4 @@ scikit-learn>=1.4.0
 pandas>=2.0.0
 # Testing
 pytest>=8.0.0
+pytest-timeout==2.4.0
