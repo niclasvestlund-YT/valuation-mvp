@@ -4,6 +4,8 @@ Tests ETL valuation path, quality score formula, training endpoint,
 and mock mode independence from model files.
 """
 
+import argparse
+import importlib.util
 import os
 import unittest
 from unittest.mock import patch
@@ -254,6 +256,8 @@ class TestEtlValuationsNullGuard(unittest.TestCase):
 
     def test_etl_valuations_skips_null_brand(self):
         """Rows with null brand must be excluded by the guard, not crash."""
+        if importlib.util.find_spec("pandas") is None:
+            self.skipTest("pandas not installed")
         import pandas as pd
         # Simulate the guard logic from step_etl_valuations
         df = pd.DataFrame([
@@ -320,6 +324,8 @@ class TestDryRunExitsCleanly(unittest.TestCase):
         import subprocess
         import sys
         from pathlib import Path
+        if importlib.util.find_spec("pandas") is None:
+            self.skipTest("pandas not installed")
         script = Path("scripts/train_valor.py")
         if not script.exists():
             self.skipTest("train_valor.py not found")
@@ -408,6 +414,70 @@ class TestValorProductionThreshold(unittest.TestCase):
         self.assertTrue(hasattr(settings, "valor_min_samples_for_production"))
         self.assertIsInstance(settings.valor_min_samples_for_production, int)
         self.assertGreater(settings.valor_min_samples_for_production, 0)
+
+
+class TestValorLabMode(unittest.TestCase):
+
+    def test_lab_mode_does_not_upsert_training_samples(self):
+        """Lab mode should not write training samples back into DB state."""
+        from scripts.train_valor import should_upsert_training_samples
+
+        lab_args = argparse.Namespace(mode="lab", dry_run=False)
+        prod_args = argparse.Namespace(mode="production", dry_run=False)
+        dry_run_args = argparse.Namespace(mode="production", dry_run=True)
+
+        self.assertFalse(should_upsert_training_samples(lab_args))
+        self.assertTrue(should_upsert_training_samples(prod_args))
+        self.assertFalse(should_upsert_training_samples(dry_run_args))
+
+    def test_lab_mode_excludes_valuations_by_default(self):
+        """Lab mode should default to observation-only data for safer challenger runs."""
+        if importlib.util.find_spec("pandas") is None:
+            self.skipTest("pandas not installed")
+        import pandas as pd
+
+        from scripts.train_valor import combine_training_sources, should_include_valuations
+
+        args = argparse.Namespace(mode="lab", include_valuations=False)
+        self.assertFalse(should_include_valuations(args))
+
+        df_obs = pd.DataFrame([{"source_type": "agent", "price_sek": 1000}])
+        df_val = pd.DataFrame([{"source_type": "valuation", "price_sek": 1200}])
+        df, summary = combine_training_sources(df_obs, df_val, include_valuations=should_include_valuations(args))
+
+        self.assertEqual(len(df), 1)
+        self.assertEqual(summary["observations"], 1)
+        self.assertEqual(summary["valuations"], 1)
+        self.assertFalse(summary["valuations_included"])
+
+    def test_lab_mode_can_opt_in_valuations(self):
+        """Lab mode should still allow explicit valuation inclusion for experiments."""
+        if importlib.util.find_spec("pandas") is None:
+            self.skipTest("pandas not installed")
+        import pandas as pd
+
+        from scripts.train_valor import combine_training_sources, should_include_valuations
+
+        args = argparse.Namespace(mode="lab", include_valuations=True)
+        self.assertTrue(should_include_valuations(args))
+
+        df_obs = pd.DataFrame([{"source_type": "agent", "price_sek": 1000}])
+        df_val = pd.DataFrame([{"source_type": "valuation", "price_sek": 1200}])
+        df, summary = combine_training_sources(df_obs, df_val, include_valuations=should_include_valuations(args))
+
+        self.assertEqual(len(df), 2)
+        self.assertTrue(summary["valuations_included"])
+
+    def test_lab_artifacts_do_not_set_latest_path(self):
+        """Lab candidates must not target valor_latest.pkl."""
+        from scripts.train_valor import build_artifact_paths
+
+        args = argparse.Namespace(mode="lab")
+        paths = build_artifact_paths(args, "valor_lab_20260328_120000")
+
+        self.assertIsNone(paths["latest_path"])
+        self.assertIn("candidates", str(paths["model_path"]))
+        self.assertIn("reports", str(paths["report_path"]))
 
 
 class TestValorStatsProductionThreshold(unittest.TestCase):

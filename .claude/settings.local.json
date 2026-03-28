@@ -8,7 +8,11 @@
       "Read(//opt/homebrew/**)",
       "Read(//Users/niclasvestlund/.pyenv/**)",
       "Bash(command -v brew)",
-      "Bash(python -m pip show sqlalchemy)"
+      "Bash(python -m pip show sqlalchemy)",
+      "Bash(psql --version)",
+      "Bash(pg_isready)",
+      "Bash(psql -U postgres -d valuation -c \"SELECT 1\")",
+      "Bash(python -c \"from pgvector.sqlalchemy import Vector; print\\(''pgvector python package OK''\\)\")"
     ]
   }
 }

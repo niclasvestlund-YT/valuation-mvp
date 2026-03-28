@@ -4,15 +4,15 @@ User-visible problem:
 - Vi kunde inte läsa eller behandla underlaget i det här försöket.
 
 Debug context:
-- debug_id: `vision_9513b3c329ae`
+- debug_id: `vision_80c99ced5a30`
 - stage: `image_decode`
 - status: `error`
-- technical_message: image_preprocess_failed: Unsupported image type: image/avif (request_id=vision_9513b3c329ae)
+- technical_message: image_preprocess_failed: Image bytes could not be decoded. (request_id=vision_80c99ced5a30)
 
 Safe reproduction summary:
 ```json
 {
-  "image_count": 1,
+  "image_count": 3,
   "has_image_payload": true,
   "brand_override_present": false,
   "model_override_present": false,
@@ -21,7 +21,7 @@ Safe reproduction summary:
 ```
 
 Relevant files to inspect:
-- `5d02da5df552836db894cead8a68f5f3.avif`
+- `88def0e5-dd48-4b14-87ea-8b34b9adc6d6.avif`
 - `backend/app/services/image_preprocess.py`
 - `backend/app/services/vision_service.py`
 
@@ -29,7 +29,7 @@ Suggested investigation area:
 - Check base64 parsing, MIME handling, HEIC conversion, and Pillow decode/conversion paths.
 
 Reproduction hints:
-- Repeat the request with 1 uploaded image(s).
+- Repeat the request with 3 uploaded image(s).
 - Use the same file name again to confirm the failure is reproducible.
 - Copy this report into Codex and ask it to fix the failing stage.
 

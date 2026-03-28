@@ -29,6 +29,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 
 MODELS_DIR = Path(os.getenv("VALOR_MODEL_DIR", str(PROJECT_ROOT / "models")))
+CANDIDATE_MODELS_DIR = MODELS_DIR / "candidates"
+REPORTS_DIR = MODELS_DIR / "reports"
 CONDITION_MAP = {
     "like_new": 1.0, "excellent": 0.9, "good": 0.8, "used": 0.6,
     "fair": 0.5, "poor": 0.3, "unknown": 0.5,
@@ -47,6 +49,154 @@ def get_sync_engine():
     db_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:dev@localhost:5432/valuation")
     sync_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
     return create_engine(sync_url)
+
+
+def should_include_valuations(args) -> bool:
+    """Keep production behavior unchanged while making lab mode safer by default."""
+    return args.mode == "production" or args.include_valuations
+
+
+def should_upsert_training_samples(args) -> bool:
+    """Lab runs should stay isolated from DB training-sample side effects."""
+    return args.mode == "production" and not args.dry_run
+
+
+def resolve_lab_validation_size(train_valid_count: int) -> int:
+    """Use a small newest-slice validation window for lab-only early stopping."""
+    if train_valid_count < 5:
+        return 0
+    valid_size = max(1, int(train_valid_count * 0.2))
+    if train_valid_count - valid_size < 2:
+        return 1
+    return valid_size
+
+
+def combine_training_sources(df_obs, df_val, *, include_valuations: bool):
+    """Combine ETL outputs and return a small inspectable source summary."""
+    import pandas as pd
+
+    if include_valuations and not df_val.empty:
+        combined = pd.concat([df_obs, df_val], ignore_index=True)
+    else:
+        combined = df_obs.copy()
+
+    return combined, {
+        "observations": int(len(df_obs)),
+        "valuations": int(len(df_val)),
+        "valuations_included": bool(include_valuations),
+        "combined": int(len(combined)),
+    }
+
+
+def build_model_version(args) -> str:
+    """Use separate version naming for lab candidates to avoid touching champion artifacts."""
+    date_str = datetime.now().strftime("%Y%m%d")
+    if args.mode == "lab":
+        return f"valor_lab_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    existing_count = len(list(MODELS_DIR.glob("valor_v*.pkl")))
+    return f"valor_v{existing_count + 1}_{date_str}"
+
+
+def build_artifact_paths(args, model_version: str) -> dict[str, Path | None]:
+    """Resolve artifact paths for either production or isolated lab mode."""
+    model_filename = f"{model_version}.pkl"
+    if args.mode == "lab":
+        return {
+            "model_path": CANDIDATE_MODELS_DIR / model_filename,
+            "latest_path": None,
+            "features_path": CANDIDATE_MODELS_DIR / f"{model_version}_features.json",
+            "report_path": REPORTS_DIR / f"{model_version}.report.json",
+        }
+
+    return {
+        "model_path": MODELS_DIR / model_filename,
+        "latest_path": MODELS_DIR / "valor_latest.pkl",
+        "features_path": MODELS_DIR / "valor_features.json",
+        "report_path": REPORTS_DIR / f"{model_version}.report.json",
+    }
+
+
+def _value_counts(series) -> dict[str, int]:
+    counts = {}
+    for key, value in series.fillna("unknown").value_counts().items():
+        counts[str(key)] = int(value)
+    return counts
+
+
+def build_feature_matrix(subset):
+    import numpy as np
+
+    return np.column_stack([
+        subset["condition_encoded"].values,
+        subset["month_of_year"].values,
+        np.clip(subset["days_since_observation"].values, 0, 365),
+        subset["price_to_new_ratio"].fillna(0.6).clip(0.1, 1.0).values,
+        (subset["is_sold"] == True).astype(int).values,
+        (subset["listing_type"] == "fixed").astype(int).values,
+        (subset["listing_type"] == "auction").astype(int).values,
+        (subset.get("source_type", "agent") == "valuation").astype(int).values if "source_type" in subset.columns else np.zeros(len(subset)),
+        (subset.get("source_type", "agent") == "crawler").astype(int).values if "source_type" in subset.columns else np.zeros(len(subset)),
+        (subset.get("source_type", "agent") == "agent").astype(int).values if "source_type" in subset.columns else np.ones(len(subset)),
+    ])
+
+
+def compute_lab_cv_summary(df, args) -> dict | None:
+    """Lab mode only: inspect candidate stability with a small rolling time-series CV summary."""
+    from sklearn.base import clone
+    from sklearn.metrics import mean_absolute_error
+    from sklearn.model_selection import TimeSeriesSplit
+    from xgboost import XGBRegressor
+
+    if args.mode != "lab" or len(df) < 10:
+        return None
+
+    n_splits = min(3, len(df) - 1)
+    if n_splits < 2:
+        return None
+
+    scores: list[float] = []
+    split_sizes: list[dict[str, int]] = []
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    base_model = XGBRegressor(
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        verbosity=0,
+        tree_method="hist",
+        eval_metric="mae",
+    )
+
+    for train_idx, test_idx in tscv.split(df):
+        train_df = df.iloc[train_idx]
+        test_df = df.iloc[test_idx]
+        if len(test_df) < 2:
+            continue
+
+        X_train = build_feature_matrix(train_df)
+        y_train = train_df["price_sek"].values.astype(float)
+        X_test = build_feature_matrix(test_df)
+        y_test = test_df["price_sek"].values.astype(float)
+
+        model = clone(base_model)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        scores.append(float(mean_absolute_error(y_test, y_pred)))
+        split_sizes.append({"train": int(len(train_df)), "test": int(len(test_df))})
+
+    if not scores:
+        return None
+
+    return {
+        "splits": int(len(scores)),
+        "mae_mean": round(sum(scores) / len(scores), 2),
+        "mae_min": round(min(scores), 2),
+        "mae_max": round(max(scores), 2),
+        "split_sizes": split_sizes,
+    }
 
 
 def step_etl(engine, args) -> "pd.DataFrame":
@@ -128,7 +278,7 @@ def step_etl(engine, args) -> "pd.DataFrame":
     df["price_to_new_ratio"] = df["price_to_new_ratio"].fillna(0.6).clip(0.1, 1.0)
 
     # Upsert to training_samples
-    if not args.dry_run:
+    if should_upsert_training_samples(args):
         from sqlalchemy import text as sql_text
         with engine.begin() as conn:
             for _, row in df.iterrows():
@@ -171,6 +321,8 @@ def step_etl(engine, args) -> "pd.DataFrame":
                 except Exception as e:
                     pass  # Duplicate — fine
         print("  Training samples upserted till DB.")
+    elif args.mode == "lab":
+        print("  Lab-läge: observationer skrivs inte till training_sample.")
 
     return df[df["included"]].copy()
 
@@ -262,7 +414,7 @@ def step_etl_valuations(engine, args) -> "pd.DataFrame":
           f"excluded_missing_fields={excluded_no_product_key} threshold=0.5")
 
     # Upsert to training_sample
-    if not args.dry_run:
+    if should_upsert_training_samples(args):
         from sqlalchemy import text as sql_text
         upserted = 0
         with engine.begin() as conn:
@@ -306,6 +458,8 @@ def step_etl_valuations(engine, args) -> "pd.DataFrame":
                 except Exception:
                     pass
         print(f"  Upserted {upserted} valuation training samples.")
+    elif args.mode == "lab":
+        print("  Lab-läge: valuations skrivs inte till training_sample.")
 
     return df[df["included"]].copy()
 
@@ -362,48 +516,63 @@ def step_train(df: "pd.DataFrame", args) -> dict | None:
 
     print(f"\n── STEG 3: FEATURES ({len(df)} samples) ──")
 
-    # Time-series split — NOT random
     df = df.sort_values("observed_at").reset_index(drop=True)
-    split_idx = int(len(df) * 0.8)
-    train_df = df.iloc[:split_idx]
-    test_df = df.iloc[split_idx:]
+    if args.mode == "lab":
+        # Lab mode gets the more advanced train/valid/test split for early stopping.
+        test_size = max(2, int(len(df) * 0.2))
+        if len(df) - test_size < 3:
+            test_size = max(1, len(df) - 2)
 
-    print(f"  Train: {len(train_df)}, Test: {len(test_df)}")
+        train_valid_df = df.iloc[:-test_size] if test_size < len(df) else df.iloc[:0]
+        test_df = df.iloc[-test_size:] if test_size > 0 else df.iloc[:0]
+
+        valid_size = resolve_lab_validation_size(len(train_valid_df))
+        if valid_size > 0:
+            train_df = train_valid_df.iloc[:-valid_size]
+            valid_df = train_valid_df.iloc[-valid_size:]
+        else:
+            train_df = train_valid_df
+            valid_df = train_valid_df.iloc[:0]
+    else:
+        # Production keeps the simpler existing split until lab candidates prove themselves.
+        split_idx = int(len(df) * 0.8)
+        train_df = df.iloc[:split_idx]
+        valid_df = df.iloc[:0]
+        test_df = df.iloc[split_idx:]
+
+    print(f"  Train: {len(train_df)}, Valid: {len(valid_df)}, Test: {len(test_df)}")
 
     if len(test_df) < 2:
         print("  ✗ Test set för liten")
         if not args.force:
             return None
 
-    def build_features(subset):
-        return np.column_stack([
-            subset["condition_encoded"].values,
-            subset["month_of_year"].values,
-            np.clip(subset["days_since_observation"].values, 0, 365),
-            subset["price_to_new_ratio"].fillna(0.6).clip(0.1, 1.0).values,
-            (subset["is_sold"] == True).astype(int).values,
-            (subset["listing_type"] == "fixed").astype(int).values,
-            (subset["listing_type"] == "auction").astype(int).values,
-            (subset.get("source_type", "agent") == "valuation").astype(int).values if "source_type" in subset.columns else np.zeros(len(subset)),
-            (subset.get("source_type", "agent") == "crawler").astype(int).values if "source_type" in subset.columns else np.zeros(len(subset)),
-            (subset.get("source_type", "agent") == "agent").astype(int).values if "source_type" in subset.columns else np.ones(len(subset)),
-        ])
-
-    X_train = build_features(train_df)
+    X_train = build_feature_matrix(train_df)
     y_train = train_df["price_sek"].values.astype(float)
-    X_test = build_features(test_df)
+    X_valid = build_feature_matrix(valid_df) if len(valid_df) else None
+    y_valid = valid_df["price_sek"].values.astype(float) if len(valid_df) else None
+    X_test = build_feature_matrix(test_df)
     y_test = test_df["price_sek"].values.astype(float)
 
     print("\n── STEG 4: TRÄNA XGBOOST ──")
     from xgboost import XGBRegressor
     from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 
-    model = XGBRegressor(
-        n_estimators=200, max_depth=6, learning_rate=0.05,
+    model_kwargs = dict(
+        n_estimators=500, max_depth=6, learning_rate=0.05,
         subsample=0.8, colsample_bytree=0.8,
-        random_state=42, verbosity=0,
+        random_state=42, verbosity=0, tree_method="hist",
+        eval_metric="mae",
     )
-    model.fit(X_train, y_train)
+    if X_valid is not None and y_valid is not None and len(valid_df) > 0:
+        model_kwargs["early_stopping_rounds"] = 20
+
+    model = XGBRegressor(**model_kwargs)
+    fit_kwargs = {}
+    if X_valid is not None and y_valid is not None and len(valid_df) > 0:
+        fit_kwargs["eval_set"] = [(X_valid, y_valid)]
+
+    model.fit(X_train, y_train, **fit_kwargs)
 
     # Baseline: naive prediction = mean of training set (standard ML baseline)
     baseline_pred = np.full_like(y_test, y_train.mean())
@@ -425,6 +594,10 @@ def step_train(df: "pd.DataFrame", args) -> dict | None:
     print(f"  Baseline:  {baseline_mae:.0f} kr MAE")
     print(f"  vs baseln: {'+' if vs_baseline > 0 else ''}{vs_baseline}%")
 
+    cv_summary = compute_lab_cv_summary(df, args)
+    if cv_summary:
+        print(f"  CV MAE:    {cv_summary['mae_mean']:.0f} kr över {cv_summary['splits']} tids-splits")
+
     return {
         "model": model,
         "mae_sek": mae,
@@ -436,108 +609,200 @@ def step_train(df: "pd.DataFrame", args) -> dict | None:
         "test_count": len(test_df),
         "vs_baseline_mae": baseline_mae,
         "vs_baseline_improvement_pct": vs_baseline,
+        "train_start_at": train_df["observed_at"].min().isoformat() if len(train_df) else None,
+        "train_end_at": train_df["observed_at"].max().isoformat() if len(train_df) else None,
+        "valid_start_at": valid_df["observed_at"].min().isoformat() if len(valid_df) else None,
+        "valid_end_at": valid_df["observed_at"].max().isoformat() if len(valid_df) else None,
+        "test_start_at": test_df["observed_at"].min().isoformat() if len(test_df) else None,
+        "test_end_at": test_df["observed_at"].max().isoformat() if len(test_df) else None,
+        "train_source_breakdown": _value_counts(train_df["source_type"]) if "source_type" in train_df.columns else {},
+        "valid_source_breakdown": _value_counts(valid_df["source_type"]) if "source_type" in valid_df.columns else {},
+        "test_source_breakdown": _value_counts(test_df["source_type"]) if "source_type" in test_df.columns else {},
+        "best_iteration": int(model.best_iteration) if getattr(model, "best_iteration", None) is not None else None,
+        "lab_cv_summary": cv_summary,
     }
 
 
-def step_save(result: dict, warnings: list[str], args) -> str:
-    """Save model to disk and register in DB."""
+def build_training_report(result: dict, warnings: list[str], args, source_summary: dict, artifact_info: dict) -> dict:
+    """Create an inspectable report for either a lab candidate or production run."""
+    return {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "mode": args.mode,
+        "product": args.product,
+        "min_samples": int(args.min_samples),
+        "force": bool(args.force),
+        "valuations_included": bool(source_summary["valuations_included"]),
+        "source_summary": source_summary,
+        "metrics": {
+            "mae_sek": float(result["mae_sek"]),
+            "mape_pct": float(result["mape_pct"]),
+            "within_10pct": float(result["within_10pct"]),
+            "within_20pct": float(result["within_20pct"]),
+            "vs_baseline_mae": float(result["vs_baseline_mae"]),
+            "vs_baseline_improvement_pct": float(result["vs_baseline_improvement_pct"]),
+        },
+        "windows": {
+            "train_start_at": result.get("train_start_at"),
+            "train_end_at": result.get("train_end_at"),
+            "valid_start_at": result.get("valid_start_at"),
+            "valid_end_at": result.get("valid_end_at"),
+            "test_start_at": result.get("test_start_at"),
+            "test_end_at": result.get("test_end_at"),
+        },
+        "train_source_breakdown": result.get("train_source_breakdown") or {},
+        "valid_source_breakdown": result.get("valid_source_breakdown") or {},
+        "test_source_breakdown": result.get("test_source_breakdown") or {},
+        "best_iteration": result.get("best_iteration"),
+        "lab_cv_summary": result.get("lab_cv_summary"),
+        "feature_importance": result["feature_importance"],
+        "warnings": warnings,
+        "artifacts": {
+            "model_path": str(artifact_info["model_path"]),
+            "features_path": str(artifact_info["features_path"]),
+            "report_path": str(artifact_info["report_path"]),
+            "latest_path": str(artifact_info["latest_path"]) if artifact_info.get("latest_path") else None,
+        },
+        "activation": {
+            "is_candidate_only": bool(args.mode == "lab"),
+            "activated": bool(artifact_info["activated"]),
+        },
+    }
+
+
+def step_save(result: dict, warnings: list[str], args, source_summary: dict) -> dict:
+    """Save model artifacts and, in production mode only, register/activate the champion."""
     import joblib
 
     print("\n── STEG 6: SPARA ──")
 
     MODELS_DIR.mkdir(exist_ok=True)
+    CANDIDATE_MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Determine version number
-    existing_count = len(list(MODELS_DIR.glob("valor_v*.pkl")))
-    date_str = datetime.now().strftime("%Y%m%d")
-    model_version = f"valor_v{existing_count + 1}_{date_str}"
-    model_filename = f"{model_version}.pkl"
-
-    model_path = MODELS_DIR / model_filename
-    latest_path = MODELS_DIR / "valor_latest.pkl"
-    features_path = MODELS_DIR / "valor_features.json"
+    model_version = build_model_version(args)
+    artifact_info = {
+        "version": model_version,
+        **build_artifact_paths(args, model_version),
+        "activated": False,
+    }
 
     if args.dry_run:
-        print(f"  [DRY RUN] Skulle sparat {model_filename}")
-        return model_version
+        print(f"  [DRY RUN] Skulle sparat {artifact_info['model_path'].name}")
+        return artifact_info
 
-    joblib.dump(result["model"], model_path)
-    shutil.copy2(model_path, latest_path)
-    features_path.write_text(json.dumps(FEATURE_NAMES, indent=2))
+    joblib.dump(result["model"], artifact_info["model_path"])
+    artifact_info["features_path"].write_text(json.dumps(FEATURE_NAMES, indent=2), encoding="utf-8")
 
-    print(f"  Sparade: {model_filename}")
-    print(f"  Kopierade: valor_latest.pkl")
-    print(f"  Features: valor_features.json")
+    if artifact_info["latest_path"] is not None:
+        shutil.copy2(artifact_info["model_path"], artifact_info["latest_path"])
+        print(f"  Sparade: {artifact_info['model_path'].name}")
+        print(f"  Kopierade: {artifact_info['latest_path'].name}")
+        print(f"  Features: {artifact_info['features_path'].name}")
+    else:
+        print(f"  Sparade kandidat: {artifact_info['model_path'].name}")
+        print(f"  Features: {artifact_info['features_path'].name}")
+        print("  Champion oförändrad (lab-läge).")
 
     # Register in DB
-    try:
-        from sqlalchemy import text, update
-        engine = get_sync_engine()
+    if args.mode == "production":
+        try:
+            from sqlalchemy import text
+            engine = get_sync_engine()
 
-        improvement = result.get("vs_baseline_improvement_pct", 0)
-        if not args.force and improvement < 0:
-            print(f"  ⚠ Modell är {improvement}% sämre än baseline — aktiveras INTE.")
-            print("  Använd --force för att aktivera ändå.")
-            should_activate = False
-        else:
-            should_activate = True
+            improvement = result.get("vs_baseline_improvement_pct", 0)
+            if not args.force and improvement < 0:
+                print(f"  ⚠ Modell är {improvement}% sämre än baseline — aktiveras INTE.")
+                print("  Använd --force för att aktivera ändå.")
+                should_activate = False
+            else:
+                should_activate = True
 
-        with engine.begin() as conn:
-            # Deactivate previous
-            if should_activate:
-                conn.execute(text("UPDATE valor_model SET is_active = false WHERE is_active = true"))
+            with engine.begin() as conn:
+                # Deactivate previous champion only when we are actually promoting.
+                if should_activate:
+                    conn.execute(text("UPDATE valor_model SET is_active = false WHERE is_active = true"))
 
-            conn.execute(text("""
-                INSERT INTO valor_model
-                    (id, model_version, model_filename, training_samples, test_samples,
-                     mae_sek, mape_pct, within_10pct, within_20pct,
-                     vs_baseline_mae, vs_baseline_improvement_pct,
-                     feature_importance, is_active, min_samples_met,
-                     data_quality_warnings, notes)
-                VALUES
-                    (:id, :mv, :mf, :ts, :tes, :mae, :mape, :w10, :w20,
-                     :vbm, :vbi, :fi, :act, :msm, :dqw, :notes)
-            """), {
-                "id": str(uuid.uuid4()), "mv": model_version,
-                "mf": model_filename,
-                "ts": result["train_count"], "tes": result["test_count"],
-                "mae": result["mae_sek"], "mape": result["mape_pct"],
-                "w10": result["within_10pct"], "w20": result["within_20pct"],
-                "vbm": result.get("vs_baseline_mae"),
-                "vbi": result.get("vs_baseline_improvement_pct"),
-                "fi": json.dumps(result["feature_importance"]),
-                "act": should_activate,
-                "msm": result["train_count"] >= args.min_samples,
-                "dqw": warnings if warnings else None,
-                "notes": f"Trained with {result['train_count']} samples",
-            })
-        print(f"  Registrerad i DB: is_active={should_activate}")
-    except Exception as exc:
-        print(f"  ⚠ Kunde inte registrera i DB: {exc}")
+                conn.execute(text("""
+                    INSERT INTO valor_model
+                        (id, model_version, model_filename, training_samples, test_samples,
+                         mae_sek, mape_pct, within_10pct, within_20pct,
+                         vs_baseline_mae, vs_baseline_improvement_pct,
+                         feature_importance, is_active, min_samples_met,
+                         data_quality_warnings, notes)
+                    VALUES
+                        (:id, :mv, :mf, :ts, :tes, :mae, :mape, :w10, :w20,
+                         :vbm, :vbi, :fi, :act, :msm, :dqw, :notes)
+                """), {
+                    "id": str(uuid.uuid4()), "mv": model_version,
+                    "mf": artifact_info["model_path"].name,
+                    "ts": result["train_count"], "tes": result["test_count"],
+                    "mae": result["mae_sek"], "mape": result["mape_pct"],
+                    "w10": result["within_10pct"], "w20": result["within_20pct"],
+                    "vbm": result.get("vs_baseline_mae"),
+                    "vbi": result.get("vs_baseline_improvement_pct"),
+                    "fi": json.dumps(result["feature_importance"]),
+                    "act": should_activate,
+                    "msm": result["train_count"] >= args.min_samples,
+                    "dqw": warnings if warnings else None,
+                    "notes": f"Trained with {result['train_count']} samples",
+                })
+            artifact_info["activated"] = should_activate
+            print(f"  Registrerad i DB: is_active={should_activate}")
+        except Exception as exc:
+            print(f"  ⚠ Kunde inte registrera i DB: {exc}")
 
-    return model_version
+    report = build_training_report(result, warnings, args, source_summary, artifact_info)
+    artifact_info["report_path"].write_text(
+        json.dumps(report, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    print(f"  Rapport: {artifact_info['report_path'].name}")
+
+    return artifact_info
 
 
 def main():
     parser = argparse.ArgumentParser(description="VALOR Training Pipeline")
+    parser.add_argument(
+        "--mode",
+        choices=["production", "lab"],
+        default="production",
+        help="Production updates champion; lab saves an isolated candidate only.",
+    )
     parser.add_argument("--dry-run", action="store_true", help="ETL only, no training")
     parser.add_argument("--force", action="store_true", help="Train even with insufficient data")
     parser.add_argument("--min-samples", type=int, default=50, help="Minimum samples required")
     parser.add_argument("--product", type=str, default=None, help="Train on specific product_key")
+    parser.add_argument(
+        "--include-valuations",
+        action="store_true",
+        help="Include valuation-derived samples in lab mode. Production already includes them.",
+    )
     args = parser.parse_args()
 
     print("════════════════════════════════════")
     print("  VALOR TRÄNINGSPIPELINE")
     print("════════════════════════════════════")
+    if args.mode == "lab":
+        print("  Läge: LAB (isolerad kandidat, champion lämnas orörd)")
 
     engine = get_sync_engine()
     df_obs = step_etl(engine, args)
     df_val = step_etl_valuations(engine, args)
 
-    # Combine both sources
-    import pandas as pd
-    df = pd.concat([df_obs, df_val], ignore_index=True) if not df_val.empty else df_obs
-    print(f"\n  Totalt kombinerade samples: {len(df)} ({len(df_obs)} obs + {len(df_val)} val)")
+    include_valuations = should_include_valuations(args)
+    df, source_summary = combine_training_sources(
+        df_obs,
+        df_val,
+        include_valuations=include_valuations,
+    )
+    print(
+        f"\n  Totalt kombinerade samples: {source_summary['combined']} "
+        f"({source_summary['observations']} obs + "
+        f"{source_summary['valuations'] if source_summary['valuations_included'] else 0} val)"
+    )
+    if args.mode == "lab" and not include_valuations and len(df_val) > 0:
+        print("  Lab-default: valuations hölls utanför för att undvika självförstärkning.")
 
     if df.empty:
         print("\n✗ Ingen träningsdata tillgänglig.")
@@ -562,18 +827,20 @@ def main():
         print("\n✗ Träning avbruten.")
         sys.exit(1)
 
-    version = step_save(result, warnings, args)
+    artifact_info = step_save(result, warnings, args, source_summary)
 
     print(f"""
 ════════════════════════════════════
   VALOR TRÄNINGSRESULTAT
 ════════════════════════════════════
-  Version:       {version}
+  Version:       {artifact_info['version']}
+  Läge:          {args.mode}
   Samples:       {result['train_count']} train / {result['test_count']} test
   MAE:           {result['mae_sek']:.0f} kr
   MAPE:          {result['mape_pct']:.1f}%
   Inom ±10%:     {result['within_10pct']:.1f}%
   Inom ±20%:     {result['within_20pct']:.1f}%
+  Rapport:       {artifact_info['report_path']}
   Varningar:     {warnings or ['Inga']}
 ════════════════════════════════════""")
 
