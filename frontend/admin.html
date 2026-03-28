@@ -415,7 +415,7 @@ function absDep(k){
 
 /* ── Auth ── */
 function showLogin(){ge('loginOverlay').classList.remove('hidden');ge('adminShell').classList.remove('active');ge('adminKeyInput').value='';ge('adminKeyInput').focus()}
-function showAdmin(){ge('loginOverlay').classList.add('hidden');ge('adminShell').classList.add('active');Object.keys(tabLoaded).forEach(k=>delete tabLoaded[k]);loadOv()}
+function showAdmin(){ge('loginOverlay').classList.add('hidden');ge('adminShell').classList.add('active');Object.keys(tabLoading).forEach(k=>delete tabLoading[k]);loadOv()}
 async function attemptLogin(){
   const inp=ge('adminKeyInput');const err=ge('loginError');const key=inp.value.trim();
   if(!key){err.style.display='block';err.textContent='Ange en nyckel';return}
@@ -427,7 +427,7 @@ ge('loginBtn').addEventListener('click',attemptLogin);
 ge('adminKeyInput').addEventListener('keydown',e=>{if(e.key==='Enter')attemptLogin()});
 
 /* ── Nav ── */
-const tabLoaded={};
+const tabLoading={};
 function switchTab(id){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item,.mobile-tab-btn').forEach(n=>n.classList.remove('active'));
@@ -437,8 +437,10 @@ function switchTab(id){
 }
 function loadActiveTab(id){
   const tabId=id||(document.querySelector('.tab-panel.active')||{}).id;
-  if(!tabId||tabLoaded[tabId])return;tabLoaded[tabId]=true;
-  ({tab_ov:loadOv,tab_cr:loadCr,tab_vibe:loadVibe,tab_eko:loadEko,tab_valor:loadValor,tab_hc:loadHc})[tabId]?.();
+  if(!tabId||tabLoading[tabId])return;
+  tabLoading[tabId]=true;
+  const loaders={'tab-ov':loadOv,'tab-cr':loadCr,'tab-vibe':loadVibe,'tab-eko':loadEko,'tab-valor':loadValor,'tab-hc':loadHc};
+  if(loaders[tabId]){loaders[tabId]().finally(()=>{delete tabLoading[tabId]})}
 }
 document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>switchTab(el.dataset.tab)));
 document.querySelectorAll('.etabs .et').forEach(btn=>btn.addEventListener('click',function(){
