@@ -719,7 +719,9 @@ document.querySelectorAll('.etabs .et').forEach(btn=>btn.addEventListener('click
    ÖVERSIKT  /admin/metrics + /health
 ══════════════════════════════════════════════════ */
 async function loadOv(){
-  ['ov-hero-kpis','ov-recent','ov-sources','ov-newprice','ov-assistant','ov-cost-card','ov-milestones-card'].forEach(id=>{const e=ge(id);if(e)skel(e)});
+  // Säker skel — hoppa över om elementet inte finns
+  const skelIds=['ov-hero-kpis','ov-recent','ov-sources','ov-newprice','ov-assistant','ov-cost-card','ov-milestones-card'];
+  skelIds.forEach(id=>{const e=ge(id);if(e)skel(e);});
   try{
     const [met,hlt,dev]=await Promise.all([
       apiFetch('/admin/metrics'),
@@ -735,13 +737,14 @@ async function loadOv(){
     const totalCost=Math.round((1488/30.44)*daysSince);
     const estHours=dev?(dev.estimated_hours||'—'):'—';
     const todayCommits=dev&&dev.history&&dev.history.length>0?dev.history[0].commit_count:0;
-    ge('ov-hero-kpis').innerHTML=
+    const heroEl=ge('ov-hero-kpis');
+    if(heroEl)heroEl.innerHTML=
       '<div class="ov-hero-grid">'+
         '<div class="ov-hero-card">'+
           '<div class="ov-hero-lbl"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Totalkostnad</div>'+
           '<div class="ov-hero-val">~'+fmtN(totalCost)+' kr</div>'+
           '<div class="ov-hero-sub">'+daysSince+' dagar · sedan 24 mars</div>'+
-          '<div class="ov-hero-bar"><div class="ov-hero-bar-fill" style="width:'+Math.min(100,(totalCost/17856*100).toFixed(1))+'%;background:var(--t1);opacity:0.3"></div></div>'+
+          '<div class="ov-hero-bar"><div class="ov-hero-bar-fill" style="width:'+Math.min(100,parseFloat((totalCost/17856*100).toFixed(1)))+'%;background:var(--t1);opacity:0.3"></div></div>'+
           '<div class="ov-hero-bar-lbl">av 17 856 kr/år</div>'+
         '</div>'+
         '<div class="ov-hero-card">'+
@@ -754,7 +757,7 @@ async function loadOv(){
         '<div class="ov-hero-card">'+
           '<div class="ov-hero-lbl"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 013 3v1h3a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h3V5a3 3 0 013-3z"/></svg>Värderingar</div>'+
           '<div class="ov-hero-val">'+fmtN(totalV)+'</div>'+
-          '<div class="ov-hero-sub">↑ '+fmtN(met.last_24h)+' idag · 100% ok</div>'+
+          '<div class="ov-hero-sub">&#8593; '+fmtN(met.last_24h)+' idag · 100% ok</div>'+
           '<div class="ov-hero-bar"><div class="ov-hero-bar-fill" style="width:100%;background:var(--ok)"></div></div>'+
           '<div class="ov-hero-bar-lbl">~'+Math.max(1,Math.round(totalV/daysSince))+'/dag i snitt</div>'+
         '</div>'+
@@ -762,74 +765,89 @@ async function loadOv(){
 
     // ── Senaste värderingar ──
     const recEl=ge('ov-recent');
-    if(met.recent_valuations&&met.recent_valuations.length>0){
-      recEl.innerHTML=met.recent_valuations.slice(0,5).map(v=>{
-        const acc=v.status==='ok'?'a-ok':v.status==='degraded'?'a-wa':v.status==='error'?'a-er':'a-in';
-        const price=v.estimated_value_sek!=null?fmtK(v.estimated_value_sek):'—';
-        return'<div class="sf-row"><div class="val-acc '+acc+'"></div><div class="sf-body"><div class="sf-name">'+esc(v.product_name)+'</div><div class="sf-sub">'+esc(v.category||'')+'&nbsp;·&nbsp;'+ago(v.created_at)+'</div></div><div class="sf-right"><div class="sf-val" style="font-size:13px">'+price+'</div></div></div>';
-      }).join('');
-    }else{recEl.innerHTML='<div class="empty-state">Inga värderingar ännu</div>'}
+    if(recEl){
+      if(met.recent_valuations&&met.recent_valuations.length>0){
+        recEl.innerHTML=met.recent_valuations.slice(0,5).map(v=>{
+          const acc=v.status==='ok'?'a-ok':v.status==='degraded'?'a-wa':v.status==='error'?'a-er':'a-in';
+          const price=v.estimated_value_sek!=null?fmtK(v.estimated_value_sek):'—';
+          return'<div class="sf-row"><div class="val-acc '+acc+'"></div><div class="sf-body"><div class="sf-name">'+esc(v.product_name)+'</div><div class="sf-sub">'+esc(v.category||'')+' &middot; '+ago(v.created_at)+'</div></div><div class="sf-right"><div class="sf-val" style="font-size:13px">'+price+'</div></div></div>';
+        }).join('');
+      }else{recEl.innerHTML='<div class="empty-state">Inga värderingar ännu</div>';}
+    }
 
     // ── Datakällor ──
-    const ss=met.source_stats||{};
-    ge('ov-sources').innerHTML=
+    const srcEl=ge('ov-sources');
+    if(srcEl)srcEl.innerHTML=
       '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Begagnat</div>'+
-      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa A</div><div class="sf-sub">realtid</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
-      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa B</div><div class="sf-sub">1h cache</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
-      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa C</div><div class="sf-sub">pipeline</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>';
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">K&#228;lla A</div><div class="sf-sub">realtid</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">K&#228;lla B</div><div class="sf-sub">1h cache</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">K&#228;lla C</div><div class="sf-sub">pipeline</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>';
 
-    ge('ov-newprice').innerHTML=
-      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Nypris-källa</div><div class="sf-sub">primär · gratis</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
-      '<div class="sf-row"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Nypris-fallback</div><div class="sf-sub">ej behövd</div></div><div style="font-size:10px;color:var(--t4)">Standby</div></div>';
+    const npEl=ge('ov-newprice');
+    if(npEl)npEl.innerHTML=
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Nypris-k&#228;lla</div><div class="sf-sub">prim&#228;r &middot; gratis</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
+      '<div class="sf-row"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Nypris-fallback</div><div class="sf-sub">ej beh&#246;vd</div></div><div style="font-size:10px;color:var(--t4)">Standby</div></div>';
 
     // ── Projektkostnad ──
-    const svcs=[
-      {ic:'CC',col:'#4a4845',tc:'#EDEAE3',name:'Claude Code',kr:Math.round((936/30.44)*daysSince)},
-      {ic:'GP',col:'#10a37f',tc:'#fff',name:'ChatGPT Plus',kr:Math.round((250/30.44)*daysSince)},
-      {ic:'Ge',col:'#1a73e8',tc:'#fff',name:'Gemini AI Pro',kr:Math.round((250/30.44)*daysSince)},
-      {ic:'Ry',col:'#8B5CF6',tc:'#fff',name:'Railway',kr:Math.round((52/30.44)*daysSince)},
-    ];
-    ge('ov-cost-card').innerHTML=
-      '<div class="card">'+
-        '<div class="card-h"><span class="card-t">Projektkostnad</span><span style="font-size:10px;color:var(--t3)">sedan 24 mars 2026</span></div>'+
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+
-          '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Totalt</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+fmtN(totalCost)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+daysSince+' dagar</div></div>'+
-          '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Per dag</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+Math.round(1488/30.44)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">1 488 kr/mån</div></div>'+
-          '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Per värdering</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+(totalV>0?Math.round(totalCost/totalV):0)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+fmtN(totalV)+' värderingar</div></div>'+
-        '</div>'+
-        '<div style="border-top:0.5px solid var(--b1);padding-top:8px">'+
-        svcs.map(s=>'<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:0.5px solid var(--sf);font-size:12px">'+
-          '<div style="width:22px;height:22px;border-radius:5px;background:'+s.col+';color:'+s.tc+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0">'+s.ic+'</div>'+
-          '<span style="flex:1;color:var(--t2)">'+esc(s.name)+'</span>'+
-          '<span style="font-weight:500;font-variant-numeric:tabular-nums">~'+fmtN(s.kr)+' kr</span></div>').join('')+
-        '</div>'+
-      '</div>';
+    const costEl=ge('ov-cost-card');
+    if(costEl){
+      const svcs=[
+        {ic:'CC',col:'#4a4845',tc:'#EDEAE3',name:'Claude Code',monthly:936},
+        {ic:'GP',col:'#10a37f',tc:'#fff',name:'ChatGPT Plus',monthly:250},
+        {ic:'Ge',col:'#1a73e8',tc:'#fff',name:'Gemini AI Pro',monthly:250},
+        {ic:'Ry',col:'#8B5CF6',tc:'#fff',name:'Railway',monthly:52},
+      ];
+      costEl.innerHTML=
+        '<div class="card">'+
+          '<div class="card-h"><span class="card-t">Projektkostnad</span><span style="font-size:10px;color:var(--t3)">sedan 24 mars 2026</span></div>'+
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+
+            '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Totalt</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+fmtN(totalCost)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+daysSince+' dagar</div></div>'+
+            '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Per dag</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+Math.round(1488/30.44)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">1 488 kr/m&#229;n</div></div>'+
+            '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Per v&#228;rdering</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+(totalV>0?Math.round(totalCost/totalV):0)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+fmtN(totalV)+' v&#228;rderingar</div></div>'+
+          '</div>'+
+          '<div style="border-top:0.5px solid var(--b1);padding-top:8px">'+
+          svcs.map(s=>{
+            const kr=Math.round((s.monthly/30.44)*daysSince);
+            return'<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:0.5px solid var(--sf);font-size:12px">'+
+              '<div style="width:22px;height:22px;border-radius:5px;background:'+s.col+';color:'+s.tc+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0">'+s.ic+'</div>'+
+              '<span style="flex:1;color:var(--t2)">'+esc(s.name)+'</span>'+
+              '<span style="font-weight:500;font-variant-numeric:tabular-nums">~'+fmtN(kr)+' kr</span></div>';
+          }).join('')+
+          '</div>'+
+        '</div>';
+    }
 
     // ── Milstolpar ──
-    const vSamp=(met.valor_stats||{}).sample_count||0;
-    const vThresh=(met.valor_stats||{}).threshold||50;
-    ge('ov-milestones-card').innerHTML=
-      '<div class="card">'+
-        '<div class="card-h"><span class="card-t">Väg till lansering</span><span style="font-size:10px;color:var(--t3)">3 av 7 klara</span></div>'+
-        '<div style="height:5px;background:var(--sf);border-radius:3px;overflow:hidden;margin-bottom:14px;transition:background 0.2s"><div style="height:100%;width:43%;background:var(--ok);border-radius:3px"></div></div>'+
-        [
-          {done:true,name:'Backend + API klart',desc:'FastAPI · PostgreSQL · Railway',tag:'Klart'},
-          {done:true,name:'Datakällor integrerade',desc:'Källa A · Källa B · Källa C',tag:'Klart'},
-          {done:true,name:'Admin UI + dark mode',desc:'Safari · Chrome · iOS · Android',tag:'Klart'},
-          {done:'next',name:'Valor ML — '+vSamp+'/'+vThresh+' observationer',desc:'Aktiveras automatiskt vid '+vThresh,tag:'Nästa',pct:Math.round(vSamp/vThresh*100)},
-          {done:false,name:'Betalning + prenumeration',desc:'Stripe · freemium-modell',tag:'Framtid'},
-          {done:false,name:'Publik landing page',desc:'usevalor.com · SEO · onboarding',tag:'Framtid'},
-          {done:false,name:'Lansering 🚀',desc:'Första betalande kund',tag:'Framtid'},
-        ].map(m=>{
-          const isNext=m.done==='next';
-          const isFuture=!m.done&&!isNext;
-          return'<div class="ms-item'+(isNext?' next-up':isFuture?' future-item':'')+'">'+'<div class="ms-dot '+(m.done===true?'done':isNext?'next':'future')+'">'+(m.done===true?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>':isNext?'<div style="width:6px;height:6px;border-radius:50%;background:var(--w)"></div>':'')+'</div>'+
-          '<div class="ms-body"><div class="ms-name">'+esc(m.name)+'</div><div class="ms-desc">'+esc(m.desc)+'</div>'+(isNext&&m.pct!==undefined?'<div style="height:3px;background:rgba(212,160,23,0.2);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+m.pct+'%;background:var(--wa)"></div></div>':'')+'</div>'+
-          '<div class="ms-tag '+(m.done===true?'done':isNext?'next':'future')+'">'+m.tag+'</div></div>';
-        }).join('')+
-      '</div>';
+    const msEl=ge('ov-milestones-card');
+    if(msEl){
+      const vSamp=(met.valor_stats||{}).sample_count||0;
+      const vThresh=(met.valor_stats||{}).threshold||50;
+      const milestones=[
+        {done:true, name:'Backend + API klart',      desc:'FastAPI &middot; PostgreSQL &middot; Railway',      tag:'Klart'},
+        {done:true, name:'Datakällor integrerade',   desc:'Källa A &middot; Källa B &middot; Källa C',        tag:'Klart'},
+        {done:true, name:'Admin UI + dark mode',     desc:'Safari &middot; Chrome &middot; iOS &middot; Android', tag:'Klart'},
+        {done:'next',name:'Valor ML &mdash; '+vSamp+'/'+vThresh+' obs', desc:'Aktiveras automatiskt vid '+vThresh, tag:'N&#228;sta', pct:Math.round(vSamp/vThresh*100)},
+        {done:false,name:'Betalning + prenumeration',desc:'Stripe &middot; freemium-modell',                   tag:'Framtid'},
+        {done:false,name:'Publik landing page',      desc:'usevalor.com &middot; SEO &middot; onboarding',     tag:'Framtid'},
+        {done:false,name:'Lansering &#128640;',      desc:'F&#246;rsta betalande kund',                       tag:'Framtid'},
+      ];
+      msEl.innerHTML=
+        '<div class="card">'+
+          '<div class="card-h"><span class="card-t">V&#228;g till lansering</span><span style="font-size:10px;color:var(--t3)">3 av 7 klara</span></div>'+
+          '<div style="height:5px;background:var(--sf);border-radius:3px;overflow:hidden;margin-bottom:14px;transition:background 0.2s"><div style="height:100%;width:43%;background:var(--ok);border-radius:3px"></div></div>'+
+          milestones.map(m=>{
+            const isNext=m.done==='next';
+            const isFuture=m.done===false;
+            return'<div class="ms-item'+(isNext?' next-up':isFuture?' future-item':'')+'">'+'<div class="ms-dot '+(m.done===true?'done':isNext?'next':'future')+'">'+(m.done===true?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>':isNext?'<div style="width:6px;height:6px;border-radius:50%;background:var(--w)"></div>':'')+'</div>'+
+              '<div class="ms-body"><div class="ms-name">'+m.name+'</div><div class="ms-desc">'+m.desc+'</div>'+(isNext&&m.pct!==undefined?'<div style="height:3px;background:rgba(212,160,23,0.2);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+m.pct+'%;background:var(--wa)"></div></div>':'')+'</div>'+
+              '<div class="ms-tag '+(m.done===true?'done':isNext?'next':'future')+'">'+m.tag+'</div></div>';
+          }).join('')+
+        '</div>';
+    }
 
-  }catch(err){['ov-hero-kpis','ov-recent'].forEach(id=>renderError(ge(id),err.detail||'Okänt fel'))}
+  }catch(err){
+    ['ov-hero-kpis','ov-recent'].forEach(id=>{const e=ge(id);if(e)renderError(e,err.detail||'Okänt fel');});
+  }
   loadAssistant();
 }
 
@@ -856,92 +874,100 @@ async function loadAssistant(){
    CRAWLER  /admin/market-data
 ══════════════════════════════════════════════════ */
 async function loadCr(){
-  ['cr-kpis','cr-sources-inner','cr-latest','cr-coverage','cr-schedule'].forEach(id=>{const e=ge(id);if(e)skel(e)});
+  ['cr-kpis','cr-sources-inner','cr-latest','cr-coverage','cr-schedule'].forEach(id=>{const e=ge(id);if(e)skel(e);});
   try{
     const d=await apiFetch('/admin/market-data');
     if(!d)return;
     const cr=d.crawl||{},pr=d.products||{};
     const total=cr.total_comparables||0;
 
-    // ── KPIs ──
-    ge('cr-kpis').innerHTML=
+    // KPIs
+    const kpiEl=ge('cr-kpis');
+    if(kpiEl)kpiEl.innerHTML=
       '<div class="kpi-row">'+
-        '<div class="kpi"><div class="kl">Jämförelser</div><div class="kv">'+fmtN(total)+'</div><div class="kd" style="color:var(--ok)">'+fmtN(cr.active_comparables)+' aktiva</div></div>'+
+        '<div class="kpi"><div class="kl">J&#228;mf&#246;relser</div><div class="kv">'+fmtN(total)+'</div><div class="kd" style="color:var(--ok)">'+fmtN(cr.active_comparables)+' aktiva</div></div>'+
         '<div class="kpi"><div class="kl">Flaggade</div><div class="kv" style="color:var(--wa)">'+fmtN(cr.flagged_count)+'</div><div class="kd">'+(total>0?((cr.flagged_count/total)*100).toFixed(1):'0')+'% av totalt</div></div>'+
         '<div class="kpi"><div class="kl">Produkter</div><div class="kv">'+fmtN(pr.total)+'</div><div class="kd">3 kategorier</div></div>'+
-        '<div class="kpi"><div class="kl">Senaste crawl</div><div class="kv" style="font-size:16px">'+(cr.latest&&cr.latest.length>0?ago(cr.latest[0].last_seen):'—')+'</div><div class="kd" style="color:var(--ok)">Nästa: 06:00</div></div>'+
+        '<div class="kpi"><div class="kl">Senaste crawl</div><div class="kv" style="font-size:16px">'+(cr.latest&&cr.latest.length>0?ago(cr.latest[0].last_seen):'—')+'</div><div class="kd" style="color:var(--ok)">N&#228;sta: 06:00</div></div>'+
       '</div>';
 
-    // ── Källkort 2-kolumns ──
-    function srcCard(ic,col,accent,name,desc,count,avg,pct,full){
-      const countN=fmtN(count);
-      const avgK=avg!=null?fmtK(avg):'—';
-      const pctN=total>0?((count/total)*100).toFixed(1):'0';
-      return'<div style="'+(full?'grid-column:1/-1;':'')+'background:var(--w);border:0.5px solid var(--b1);border-radius:12px;padding:14px;position:relative;overflow:hidden;transition:background 0.2s,border-color 0.2s">'+
-        '<div class="source-card-accent" style="background:'+accent+'"></div>'+
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">'+
-          '<div class="source-card-ic" style="background:'+col+'">'+ic+'</div>'+
-          '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+name+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+desc+'</div></div>'+
-          '<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:var(--ok)"></div><span style="font-size:10px;color:var(--ok);font-weight:500">Aktiv</span></div>'+
-        '</div>'+
-        '<div style="border-top:0.5px solid var(--sf);padding-top:8px">'+
-          '<div class="source-stat-row"><span style="color:var(--t3)">Annonser</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+countN+'</span></div>'+
-          '<div class="source-stat-row"><span style="color:var(--t3)">Snittpris</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+avgK+'</span></div>'+
-          '<div class="source-stat-row"><span style="color:var(--t3)">Andel av totalt</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+pctN+'%</span></div>'+
-        '</div>'+
-        '<div class="source-progress"><div class="source-progress-fill" style="width:'+Math.min(100,parseFloat(pctN))+'%;background:'+accent+'"></div></div>'+
+    // Källkort
+    const srcEl=ge('cr-sources-inner');
+    if(srcEl){
+      const bySource=cr.by_source||[];
+      const sA=bySource.find(s=>s.source==='tradera')||{count:0,avg_price_sek:null};
+      const sB=bySource.find(s=>s.source==='blocket')||{count:0,avg_price_sek:null};
+      const sC=bySource.find(s=>!['tradera','blocket'].includes(s.source))||{count:0,avg_price_sek:null};
+      function srcCard(ic,col,accent,name,desc,s,full){
+        const pct=total>0?((s.count/total)*100).toFixed(1):'0';
+        return'<div style="'+(full?'grid-column:1/-1;':'')+'background:var(--w);border:0.5px solid var(--b1);border-radius:12px;padding:14px;position:relative;overflow:hidden;transition:background 0.2s,border-color 0.2s">'+
+          '<div class="source-card-accent" style="background:'+accent+'"></div>'+
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">'+
+            '<div class="source-card-ic" style="background:'+col+'">'+ic+'</div>'+
+            '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+name+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+desc+'</div></div>'+
+            '<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:var(--ok)"></div><span style="font-size:10px;color:var(--ok);font-weight:500">Aktiv</span></div>'+
+          '</div>'+
+          '<div style="border-top:0.5px solid var(--sf);padding-top:8px">'+
+            '<div class="source-stat-row"><span style="color:var(--t3)">Annonser</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+fmtN(s.count)+'</span></div>'+
+            '<div class="source-stat-row"><span style="color:var(--t3)">Snittpris</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+(s.avg_price_sek!=null?fmtK(s.avg_price_sek):'—')+'</span></div>'+
+            '<div class="source-stat-row"><span style="color:var(--t3)">Andel av totalt</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+pct+'%</span></div>'+
+          '</div>'+
+          '<div class="source-progress"><div class="source-progress-fill" style="width:'+Math.min(100,parseFloat(pct))+'%;background:'+accent+'"></div></div>'+
+        '</div>';
+      }
+      srcEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">'+
+        srcCard('Tr','#34a873','var(--ok)','K&#228;lla A','Officiellt avtal &middot; realtid',sA,false)+
+        srcCard('Bl','#d4a017','var(--wa)','K&#228;lla B','1h cache &middot; begagnat',sB,false)+
+        srcCard('Kt','#8A8578','var(--t3)','K&#228;lla C','Komplement &middot; pipeline',sC,true)+
       '</div>';
     }
-    const bySource=cr.by_source||[];
-    const sA=bySource.find(s=>s.source==='tradera')||{count:0,avg_price_sek:null};
-    const sB=bySource.find(s=>s.source==='blocket')||{count:0,avg_price_sek:null};
-    const sC=bySource.find(s=>!['tradera','blocket'].includes(s.source))||{count:0,avg_price_sek:null};
-    ge('cr-sources-inner').innerHTML=
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">'+
-        srcCard('Tr','#34a873','var(--ok)','Källa A','Officiellt avtal · realtid',sA.count,sA.avg_price_sek,null,false)+
-        srcCard('Bl','#d4a017','var(--wa)','Källa B','1h cache · begagnat',sB.count,sB.avg_price_sek,null,false)+
-        srcCard('Kt','#8A8578','var(--t3)','Källa C','Komplement · pipeline',sC.count,sC.avg_price_sek,null,true)+
-      '</div>';
 
-    // ── Senaste annonser feed ──
+    // Senaste annonser
     const latEl=ge('cr-latest');
-    if(cr.latest&&cr.latest.length){
-      const srcIc={tradera:{ic:'Tr',col:'#34a873'},blocket:{ic:'Bl',col:'#d4a017'}};
-      latEl.innerHTML=cr.latest.slice(0,6).map(r=>{
-        const si=srcIc[r.source]||{ic:'Kt',col:'#8A8578'};
-        return'<div class="listing-item">'+
-          '<div class="listing-ic" style="background:'+si.col+'">'+si.ic+'</div>'+
-          '<div class="listing-body"><div class="listing-title">'+esc(r.title)+'</div><div class="listing-meta">'+absSrc(r.source)+(r.condition?' · '+esc(r.condition):'')+'</div></div>'+
-          '<div style="text-align:right;flex-shrink:0"><div class="listing-price">'+fmtK(r.price_sek)+'</div><div class="listing-time">'+ago(r.last_seen)+'</div></div>'+
-        '</div>';
-      }).join('');
-      if(cr.latest.length>6)latEl.innerHTML+='<div style="text-align:center;padding:8px 0 2px"><span style="font-size:11px;color:var(--t3);text-decoration:underline;cursor:pointer">Visa alla '+fmtN(total)+' annonser →</span></div>';
-    }else{latEl.innerHTML='<div class="empty-state">Inga annonser ännu</div>'}
+    if(latEl){
+      if(cr.latest&&cr.latest.length){
+        const srcIc={tradera:{ic:'Tr',col:'#34a873'},blocket:{ic:'Bl',col:'#d4a017'}};
+        latEl.innerHTML=cr.latest.slice(0,6).map(r=>{
+          const si=srcIc[r.source]||{ic:'Kt',col:'#8A8578'};
+          return'<div class="listing-item">'+
+            '<div class="listing-ic" style="background:'+si.col+'">'+si.ic+'</div>'+
+            '<div class="listing-body"><div class="listing-title">'+esc(r.title)+'</div><div class="listing-meta">'+absSrc(r.source)+(r.condition?' &middot; '+esc(r.condition):'')+'</div></div>'+
+            '<div style="text-align:right;flex-shrink:0"><div class="listing-price">'+fmtK(r.price_sek)+'</div><div class="listing-time">'+ago(r.last_seen)+'</div></div>'+
+          '</div>';
+        }).join('');
+      }else{latEl.innerHTML='<div class="empty-state">Inga annonser &#228;nnu</div>';}
+    }
 
-    // ── Produkttäckning ──
+    // Produkttäckning
     const covEl=ge('cr-coverage');
-    if(pr.top_by_comparables&&pr.top_by_comparables.length){
-      const maxC=pr.top_by_comparables[0].comparable_count||1;
-      covEl.innerHTML=pr.top_by_comparables.slice(0,8).map(p=>
-        '<div class="cov-item">'+
-          '<div class="cov-name">'+esc(p.brand)+' '+esc(p.model)+'</div>'+
-          '<div class="cov-bar-wrap"><div class="cov-bar" style="width:'+((p.comparable_count/maxC)*100).toFixed(0)+'%"></div></div>'+
-          '<div class="cov-count">'+fmtN(p.comparable_count)+'</div>'+
-          '<div class="cov-price">'+fmtK(p.avg_price_sek)+'</div>'+
-        '</div>'
-      ).join('')+
-      (pr.top_by_comparables.length>8?'<div style="text-align:center;padding:8px 0 2px"><span style="font-size:11px;color:var(--t3);text-decoration:underline;cursor:pointer">Visa alla '+fmtN(pr.total)+' produkter →</span></div>':'');
-    }else{covEl.innerHTML='<div class="empty-state">Ingen produkttäckning ännu</div>'}
+    if(covEl){
+      if(pr.top_by_comparables&&pr.top_by_comparables.length){
+        const maxC=pr.top_by_comparables[0].comparable_count||1;
+        covEl.innerHTML=pr.top_by_comparables.slice(0,8).map(p=>
+          '<div class="cov-item">'+
+            '<div class="cov-name">'+esc(p.brand)+' '+esc(p.model)+'</div>'+
+            '<div class="cov-bar-wrap"><div class="cov-bar" style="width:'+((p.comparable_count/maxC)*100).toFixed(0)+'%"></div></div>'+
+            '<div class="cov-count">'+fmtN(p.comparable_count)+'</div>'+
+            '<div class="cov-price">'+fmtK(p.avg_price_sek)+'</div>'+
+          '</div>'
+        ).join('')+
+        (pr.top_by_comparables.length>8?'<div style="text-align:center;padding:8px 0 2px"><span style="font-size:11px;color:var(--t3);text-decoration:underline;cursor:pointer">Visa alla '+fmtN(pr.total)+' produkter &#8594;</span></div>':'');
+      }else{covEl.innerHTML='<div class="empty-state">Ingen produktt&#228;ckning &#228;nnu</div>';}
+    }
 
-    // ── Schema ──
-    ge('cr-schedule').innerHTML=
-      '<div class="sched-item p1"><span class="sched-badge p1">P1</span><div style="flex:1;min-width:0"><div class="sched-name">Hörlurar + Smartphones</div><div class="sched-sub">24 produkter · daglig · Källa A + B + C</div></div><div class="sched-time p1">Imorgon 06:00</div></div>'+
-      '<div class="sched-item p2"><span class="sched-badge p2">P2</span><div style="flex:1;min-width:0"><div class="sched-name">Laptops + Kameror</div><div class="sched-sub">30 produkter · 3×/vecka · Källa A + B</div></div><div class="sched-time p2">Måndag 06:00</div></div>'+
-      '<div class="sched-item p3"><span class="sched-badge p3">P3</span><div style="flex:1;min-width:0"><div class="sched-name">Gaming + Övrigt</div><div class="sched-sub">26 produkter · veckovis · Källa A</div></div><div class="sched-time p3">Söndag 06:00</div></div>'+
-      '<div style="display:flex;align-items:flex-start;gap:7px;background:var(--sf);border-radius:8px;padding:9px 11px;margin-top:10px;transition:background 0.2s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><div style="font-size:11px;color:var(--t2);line-height:1.6">Ändra schema kräver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div></div>';
+    // Schema
+    const schEl=ge('cr-schedule');
+    if(schEl)schEl.innerHTML=
+      '<div class="sched-item p1"><span class="sched-badge p1">P1</span><div style="flex:1;min-width:0"><div class="sched-name">H&#246;rlurar + Smartphones</div><div class="sched-sub">24 produkter &middot; daglig &middot; K&#228;lla A + B + C</div></div><div class="sched-time p1">Imorgon 06:00</div></div>'+
+      '<div class="sched-item p2"><span class="sched-badge p2">P2</span><div style="flex:1;min-width:0"><div class="sched-name">Laptops + Kameror</div><div class="sched-sub">30 produkter &middot; 3&#215;/vecka &middot; K&#228;lla A + B</div></div><div class="sched-time p2">M&#229;ndag 06:00</div></div>'+
+      '<div class="sched-item p3"><span class="sched-badge p3">P3</span><div style="flex:1;min-width:0"><div class="sched-name">Gaming + &#214;vrigt</div><div class="sched-sub">26 produkter &middot; veckovis &middot; K&#228;lla A</div></div><div class="sched-time p3">S&#246;ndag 06:00</div></div>'+
+      '<div style="display:flex;align-items:flex-start;gap:7px;background:var(--sf);border-radius:8px;padding:9px 11px;margin-top:10px;transition:background 0.2s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><div style="font-size:11px;color:var(--t2);line-height:1.6">&#196;ndra schema kr&#228;ver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div></div>';
 
-  }catch(err){['cr-kpis','cr-sources-inner','cr-latest'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta crawlerdata'))}
-  ge('crSchemaBtn').addEventListener('click',()=>alert('Kräver PATCH /api/crawler/schedule i backend.'));
+  }catch(err){
+    ['cr-kpis','cr-sources-inner','cr-latest'].forEach(id=>{const e=ge(id);if(e)renderError(e,err.detail||'Kunde inte h&#228;mta crawlerdata');});
+  }
+  const schBtn=ge('crSchemaBtn');
+  if(schBtn)schBtn.addEventListener('click',()=>alert('Kr&#228;ver PATCH /api/crawler/schedule i backend.'));
 }
 
 /* ══════════════════════════════════════════════════
