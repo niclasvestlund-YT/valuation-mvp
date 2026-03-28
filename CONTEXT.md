@@ -80,7 +80,7 @@ backend/app/middleware/__init__.py — empty
 backend/app/middleware/request_id.py — RequestIdMiddleware: injects UUID per request, sets request_id_var, adds X-Request-ID header
 tests/test_logger.py — 10 tests: JSON fields, request_id propagation, log levels, exc_info
 frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
-frontend/admin.html — admin UI v12: 6 tabs (Översikt/Crawler/Vibe/Ekonomi/Valor/Hälsokoll), responsive, skeleton loaders, structured errors with copy-to-clipboard
+frontend/admin.html — admin UI v16: 6 tabs, dark mode toggle (CSS + JS), Scandinavian design, responsive, skeleton loaders, structured errors
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
@@ -180,6 +180,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-28 — feat: admin v16 dark mode — CSS custom properties for light/dark, prefers-color-scheme media query, JS toggle with localStorage persistence (dm key only), smooth transitions on all surfaces, updated icon colors for contrast
 2026-03-28 — feat: admin.html full rewrite — 6 tabs (Oversikt/Crawler/Vibe/Ekonomi/Valor/Halsokoll), Scandinavian design system, XSS-safe esc(), memory-only auth, skeleton loaders, Chart.js, responsive mobile tab bar, assistant-stats fallback
 2026-03-28 — review: test + deploy audit — outlier_filter tests (21), config tests (17), Makefile fixed (develop→staging→main, test gate), pytest in requirements.txt, golden cases verified
 2026-03-28 — feat: replace Serper.dev with Webhallen+Inet for new prices — webhallen_client.py (JSON API), inet_client.py (JSON API), serper disabled, priority chain Webhallen→Inet→SerpAPI, 18 new tests, 461 pass
@@ -192,7 +193,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-28 — feat: VALOR production readiness — ETL null brand/model guard, ETL summary logging, feature consistency tests, admin VALOR health cell + detail panel estimate + training CTA, 400 tests pass
 2026-03-27 — fix: promotion safety v2 — strict env vars, localhost rejection, 21 promotion tests, weekly runbook
 2026-03-27 — feat: idempotent reference data promotion — promote_reference_data.py, UPSERT-based, ENVIRONMENT_AND_DATA_PROMOTION.md
-2026-03-27 — fix: Railway staging safety — DATABASE_URL fail-closed, admin auth locked, logger best-effort, env detection, RAILWAY_STAGING_SETUP.md
 
 ## Next Up
 - Backfill price observations from existing comparables to bootstrap VALOR training data toward 50-sample threshold

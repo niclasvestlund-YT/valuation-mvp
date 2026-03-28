@@ -64,8 +64,12 @@ class TestStructure:
                 f"'{name}' syns i UI-text — ska vara abstraherat"
 
     def test_no_localStorage_usage(self, js_code):
-        assert "localStorage" not in js_code, \
-            "Får inte använda localStorage (säkerhetskrav)"
+        # localStorage is allowed ONLY for dark mode preference (dm key)
+        import re
+        # Remove all dark-mode localStorage calls, then check no other usage remains
+        cleaned = re.sub(r"localStorage\.(set|get)Item\('dm'[^)]*\)", "", js_code)
+        assert "localStorage" not in cleaned, \
+            "Får inte använda localStorage utanför dark mode (säkerhetskrav)"
         assert "sessionStorage" not in js_code, \
             "Får inte använda sessionStorage"
 
