@@ -164,10 +164,11 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 - Admin table browser uses f-string SQL after ALLOWED_TABLES allowlist + regex validation (hardened in phase 2)
-- VALOR model persistence: Railway volume now configured in railway.toml; create volume "valor-models" in dashboard to activate
+- VALOR model persistence: Railway volume mounted at /app/models (deployed 2026-03-28); model survives restarts
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-28 — deploy: Railway pre-prod live — valor-models volume, first VALOR training (3 samples, MAE 1189 kr, MAPE 28.7%), model persists across restarts, threshold set to 50
 2026-03-28 — security: admin phase 2 — esc() XSS helper on all API data in innerHTML, renderSectionState() for consistent loader states, str(exc) removed from all HTTP error responses, table browser hardened via ALLOWED_TABLES allowlist, 10 new tests
 2026-03-28 — fix: admin phase 1 security — admin key memory-only (no localStorage), auth gate before fetches, 401/403 re-auth, demo fallback removed, status_breakdown metrics bug fixed, local valuation_history removed from admin, 7 new tests
 2026-03-28 — feat: VALOR production activation — Railway volume config, VALOR_MODEL_DIR env var, production threshold gate (50 samples), admin UI threshold display + training state, 405 tests pass
@@ -182,7 +183,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-27 — feat: Phase 4 OCR — Google Vision + EasyOCR clients, OCR service, cross-verification, pipeline integration (169 tests)
 2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
 2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
-2026-03-26 — feat: Phase 0 intelligence layer — pgvector, Product/MarketComparable/NewPriceSnapshot/ProductEmbedding tables, product_key normalization, Alembic migration
 
 ## Next Up
 [Empty — add manually]
