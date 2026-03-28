@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from backend.app.integrations.google_cse_client import GoogleCSESearchResponse
 from backend.app.integrations.new_price_search_client import NewPriceSearchResponse
@@ -7,6 +8,8 @@ from backend.app.services.new_price_service import NewPriceService
 
 
 class StubSearchClient:
+    is_configured = True
+
     def __init__(self, response: NewPriceSearchResponse) -> None:
         self.response = response
 
@@ -64,6 +67,17 @@ def _service_with_serpapi_stub(stub_response: NewPriceSearchResponse) -> NewPric
 
 
 class NewPriceServiceTests(unittest.TestCase):
+    def setUp(self):
+        # Bypass Webhallen/Inet sources so these tests exercise the SerpAPI/CSE/Serper paths
+        self._wh_patch = patch("backend.app.services.new_price_service._get_webhallen_price", return_value=None)
+        self._inet_patch = patch("backend.app.services.new_price_service._get_inet_price", return_value=None)
+        self._wh_patch.start()
+        self._inet_patch.start()
+
+    def tearDown(self):
+        self._wh_patch.stop()
+        self._inet_patch.stop()
+
     def candidate(
         self,
         *,
@@ -205,9 +219,10 @@ class NewPriceServiceTests(unittest.TestCase):
         self.assertEqual(result["source_count"], 0)
         self.assertEqual(result["method"], "no_trustworthy_candidates")
 
-    def test_prefers_google_cse_without_calling_serper_when_cse_is_actionable(self) -> None:
-        cse_client = TrackingGoogleCSEClient(
-            GoogleCSESearchResponse(
+    def test_serpapi_fallback_used_when_webhallen_and_inet_return_none(self) -> None:
+        """When Webhallen and Inet return None, SerpAPI fallback is used."""
+        service = _service_with_serpapi_stub(
+            NewPriceSearchResponse(
                 results=[
                     self.candidate(title="Apple iPhone 13 128GB", price=7999, currency="SEK", source="Webhallen"),
                     self.candidate(title="Apple iPhone 13 128GB", price=8299, currency="SEK", source="Elgiganten"),
@@ -216,60 +231,22 @@ class NewPriceServiceTests(unittest.TestCase):
                 reason="ok",
             )
         )
-        serper_client = TrackingSerperClient(
-            SerperNewPriceSearchResponse(
-                results=[
-                    self.candidate(title="Apple iPhone 13 128GB", price=7899, currency="SEK", source="Kjell"),
-                    self.candidate(title="Apple iPhone 13 128GB", price=8199, currency="SEK", source="NetOnNet"),
-                ],
-                available=True,
-                reason="ok",
-            )
-        )
-        service = NewPriceService(
-            search_client=StubSearchClient(NewPriceSearchResponse(results=[], available=False, reason="unused")),
-            serper_client=serper_client,
-            google_cse_client=cse_client,
+
+        result = service.get_new_price("Apple", "iPhone 13", "smartphone")
+
+        self.assertEqual(result["method"], "serpapi_google_shopping_median")
+        self.assertEqual(result["estimated_new_price"], 7999.0)
+
+    def test_returns_unavailable_when_serpapi_also_fails(self) -> None:
+        """When all sources fail (Webhallen, Inet patched to None, SerpAPI unavailable), returns unavailable."""
+        service = _service_with_serpapi_stub(
+            NewPriceSearchResponse(results=[], available=False, reason="missing_api_key")
         )
 
         result = service.get_new_price("Apple", "iPhone 13", "smartphone")
 
-        self.assertEqual(result["method"], "google_cse_median")
-        self.assertEqual(cse_client.calls, 1)
-        self.assertEqual(serper_client.calls, 0)
-
-    def test_falls_back_to_serper_when_google_cse_is_insufficient(self) -> None:
-        cse_client = TrackingGoogleCSEClient(
-            GoogleCSESearchResponse(
-                results=[
-                    self.candidate(title="Apple iPhone 13 128GB", price=7999, currency="SEK", source="Webhallen"),
-                ],
-                available=True,
-                reason="ok",
-            )
-        )
-        serper_client = TrackingSerperClient(
-            SerperNewPriceSearchResponse(
-                results=[
-                    self.candidate(title="Apple iPhone 13 128GB", price=7899, currency="SEK", source="Kjell"),
-                    self.candidate(title="Apple iPhone 13 128GB", price=8199, currency="SEK", source="NetOnNet"),
-                ],
-                available=True,
-                reason="ok",
-            )
-        )
-        service = NewPriceService(
-            search_client=StubSearchClient(NewPriceSearchResponse(results=[], available=False, reason="unused")),
-            serper_client=serper_client,
-            google_cse_client=cse_client,
-        )
-
-        result = service.get_new_price("Apple", "iPhone 13", "smartphone")
-
-        self.assertEqual(result["method"], "serper_google_shopping_median")
-        self.assertEqual(cse_client.calls, 1)
-        self.assertEqual(serper_client.calls, 1)
-        self.assertEqual(result["cse_comparison"]["method"], "single_source_insufficient")
+        self.assertIsNone(result["estimated_new_price"])
+        self.assertEqual(result["method"], "unavailable")
 
 
 if __name__ == "__main__":

@@ -98,11 +98,18 @@ def _is_swedish_result(source: str | None, url: str | None, text: str | None) ->
     return any(kw in normalized for kw in SWEDISH_HINT_KEYWORDS)
 
 
+def get_new_price_sek(product_query: str) -> None:
+    """Serper.dev is disabled — quota exhausted. Returns None immediately."""
+    logger.info("serper.disabled", extra={"reason": "quota_exhausted"})
+    return None
+
+
 class SerperNewPriceClient:
     """
     New-price lookup via Serper.dev Google Shopping.
 
-    Primary new-price source — replaces SerpAPI Google Shopping.
+    NOTE: Serper.dev quota exhausted (2026-03-28). Disabled in get_new_price_sek().
+    Class preserved for future quota refill.
     Requires SERPER_DEV_API_KEY in the environment.
     """
 

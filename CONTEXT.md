@@ -53,7 +53,7 @@ backend/app/core/value_engine.py — main orchestration: vision → market → s
 backend/app/services/vision_service.py — OpenAI Vision API, product identification, confidence rules
 backend/app/services/market_service.py — market data wrapper, provider selection
 backend/app/services/market_data_service.py — fetches and merges comparables from all sources
-backend/app/services/new_price_service.py — new price lookup: Serper.dev primary, SerpAPI fallback, SEK filtering
+backend/app/services/new_price_service.py — new price lookup: Webhallen → Inet → SerpAPI fallback; SEK filtering
 backend/app/services/pricing_service.py — weighted median valuation, confidence calculation
 backend/app/services/comparable_scoring.py — relevance scoring, hard rejection rules
 backend/app/services/image_preprocess.py — image conversion, resizing, HEIC support
@@ -62,10 +62,12 @@ backend/app/services/depreciation_rules.py — depreciation rate ranges by categ
 backend/app/integrations/tradera_client.py — Tradera SOAP API client, Swedish marketplace
 backend/app/integrations/facebook_marketplace_client.py — FB Marketplace via DuckDuckGo index (no API key, no FB account)
 backend/app/integrations/blocket_client.py — Blocket used-market search via blocket-api package; no API key needed; 1h in-memory cache
-backend/app/integrations/serper_new_price_client.py — Serper.dev Google Shopping new price (primary); requires SERPER_DEV_API_KEY; 1h cache
+backend/app/integrations/webhallen_client.py — Webhallen autocomplete API new price (primary); free, Swedish, JSON; 1h cache, 5s rate limit
+backend/app/integrations/inet_client.py — Inet.se autocomplete API new price (secondary); free, Swedish, JSON; 1h cache, 8s rate limit
+backend/app/integrations/serper_new_price_client.py — Serper.dev Google Shopping new price (disabled — quota exhausted); preserved for future use
 backend/app/integrations/prisjakt_client.py — stub; Prisjakt blocks server-side requests (HTTP 403); documents investigation
 backend/app/integrations/serpapi_used_market_client.py — SerpAPI used market supplement (optional fallback only)
-backend/app/integrations/new_price_search_client.py — SerpAPI Google Shopping new price (fallback only)
+backend/app/integrations/new_price_search_client.py — SerpAPI Google Shopping new price (last-resort fallback only)
 backend/app/schemas/product_identification.py — vision output schema
 backend/app/schemas/assistant.py — QuickReply + AssistantContext for Prisassistent conversation layer
 backend/app/schemas/market_comparable.py — market comparable schema
@@ -81,6 +83,7 @@ frontend/admin.html — vanilla JS admin dashboard; tabs: DB overview, valuation
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
+tests/test_new_price_clients.py — 18 tests for Webhallen, Inet, Serper clients + service source chain
 tests/test_pricing_service.py — pricing service tests
 tests/test_value_engine.py — end-to-end value engine tests
 tests/test_depreciation_rules.py — condition adjustments and category depreciation range tests
@@ -161,6 +164,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - error — request failed (bad upload, decode failure, unexpected exception)
 
 ## Known Issues
+- Serper.dev quota exhausted — disabled in serper_new_price_client.py; get_new_price_sek() returns None; class preserved for quota refill
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 - Admin table browser uses f-string SQL after ALLOWED_TABLES allowlist + regex validation (hardened in phase 2)
@@ -168,6 +172,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-28 — feat: replace Serper.dev with Webhallen+Inet for new prices — webhallen_client.py (JSON API), inet_client.py (JSON API), serper disabled, priority chain Webhallen→Inet→SerpAPI, 18 new tests, 461 pass
 2026-03-28 — test: TDZ regression guard for VALOR admin UI — 2 tests in test_admin_ui_data.py assert declaration order + explanatory copy
 2026-03-28 — fix: admin VALOR UI temporal-dead-zone bug — moved `const t` before first use, updated no-model copy to explain market_comparable vs training_sample distinction
 2026-03-28 — deploy: Railway pre-prod live — valor-models volume, first VALOR training (3 samples, MAE 1189 kr, MAPE 28.7%), model persists across restarts, threshold set to 50
@@ -184,7 +189,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-27 — feat: Facebook Marketplace client via DuckDuckGo — no API key, integrated into market_data_service
 2026-03-27 — feat: Phase 4 OCR — Google Vision + EasyOCR clients, OCR service, cross-verification, pipeline integration (169 tests)
 2026-03-27 — feat: Phase 6-7 — integration tests, data quality tests, .env.example, /health updated (144 tests total)
-2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
 
 ## Next Up
 - Backfill price observations from existing comparables to bootstrap VALOR training data toward 50-sample threshold

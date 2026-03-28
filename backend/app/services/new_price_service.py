@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from backend.app.integrations.google_cse_client import GoogleCSEClient
 from backend.app.integrations.new_price_search_client import NewPriceSearchClient, normalize_text
@@ -6,6 +6,19 @@ from backend.app.integrations.serper_new_price_client import SerperNewPriceClien
 from backend.app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def _get_webhallen_price(query: str) -> Optional[float]:
+    """Fetch new price from Webhallen. Module-level for easy monkeypatching."""
+    from backend.app.integrations.webhallen_client import get_new_price_sek
+    return get_new_price_sek(query)
+
+
+def _get_inet_price(query: str) -> Optional[float]:
+    """Fetch new price from Inet. Module-level for easy monkeypatching."""
+    from backend.app.integrations.inet_client import get_new_price_sek
+    return get_new_price_sek(query)
+
 
 USED_KEYWORDS = {
     "used",
@@ -251,74 +264,59 @@ class NewPriceService:
     ) -> None:
         self.serper_client = serper_client or SerperNewPriceClient()
         self.google_cse_client = google_cse_client or GoogleCSEClient()
+        # SerpAPI is the last-resort fallback (only used if key is configured)
         self.search_client = search_client or NewPriceSearchClient()
 
     def get_new_price(self, brand: str, model: str, category: str | None = None) -> dict[str, Any]:
-        serper_failed = False
-        cse_result: dict[str, Any] | None = None
+        query = f"{brand} {model}".strip()
+        if not query:
+            return build_unavailable_result(method="empty_query")
 
-        # Free-tier-first strategy: try Google CSE before Serper when both are configured.
-        # This keeps the cheaper/daily-free source on the fast path and only spends Serper
-        # credits when the CSE result is missing or too weak to anchor a trustworthy new price.
-        if self.google_cse_client.is_configured:
-            cse_response = self.google_cse_client.search(brand=brand, model=model, category=category)
-            if cse_response.available:
-                cse_result = self._process_candidates(
-                    cse_response.results,
-                    brand=brand,
-                    model=model,
-                    category=category,
-                    method_label="google_cse_median",
-                    source_label="Google Custom Search",
-                )
-                logger.info("new_price.google_cse_done brand=%s model=%s method=%s", brand, model, cse_result.get("method"))
-                if is_actionable_new_price_result(cse_result):
-                    logger.info("new_price.google_cse_preferred brand=%s model=%s", brand, model)
-                    return cse_result
+        # --- Source 1: Webhallen (free, Swedish, JSON API) ---
+        webhallen_price = _get_webhallen_price(query)
+        if webhallen_price is not None:
+            logger.info("new_price.webhallen_hit brand=%s model=%s price=%s", brand, model, webhallen_price)
+            return {
+                "estimated_new_price": webhallen_price,
+                "currency": "SEK",
+                "confidence": 0.55,
+                "source_count": 1,
+                "sources": [{"source": "Webhallen", "title": query, "price": webhallen_price, "currency": "SEK", "url": None}],
+                "method": "webhallen_autocomplete",
+                "price": webhallen_price,
+                "source": "Webhallen",
+            }
 
-        if self.serper_client.is_configured:
-            response = self.serper_client.search(brand=brand, model=model, category=category)
+        # --- Source 2: Inet (free, Swedish, JSON API) ---
+        inet_price = _get_inet_price(query)
+        if inet_price is not None:
+            logger.info("new_price.inet_hit brand=%s model=%s price=%s", brand, model, inet_price)
+            return {
+                "estimated_new_price": inet_price,
+                "currency": "SEK",
+                "confidence": 0.55,
+                "source_count": 1,
+                "sources": [{"source": "Inet", "title": query, "price": inet_price, "currency": "SEK", "url": None}],
+                "method": "inet_autocomplete",
+                "price": inet_price,
+                "source": "Inet",
+            }
+
+        # --- Source 3: SerpAPI fallback (only if key is set) ---
+        if self.search_client.is_configured:
+            logger.info("new_price.serpapi_fallback brand=%s model=%s", brand, model)
+            response = self.search_client.search(brand=brand, model=model, category=category)
             if response.available:
-                serper_result = self._process_candidates(
+                return self._process_candidates(
                     response.results,
                     brand=brand,
                     model=model,
                     category=category,
-                    method_label="serper_google_shopping_median",
-                    source_label="Serper.dev Google Shopping",
+                    method_label="serpapi_google_shopping_median",
+                    source_label="SerpApi Google Shopping",
                 )
-                logger.info("new_price.serper_done brand=%s model=%s method=%s", brand, model, serper_result.get("method"))
-                if cse_result:
-                    serper_result["cse_comparison"] = cse_result
-                    if rank_new_price_result(cse_result) >= rank_new_price_result(serper_result):
-                        logger.info("new_price.google_cse_kept_over_serper brand=%s model=%s", brand, model)
-                        return cse_result
-                return serper_result
 
-            serper_failed = True
-            logger.info("new_price.serper_failed brand=%s model=%s reason=%s", brand, model, response.reason)
-            if cse_result:
-                return cse_result
-
-        elif cse_result:
-            return cse_result
-
-        # SerpAPI fallback — only called when all above failed or are unconfigured.
-        if not self.serper_client.is_configured or serper_failed:
-            logger.info("new_price.serpapi_fallback brand=%s model=%s", brand, model)
-
-        response = self.search_client.search(brand=brand, model=model, category=category)
-        if not response.available:
-            return build_unavailable_result(method="unavailable")
-
-        return self._process_candidates(
-            response.results,
-            brand=brand,
-            model=model,
-            category=category,
-            method_label="serpapi_google_shopping_median",
-            source_label="SerpApi Google Shopping",
-        )
+        return build_unavailable_result(method="unavailable")
 
     def _process_candidates(
         self,
