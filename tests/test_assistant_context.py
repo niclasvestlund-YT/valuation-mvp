@@ -11,7 +11,9 @@ from backend.app.services.assistant_flow import (
     build_assistant_context as _build_assistant_context,
     enrich_envelope,
     is_bundle_eligible as _is_bundle_eligible,
+    is_valid_product_query as _is_valid_query,
     normalize_confirmation as _normalize_confirmation,
+    HIGH_CONFIDENCE_SKIP_THRESHOLD,
 )
 
 
@@ -597,6 +599,121 @@ class TestStrategyOutput(unittest.TestCase):
         self.assertEqual(ctx.phase, "ready")
         self.assertIsNotNone(ctx.strategy_summary)
         self.assertIn("övre", ctx.strategy_summary.lower())
+
+
+# ─── Bug fix regression tests ───
+
+
+class TestBug1StateCorruption(unittest.TestCase):
+    """Bug 1: confirmation=yes with data=None should re-ask, not crash."""
+
+    def test_confirm_yes_with_none_data_reasks(self):
+        ctx = _build_assistant_context("ok", None, "yes", True)
+        self.assertEqual(ctx.phase, "confirming")
+        self.assertIn("tappade", ctx.prompt.lower())
+
+    def test_confirm_yes_with_empty_data_proceeds(self):
+        """Empty dict is valid — pipeline ran but no brand. Should still proceed."""
+        ctx = _build_assistant_context("ok", {}, "yes", True)
+        self.assertEqual(ctx.phase, "awaiting_condition")
+
+    def test_confirm_yes_with_real_data_proceeds(self):
+        ctx = _build_assistant_context("ok", {"brand": "Sony", "model": "WH-1000XM5"}, "yes", True)
+        self.assertEqual(ctx.phase, "awaiting_condition")
+        self.assertIn("Sony", ctx.prompt)
+
+
+class TestBug2HighConfidenceSkip(unittest.TestCase):
+    """Bug 2: high confidence (>0.9) should skip confirmation."""
+
+    def test_high_confidence_skips_to_condition(self):
+        data = {"brand": "Sony", "model": "WH-1000XM5", "confidence": 0.95}
+        ctx = _build_assistant_context("ok", data, None, True)
+        self.assertEqual(ctx.phase, "awaiting_condition")
+        self.assertIn("95%", ctx.prompt)
+
+    def test_low_confidence_asks_confirmation(self):
+        data = {"brand": "Sony", "model": "WH-1000XM5", "confidence": 0.75}
+        ctx = _build_assistant_context("ok", data, None, True)
+        self.assertEqual(ctx.phase, "confirming")
+
+    def test_threshold_boundary(self):
+        """Exactly at threshold should skip."""
+        data = {"brand": "Sony", "model": "WH-1000XM5", "confidence": HIGH_CONFIDENCE_SKIP_THRESHOLD}
+        ctx = _build_assistant_context("ok", data, None, True)
+        self.assertEqual(ctx.phase, "awaiting_condition")
+
+    def test_just_below_threshold_asks(self):
+        data = {"brand": "Sony", "model": "WH-1000XM5", "confidence": 0.89}
+        ctx = _build_assistant_context("ok", data, None, True)
+        self.assertEqual(ctx.phase, "confirming")
+
+
+class TestBug3GarbageInput(unittest.TestCase):
+    """Bug 3: short strings rejected as product queries."""
+
+    def test_short_string_rejected(self):
+        self.assertFalse(_is_valid_query("tes"))
+
+    def test_single_char_rejected(self):
+        self.assertFalse(_is_valid_query("a"))
+
+    def test_empty_rejected(self):
+        self.assertFalse(_is_valid_query(""))
+
+    def test_none_rejected(self):
+        self.assertFalse(_is_valid_query(None))
+
+    def test_valid_query_accepted(self):
+        self.assertTrue(_is_valid_query("Sony WH-1000XM5"))
+
+    def test_minimum_length_accepted(self):
+        self.assertTrue(_is_valid_query("iPod"))
+
+
+class TestBug4VariedFallback(unittest.TestCase):
+    """Bug 4: fallback text varies with fallback_count."""
+
+    def test_first_fallback(self):
+        ctx = _build_assistant_context("ok", None, None, False, fallback_count=0)
+        self.assertEqual(ctx.phase, "unsupported")
+        self.assertIn("hjälpa", ctx.prompt.lower())
+
+    def test_second_fallback_different(self):
+        ctx0 = _build_assistant_context("ok", None, None, False, fallback_count=0)
+        ctx1 = _build_assistant_context("ok", None, None, False, fallback_count=1)
+        self.assertNotEqual(ctx0.prompt, ctx1.prompt)
+
+    def test_third_fallback_different_again(self):
+        ctx1 = _build_assistant_context("ok", None, None, False, fallback_count=1)
+        ctx2 = _build_assistant_context("ok", None, None, False, fallback_count=2)
+        self.assertNotEqual(ctx1.prompt, ctx2.prompt)
+
+    def test_high_count_clamps_to_last(self):
+        ctx = _build_assistant_context("ok", None, None, False, fallback_count=99)
+        self.assertEqual(ctx.phase, "unsupported")
+        # Should not crash, uses last message
+
+
+class TestBug5ConditionPhase(unittest.TestCase):
+    """Bug 5: condition only asked after confirmation, never during."""
+
+    def test_condition_not_asked_without_confirmation(self):
+        """Even with status=ok, condition is not asked before confirmation."""
+        data = {"brand": "Sony", "model": "WH-1000XM5", "confidence": 0.75}
+        ctx = _build_assistant_context("ok", data, None, True)
+        self.assertEqual(ctx.phase, "confirming")
+        self.assertNotEqual(ctx.phase, "awaiting_condition")
+
+    def test_condition_asked_after_confirmation(self):
+        data = {"brand": "Sony", "model": "WH-1000XM5"}
+        ctx = _build_assistant_context("ok", data, "yes", True)
+        self.assertEqual(ctx.phase, "awaiting_condition")
+
+    def test_condition_not_asked_during_ambiguous(self):
+        ctx = _build_assistant_context("ambiguous_model", {"brand": "Sony"}, None, True)
+        self.assertEqual(ctx.phase, "correcting")
+        self.assertNotEqual(ctx.phase, "awaiting_condition")
 
 
 if __name__ == "__main__":

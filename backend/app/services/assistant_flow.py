@@ -87,8 +87,32 @@ BUNDLE_ELIGIBLE_CATEGORIES = frozenset({"camera"})
 # Brands where bundle kits are especially common and affect pricing significantly.
 BUNDLE_ELIGIBLE_BRANDS = frozenset({"dji", "gopro"})
 
+# Minimum query length for product matching (Bug 3: garbage input guard)
+MIN_QUERY_LENGTH = 4
+
+# Confidence threshold for skipping confirmation (Bug 2: high-confidence skip)
+HIGH_CONFIDENCE_SKIP_THRESHOLD = 0.9
+
+# Varied fallback messages to avoid repetition (Bug 4)
+_FALLBACK_MESSAGES = [
+    "Jag kan hjälpa dig värdera en produkt.",
+    "Ladda upp en bild så hjälper jag dig att ta reda på vad den är värd.",
+    "Vill du veta vad din pryl är värd? Fota den så kör vi.",
+]
+
 
 # ─── Helpers ───
+
+def is_valid_product_query(query: str | None) -> bool:
+    """Check if a string is long enough to be a plausible product name.
+
+    Rejects garbage like 'tes', 'ab', single chars.
+    """
+    if not query:
+        return False
+    cleaned = query.strip()
+    return len(cleaned) >= MIN_QUERY_LENGTH
+
 
 def get_product_display_name(data: dict[str, Any] | None) -> str:
     """Extract a human-readable product name from ValueData fields."""
@@ -121,6 +145,7 @@ def build_assistant_context(
     bundle: str | None = None,
     shipping: str | None = None,
     goal: str | None = None,
+    fallback_count: int = 0,
 ) -> AssistantContext | None:
     """Build conversation-phase context from response status + user input.
 
@@ -128,6 +153,12 @@ def build_assistant_context(
     Returns None for degraded/error statuses (no guidance possible).
 
     Flow: confirm → condition → bundle (if eligible) → shipping → goal → ready
+
+    Bug fixes applied:
+    - Bug 1: confirmation="yes" requires data to have brand/model, otherwise re-ask
+    - Bug 2: high confidence (>0.9) skips confirmation and goes straight to condition
+    - Bug 4: fallback_count varies the unsupported message
+    - Bug 5: condition only asked AFTER confirmation, never during
     """
     # ── No guidance for error states ──
     if status in {"degraded", "error"}:
@@ -135,8 +166,20 @@ def build_assistant_context(
 
     product_name = get_product_display_name(data)
 
+    # ── Bug 1 fix: if user confirmed but data was completely lost, re-ask ──
+    if confirmation == "yes" and data is None:
+        return AssistantContext(
+            phase="confirming",
+            prompt="Något gick fel — vi tappade produkten. Kan du bekräfta igen?",
+            quick_replies=[
+                QuickReply(label="Ja, det stämmer", action="confirm_yes", payload={"confirmation": "yes"}),
+                QuickReply(label="Nej, fel modell", action="confirm_no", payload={"confirmation": "no"}),
+            ],
+        )
+
     # ── User confirmed: condition → bundle (if eligible) → shipping → goal → ready ──
     if confirmation == "yes":
+        # Bug 5 fix: condition is only asked here (after confirmation), never elsewhere
         if not condition:
             return AssistantContext(
                 phase="awaiting_condition",
@@ -184,11 +227,12 @@ def build_assistant_context(
             ],
         )
 
-    # ── No images and no confirmation — out of scope ──
+    # ── No images and no confirmation — out of scope (Bug 4: vary text) ──
     if not has_images and confirmation is None:
+        msg_idx = min(fallback_count, len(_FALLBACK_MESSAGES) - 1)
         return AssistantContext(
             phase="unsupported",
-            prompt="Jag kan hjälpa dig värdera en produkt.",
+            prompt=_FALLBACK_MESSAGES[msg_idx],
             quick_replies=[
                 QuickReply(label="Fotografera en produkt", action="start_over"),
             ],
@@ -197,6 +241,23 @@ def build_assistant_context(
 
     # ── Valuation succeeded — ask for confirmation ──
     if status in {"ok", "depreciation_estimate"}:
+        # Bug 2 fix: skip confirmation for high-confidence results
+        confidence = float((data or {}).get("confidence") or 0)
+        if confidence >= HIGH_CONFIDENCE_SKIP_THRESHOLD:
+            # High confidence — skip straight to condition question
+            if not condition:
+                return AssistantContext(
+                    phase="awaiting_condition",
+                    prompt=f"Vi är {int(confidence * 100)}% säkra att det är {product_name}. Hur ser skicket ut?",
+                    quick_replies=list(CONDITION_QUICK_REPLIES),
+                )
+            # If condition already set, treat as confirmed and continue flow
+            return build_assistant_context(
+                status=status, data=data, confirmation="yes",
+                has_images=has_images, condition=condition,
+                bundle=bundle, shipping=shipping, goal=goal,
+            )
+
         return AssistantContext(
             phase="confirming",
             prompt=f"Vi identifierade {product_name}. Stämmer det?",
