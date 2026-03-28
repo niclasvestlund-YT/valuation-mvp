@@ -28,6 +28,16 @@
     --accent-warning: #d4a017;
     --accent-danger: #c4432a;
 
+    /* Chip colors (OCR, diary badges) */
+    --chip-green-bg: #e8f5ee;
+    --chip-green-text: #1e6e42;
+    --chip-amber-bg: #fef3cd;
+    --chip-amber-text: #7d5a00;
+    --chip-blue-bg: #e8eaf5;
+    --chip-blue-text: #3949ab;
+    --chip-purple-bg: #f3e5f5;
+    --chip-purple-text: #7b1fa2;
+
     /* Spacing scale (4px base) */
     --space-1: 4px;
     --space-2: 8px;
@@ -371,15 +381,21 @@
     cursor: pointer;
     font-size: var(--text-xs);
     font-family: inherit;
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-2) var(--space-3);
     border-radius: 6px;
-    min-height: 28px;
-    min-width: 28px;
+    min-height: 36px;
+    min-width: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: border-color 0.15s, color 0.15s;
     -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 767px) {
+    .section-label .refresh-btn {
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 
   .refresh-btn:hover {
@@ -593,6 +609,41 @@
   }
 
   .source-row:last-child { border-bottom: none; }
+
+  /* API source rows — structured mobile-friendly layout */
+  .api-source-row {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .api-source-row:last-child { border-bottom: none; }
+  .api-source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .api-source-name {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .api-source-rate {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+  .api-source-detail {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .api-source-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+  }
 
   .source-name {
     font-size: var(--text-sm);
@@ -879,10 +930,10 @@
   .diary-commit { display:flex;align-items:flex-start;gap:var(--space-2);padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:var(--text-sm);color:var(--text-secondary); }
   .diary-commit:last-child { border-bottom:none; }
   .diary-badge { display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.6rem;font-weight:600;padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px;text-transform:uppercase; }
-  .diary-badge-feat { background:#e8f5ee;color:#1e6e42; }
-  .diary-badge-fix { background:#fef3cd;color:#7d5a00; }
-  .diary-badge-refactor { background:#e8eaf5;color:#3949ab; }
-  .diary-badge-docs { background:#f3e5f5;color:#7b1fa2; }
+  .diary-badge-feat { background:var(--chip-green-bg);color:var(--chip-green-text); }
+  .diary-badge-fix { background:var(--chip-amber-bg);color:var(--chip-amber-text); }
+  .diary-badge-refactor { background:var(--chip-blue-bg);color:var(--chip-blue-text); }
+  .diary-badge-docs { background:var(--chip-purple-bg);color:var(--chip-purple-text); }
   .diary-badge-chore { background:var(--bg-surface);color:var(--text-muted); }
   .diary-export-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-3);margin-top:var(--space-4); }
   @media(max-width:640px) { .diary-export-grid { grid-template-columns:1fr; } }
@@ -967,8 +1018,9 @@
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-value" id="stat-total">—</div>
-            <div class="stat-label">Värderingar</div>
-            <div class="stat-change neutral" id="stat-total-change"></div>
+            <div class="stat-label">Värderingar totalt</div>
+            <div class="stat-change neutral" id="stat-24h"></div>
+            <div style="font-size:var(--text-xs);color:var(--text-faint);" id="stat-7d"></div>
           </div>
           <div class="stat-card">
             <div class="stat-value" id="stat-ok-pct">—</div>
@@ -977,7 +1029,7 @@
           </div>
           <div class="stat-card">
             <div class="stat-value" id="stat-avg-estimate">—</div>
-            <div class="stat-label">Snitt estimat (kr)</div>
+            <div class="stat-label">Snitt konfidens %</div>
             <div class="stat-change neutral"></div>
           </div>
           <div class="stat-card">
@@ -1018,13 +1070,22 @@
         </div>
       </div>
 
-      <!-- Recent valuations -->
+      <!-- System health -->
       <div class="section">
-        <div class="section-label">SENASTE VÄRDERINGAR</div>
-        <div class="valuation-list" id="valuation-list">
-          <div class="skeleton skeleton-card"></div>
-          <div class="skeleton skeleton-card"></div>
-          <div class="skeleton skeleton-card"></div>
+        <div class="section-label">SYSTEMHÄLSA</div>
+        <div class="card" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;padding:var(--space-4);">
+          <div>
+            <div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">API-status</div>
+            <div id="health-api-val" style="font-size:var(--text-lg);font-weight:600;">—</div>
+          </div>
+          <div>
+            <div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Priser insamlade</div>
+            <div id="health-crawl-val" style="font-size:var(--text-lg);font-weight:600;">—</div>
+          </div>
+          <div>
+            <div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Snitt konfidens</div>
+            <div id="health-conf-val" style="font-size:var(--text-lg);font-weight:600;">—</div>
+          </div>
         </div>
       </div>
 
@@ -1140,6 +1201,15 @@
         <div class="card" id="valor-source-breakdown">
           <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
         </div>
+        <div id="training-progress-bar" style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:var(--text-xs);color:var(--text-muted);margin-bottom:4px;">
+            <span>Träningsdata</span>
+            <span id="training-progress-text">0 / 50 minimum</span>
+          </div>
+          <div style="height:6px;background:var(--border-subtle);border-radius:3px;">
+            <div id="training-progress-fill" style="height:100%;border-radius:3px;background:var(--text-primary);transition:width 0.4s ease;width:0%;"></div>
+          </div>
+        </div>
       </div>
 
       <div class="section">
@@ -1196,7 +1266,11 @@
 
       <!-- OCR-tjänster -->
       <div class="section">
-        <div class="section-label">OCR-TJÄNSTER <button onclick="loadOcrStats()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.6875rem;margin-left:8px;">Uppdatera</button></div>
+        <div class="section-label">OCR-TJÄNSTER
+          <button class="refresh-btn" onclick="loadOcrStats()" aria-label="Uppdatera OCR-statistik">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          </button>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
           <div class="stat-card"><div class="stat-value" id="ocr-val-google">—</div><div class="stat-label">Google Vision</div></div>
           <div class="stat-card"><div class="stat-value" id="ocr-val-easyocr">—</div><div class="stat-label">EasyOCR</div></div>
@@ -1555,23 +1629,32 @@ async function fetchApiUsage() {
         : `tot ${s.total_calls}`;
       const quotaStatus = s.quota_exhausted ? 'stoppad' : s.quota_limit != null ? `kvar ${s.quota_remaining}` : 'ingen gräns';
       const blockedText = s.blocked_total > 0 ? `block ${s.blocked_total}` : 'block 0';
-      html += `<div class="source-row">
-        <span class="source-name" style="white-space:normal;overflow:visible;text-overflow:unset;">
-          <strong style="display:block;color:var(--text-primary);font-weight:600;">${label}</strong>
-          <span style="font-size:var(--text-xs);color:var(--text-muted);">${quotaSummary}</span>
-        </span>
-        <div class="source-stats">
+      html += `<div class="api-source-row">
+        <div class="api-source-header">
+          <strong class="api-source-name">${label}</strong>
+          <span class="api-source-rate" style="color:${rateColor};">${rateText}</span>
+        </div>
+        <div class="api-source-detail">${quotaSummary}</div>
+        <div class="api-source-stats">
           <span class="source-success">ok ${s.total_calls}</span>
           <span class="source-fail">fel ${s.error_calls}</span>
-          <span style="color:${rateColor};font-weight:500;">${rateText}</span>
           <span style="color:${quotaColor};font-weight:500;">${quotaChip}</span>
           <span style="color:${s.blocked_total > 0 ? 'var(--accent-danger)' : 'var(--text-muted)'};">${blockedText}</span>
           <span style="color:var(--text-muted)">${quotaStatus}</span>
-          <span style="color:var(--text-faint);font-size:var(--text-xs);">${lastCall}</span>
+          <span style="color:var(--text-faint);">${lastCall}</span>
         </div>
       </div>`;
     }
     tbl.innerHTML = html;
+    // Health: API status
+    const entries = Object.values(data.sources || {});
+    const okSources = entries.filter(s => s.success_rate_pct == null || s.success_rate_pct >= 90).length;
+    const totalSources = entries.length;
+    const hapi = document.getElementById('health-api-val');
+    if (hapi && totalSources > 0) {
+      hapi.textContent = okSources + '/' + totalSources + ' ok';
+      hapi.style.color = okSources === totalSources ? 'var(--accent-positive)' : okSources >= totalSources / 2 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+    }
   } catch (e) {
     document.getElementById('api-usage-header').textContent = 'Kunde inte hämta API-statistik';
   }
@@ -1579,14 +1662,37 @@ async function fetchApiUsage() {
 
 /* ─── Render functions ─── */
 function renderStats(m) {
-  const statusBreakdown = m.status_breakdown || {};
+  // Normalize status_breakdown: accept both list (real API) and object (demo data)
+  let statusBreakdown = {};
+  if (Array.isArray(m.status_breakdown)) {
+    m.status_breakdown.forEach(item => { statusBreakdown[item.status] = item.count; });
+  } else {
+    statusBreakdown = m.status_breakdown || {};
+  }
   const total = Object.values(statusBreakdown).reduce((a, b) => a + b, 0);
   const okCount = statusBreakdown.ok || 0;
 
   document.getElementById('stat-total').textContent = total || '—';
   document.getElementById('stat-ok-pct').textContent = total > 0 ? Math.round(okCount / total * 100) + '%' : '—';
-  document.getElementById('stat-avg-estimate').textContent = m.avg_estimate ? Math.round(m.avg_estimate).toLocaleString('sv-SE') : '—';
+  // avg_estimate: not in backend ValuationMetrics — show avg_confidence instead
+  document.getElementById('stat-avg-estimate').textContent = m.avg_confidence ? (m.avg_confidence * 100).toFixed(0) + '%' : '—';
   document.getElementById('stat-avg-conf').textContent = m.avg_confidence ? m.avg_confidence.toFixed(2) : '—';
+  // Trend indicators
+  const el24h = document.getElementById('stat-24h');
+  if (el24h && m.last_24h != null) {
+    el24h.textContent = m.last_24h > 0 ? '↑ ' + m.last_24h + ' senaste 24h' : '0 senaste 24h';
+    el24h.className = 'stat-change ' + (m.last_24h > 0 ? 'up' : 'neutral');
+  }
+  const el7d = document.getElementById('stat-7d');
+  if (el7d && m.last_7d != null) {
+    el7d.textContent = m.last_7d + ' senaste 7d';
+  }
+  // Health: avg confidence
+  const hcEl = document.getElementById('health-conf-val');
+  if (hcEl && m.avg_confidence) {
+    hcEl.textContent = (m.avg_confidence * 100).toFixed(0) + '%';
+    hcEl.style.color = m.avg_confidence >= 0.7 ? 'var(--accent-positive)' : m.avg_confidence >= 0.5 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+  }
 
   const bar = document.getElementById('status-bar');
   const legend = document.getElementById('status-legend');
@@ -1617,7 +1723,7 @@ function renderList() {
     return;
   }
   list.innerHTML = valuations.map((v, i) => {
-    const model = v.model || v.product || 'Okänd produkt';
+    const model = v.product_name || v.model || v.product_identifier || v.product || 'Okänd produkt';
     const category = (v.category || '').toLowerCase();
     const icon = categoryIcons[category] || categoryIcons.default;
     const estimate = v.estimated_value || v.fair_estimate;
@@ -1649,7 +1755,7 @@ function renderList() {
 function openDetail(idx) {
   const v = valuations[idx];
   if (!v) return;
-  const model = v.model || v.product || 'Okänd produkt';
+  const model = v.product_name || v.model || v.product_identifier || v.product || 'Okänd produkt';
   document.getElementById('detail-product-name').textContent = model;
 
   const estimate = v.estimated_value || v.fair_estimate;
@@ -1708,6 +1814,9 @@ async function loadMarketData() {
     const d = await res.json();
     const c = d.crawl || {};
     document.getElementById('crawl-total').textContent = (c.total_comparables || 0).toLocaleString('sv-SE');
+    // Health: crawl count
+    const hcrawl = document.getElementById('health-crawl-val');
+    if (hcrawl) hcrawl.textContent = (c.total_comparables || 0).toLocaleString('sv-SE');
     document.getElementById('crawl-active').textContent = (c.active_comparables || 0).toLocaleString('sv-SE');
     document.getElementById('crawl-flagged').textContent = c.flagged_count || 0;
     const avgRel = (c.by_source || []).reduce((a, s) => a + (parseFloat(s.avg_relevance) || 0), 0);
@@ -1718,9 +1827,9 @@ async function loadMarketData() {
     const srcLabels = (c.by_source || []).map(s => s.source);
     const srcData = (c.by_source || []).map(s => s.count);
     const srcColors = srcLabels.map(s => {
-      if (s.toLowerCase().includes('tradera')) return '#2C2A25';
-      if (s.toLowerCase().includes('blocket')) return '#8A8578';
-      return '#B0AA9E';
+      if (s.toLowerCase().includes('tradera')) return getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      if (s.toLowerCase().includes('blocket')) return getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+      return getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim();
     });
     if (sourceChartInst) sourceChartInst.destroy();
     const srcCtx = document.getElementById('source-chart');
@@ -1753,7 +1862,7 @@ async function loadMarketData() {
     if (catCtx && cats.length && typeof Chart !== 'undefined') {
       categoryChartInst = new Chart(catCtx, {
         type: 'bar',
-        data: { labels: cats.map(c => c.category || '—'), datasets: [{ data: cats.map(c => c.count), backgroundColor: '#2C2A25', borderRadius: 3 }] },
+        data: { labels: cats.map(c => c.category || '—'), datasets: [{ data: cats.map(c => c.count), backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim(), borderRadius: 3 }] },
         options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { font: { size: 11 } } } } }
       });
     }
@@ -1820,11 +1929,12 @@ async function loadValuationsData() {
     const statuses = d.by_status || [];
     if (valStatusChartInst) valStatusChartInst.destroy();
     const vsCtx = document.getElementById('val-status-chart');
-    const statusColors = { ok: '#34a873', depreciation_estimate: '#d4a017', insufficient_evidence: '#c4432a', ambiguous_model: '#8A8578', error: '#c4432a', degraded: '#d4a017' };
+    const _cs = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    const statusColors = { ok: _cs('--accent-positive'), depreciation_estimate: _cs('--accent-warning'), insufficient_evidence: _cs('--accent-danger'), ambiguous_model: _cs('--text-muted'), error: _cs('--accent-danger'), degraded: _cs('--accent-warning') };
     if (vsCtx && statuses.length && typeof Chart !== 'undefined') {
       valStatusChartInst = new Chart(vsCtx, {
         type: 'bar',
-        data: { labels: statuses.map(s => s.status), datasets: [{ data: statuses.map(s => s.count), backgroundColor: statuses.map(s => statusColors[s.status] || '#B0AA9E'), borderRadius: 3 }] },
+        data: { labels: statuses.map(s => s.status), datasets: [{ data: statuses.map(s => s.count), backgroundColor: statuses.map(s => statusColors[s.status] || _cs('--text-faint')), borderRadius: 3 }] },
         options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { font: { size: 10 } } } } }
       });
     }
@@ -1836,7 +1946,7 @@ async function loadValuationsData() {
     if (vcCtx && cats.length && typeof Chart !== 'undefined') {
       valCategoryChartInst = new Chart(vcCtx, {
         type: 'bar',
-        data: { labels: cats.map(c => c.category), datasets: [{ data: cats.map(c => parseFloat(c.avg_confidence) || 0), backgroundColor: '#2C2A25', borderRadius: 3 }] },
+        data: { labels: cats.map(c => c.category), datasets: [{ data: cats.map(c => parseFloat(c.avg_confidence) || 0), backgroundColor: _cs('--text-primary'), borderRadius: 3 }] },
         options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false, max: 1 }, y: { ticks: { font: { size: 10 } } } } }
       });
     }
@@ -1914,9 +2024,9 @@ async function loadOcrStats() {
           ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--border-medium);"></span>'
           : '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;border:1px solid var(--border-subtle);"></span>';
       const chip = r.ocr_provider === 'google_vision'
-        ? '<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;background:#e8f5ee;color:#1e6e42;">Google Vision</span>'
+        ? '<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;background:var(--chip-green-bg);color:var(--chip-green-text);">Google Vision</span>'
         : r.ocr_provider === 'easyocr'
-          ? '<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;background:#fef3cd;color:#7d5a00;">EasyOCR</span>'
+          ? '<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;background:var(--chip-amber-bg);color:var(--chip-amber-text);">EasyOCR</span>'
           : '<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;background:var(--bg-base);color:var(--text-muted);border:1px solid var(--border-subtle);">Ingen</span>';
       const name = [r.brand, r.model].filter(Boolean).join(' ') || '—';
       const t = r.created_at ? timeAgo(r.created_at) : '—';
@@ -1954,16 +2064,25 @@ async function loadAgentStats() {
     // Status cards
     document.getElementById('agent-total-obs').textContent = (d.total_observations || 0).toLocaleString('sv-SE');
     document.getElementById('agent-coverage').textContent = (d.coverage || 0).toLocaleString('sv-SE');
-    document.getElementById('agent-suspicious-rate').textContent = d.suspicious_rate != null ? d.suspicious_rate + '%' : '—';
+    document.getElementById('agent-suspicious-rate').innerHTML = d.suspicious_rate != null ?
+      d.suspicious_rate + '%' + (d.suspicious_count != null ? '<span style="display:block;font-size:var(--text-xs);color:var(--text-muted);">' + d.suspicious_count + ' av ' + (d.total_observations || 0) + '</span>' : '')
+      : '—';
 
     // Last run info
+    const _jobStatusMap = {
+      done:      { label: 'Klar',       color: 'var(--accent-positive)' },
+      completed: { label: 'Klar',       color: 'var(--accent-positive)' },
+      failed:    { label: 'Misslyckad', color: 'var(--accent-danger)' },
+      dead:      { label: 'Avbruten',   color: 'var(--accent-danger)' },
+      running:   { label: 'Aktiv',      color: 'var(--accent-warning)' },
+      pending:   { label: 'Väntar',     color: 'var(--text-muted)' },
+    };
     const jobs = d.recent_jobs || [];
     if (jobs.length > 0) {
       const last = jobs[0];
-      const statusLabel = last.status === 'done' ? 'done' : last.status === 'failed' ? 'failed' : 'running';
-      const statusColor = last.status === 'done' ? 'var(--accent-positive)' : last.status === 'failed' ? 'var(--accent-danger)' : 'var(--accent-warning)';
+      const ls = _jobStatusMap[last.status] || { label: last.status, color: 'var(--text-muted)' };
       document.getElementById('agent-last-run').innerHTML =
-        `<span style="color:${statusColor};font-weight:500;">${statusLabel}</span> <span style="font-size:var(--text-xs);color:var(--text-muted);display:block;">${last.started_at ? timeAgo(last.started_at) : ''}</span>`;
+        `<span style="color:${ls.color};font-weight:500;">${ls.label}</span> <span style="font-size:var(--text-xs);color:var(--text-muted);display:block;">${last.started_at ? timeAgo(last.started_at) : ''}</span>`;
     }
 
     // Source table
@@ -1999,8 +2118,8 @@ async function loadAgentStats() {
     const jobsEl = document.getElementById('agent-jobs-table');
     if (jobs.length) {
       jobsEl.innerHTML = jobs.map(j => {
-        const sc = j.status === 'done' ? 'var(--accent-positive)' : j.status === 'failed' ? 'var(--accent-danger)' : 'var(--accent-warning)';
-        const pill = `<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;color:#fff;background:${sc};">${j.status}</span>`;
+        const js = _jobStatusMap[j.status] || { label: j.status, color: 'var(--text-muted)' };
+        const pill = `<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;color:#fff;background:${js.color};">${js.label}</span>`;
         const t = j.started_at ? new Date(j.started_at).toLocaleString('sv-SE', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
         return `
         <div class="source-row" style="flex-wrap:wrap;gap:4px;">
@@ -2010,6 +2129,7 @@ async function loadAgentStats() {
           <span style="font-weight:500;color:var(--accent-positive);min-width:30px;">+${j.observations_added || 0}</span>
           <span style="font-weight:500;color:var(--accent-danger);min-width:30px;">-${j.observations_rejected || 0}</span>
           ${pill}
+          ${j.error_message ? '<div style="font-size:var(--text-xs);color:var(--accent-danger);margin-top:4px;padding-left:4px;border-left:2px solid var(--accent-danger);width:100%;">' + j.error_message + '</div>' : ''}
         </div>`;
       }).join('');
     } else {
@@ -2065,7 +2185,11 @@ async function loadValorStats() {
           <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Inom ±20%</div><div style="font-weight:600;color:var(--accent-positive);">${m.within_20pct ? m.within_20pct.toFixed(1) + '%' : '—'}</div></div>
           <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Tränad</div><div style="font-weight:500;">${m.trained_at ? timeAgo(m.trained_at) : '—'}</div></div>
         </div>
-        <div style="font-size:var(--text-xs);color:var(--accent-positive);font-weight:500;">● Aktiv</div>`;
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:var(--text-xs);color:var(--accent-positive);font-weight:500;">● Aktiv</span>
+          ${m.vs_baseline_improvement_pct != null ? '<span style="font-size:var(--text-xs);font-weight:500;padding:2px 8px;border-radius:6px;background:var(--chip-green-bg);color:var(--chip-green-text);">+' + m.vs_baseline_improvement_pct.toFixed(1) + '% vs baseline</span>' : ''}
+        </div>
+        ${(m.data_quality_warnings && m.data_quality_warnings.length) ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">' + m.data_quality_warnings.map(w => '<span style="font-size:var(--text-xs);padding:2px 8px;border-radius:6px;background:var(--chip-amber-bg);color:var(--chip-amber-text);">⚠ ' + w + '</span>').join('') + '</div>' : ''}`;
     } else {
       modelEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Ingen VALOR-modell aktiv — samlar träningsdata</div>';
     }
@@ -2076,6 +2200,17 @@ async function loadValorStats() {
     document.getElementById('valor-included').textContent = (t.included_in_training || 0).toLocaleString('sv-SE');
     document.getElementById('valor-avg-quality').textContent = t.avg_quality_score != null ? t.avg_quality_score.toFixed(2) : '—';
     document.getElementById('valor-estimates').textContent = (d.estimates?.total || 0).toLocaleString('sv-SE');
+
+    // Training progress bar
+    const samples = t.total_samples || 0;
+    const pct = Math.min(100, Math.round(samples / 50 * 100));
+    const progressFill = document.getElementById('training-progress-fill');
+    const progressText = document.getElementById('training-progress-text');
+    if (progressFill) {
+      progressFill.style.width = pct + '%';
+      progressFill.style.background = pct >= 100 ? 'var(--accent-positive)' : pct >= 40 ? 'var(--accent-warning)' : 'var(--text-primary)';
+    }
+    if (progressText) progressText.textContent = samples + ' / 50 minimum';
 
     const srcEl = document.getElementById('valor-source-breakdown');
     const srcs = t.samples_per_source || [];
