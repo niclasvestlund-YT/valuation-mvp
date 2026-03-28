@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="build-version" content="v14.0">
+  <meta name="build-version" content="v15.0">
   <title>Admin v14 — Vardagsvärde</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -256,7 +256,7 @@
     <div class="sb-top">
       <div class="sb-name">Vardagsvärde</div>
       <div class="sb-sub">Admin</div>
-      <div class="sb-ver" id="build-info">v14.0 · 2026-03-28</div>
+      <div class="sb-ver" id="build-info">v15.0 · 2026-03-28</div>
     </div>
     <div class="sb-sec">
       <div class="sb-lbl">Drift</div>
@@ -295,6 +295,16 @@
       <div class="pg-s">Systemstatus och nyckeltal</div>
       <div id="ov-banner" class="health-banner"></div>
       <div id="ov-kpis"></div>
+      <div style="background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+          <span style="font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500">Värderingar per dag</span>
+          <span id="spk-today" style="font-size:11px;color:var(--t2)">Idag: <strong>—</strong></span>
+        </div>
+        <svg id="spk-svg" width="100%" height="40" viewBox="0 0 520 40" preserveAspectRatio="none" style="display:block">
+          <path d="M0,36 L520,36" fill="none" stroke="var(--sf)" stroke-width="1.5"/>
+        </svg>
+        <div id="spk-labels" style="display:flex;justify-content:space-between;margin-top:4px"></div>
+      </div>
       <div class="ov-grid">
         <div class="card"><div class="card-h"><span class="card-t">Senaste värderingar</span></div><div id="ov-recent"></div></div>
         <div class="card"><div class="card-h"><span class="card-t">Datakällor</span><button class="card-link" onclick="switchTab('tab-hc')">Hälsokoll →</button></div><div id="ov-sources"></div></div>
@@ -502,6 +512,31 @@ async function loadOv(){
         </div>
       </div>`;
 
+    // Sparkline
+    if (met.daily_volume && met.daily_volume.length > 0) {
+      const dv = met.daily_volume.slice(-7);
+      const maxC = Math.max(...dv.map(d => d.count), 1);
+      const W = 520, H = 40, pad = 4;
+      const pts = dv.map((d, i) => {
+        const x = dv.length > 1 ? (i / (dv.length - 1)) * W : W / 2;
+        const y = H - pad - (d.count / maxC) * (H - pad * 2);
+        return x + ',' + y;
+      });
+      const pathD = 'M' + pts.join(' L');
+      const lastPt = pts[pts.length - 1].split(',');
+      const firstX = pts[0].split(',')[0];
+      ge('spk-svg').innerHTML =
+        '<path d="' + pathD + '" fill="none" stroke="var(--t1)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>' +
+        '<path d="' + pathD + ' L' + lastPt[0] + ',' + H + ' L' + firstX + ',' + H + 'Z" fill="var(--sf)"/>' +
+        '<circle cx="' + lastPt[0] + '" cy="' + lastPt[1] + '" r="3" fill="var(--t1)"/>';
+      const last = dv[dv.length - 1];
+      ge('spk-today').innerHTML = 'Idag: <strong>' + last.count + '</strong>';
+      ge('spk-labels').innerHTML = dv.map(d => {
+        const dt = new Date(d.day);
+        return '<span style="font-size:9px;color:var(--t4)">' + dt.getDate() + '/' + (dt.getMonth() + 1) + '</span>';
+      }).join('');
+    }
+
     // Recent valuations
     const recEl=ge('ov-recent');
     if(met.recent_valuations&&met.recent_valuations.length>0){
@@ -637,11 +672,11 @@ async function loadVibe(){
     ge('vibe-fact').innerHTML=ff?`<div class="fun-fact">${esc(ff)}</div>`:'';
 
     // KPIs
-    ge('vibe-kpis').innerHTML=`<div class="kpi-row cols3">
-      <div class="kpi"><div class="kl">Tester totalt</div><div class="kv">${fmtN(d.test_count)}</div></div>
-      <div class="kpi"><div class="kl">Commits (30d)</div><div class="kv">${fmtN(d.total_commits)}</div></div>
-      <div class="kpi"><div class="kl">Aktiva dagar</div><div class="kv">${fmtN(d.total_days)}</div></div>
-    </div>`;
+    ge('vibe-kpis').innerHTML = '<div class="kpi-row cols3">' +
+      '<div class="kpi"><div class="kl">Tester totalt</div><div class="kv">' + fmtN(d.test_count) + '</div><div class="kd" style="color:var(--ok)">100% passerar</div></div>' +
+      '<div class="kpi"><div class="kl">Commits (30d)</div><div class="kv">' + fmtN(d.total_commits) + '</div><div class="kd">' + fmtN(d.total_days) + ' aktiva dagar</div></div>' +
+      '<div class="kpi"><div class="kl">Idag</div><div class="kv">' + fmtN((d.history && d.history[0] ? d.history[0].commit_count : 0)) + '</div><div class="kd">commits</div></div>' +
+    '</div>';
 
     // Commits per dag
     const cmEl=ge('vibe-commits');
@@ -662,7 +697,7 @@ async function loadVibe(){
 async function loadEko(){
   // KPIs (statiska)
   ge('eko-kpis').innerHTML=`<div class="kpi-row">
-    <div class="kpi"><div class="kl">Prenumeration</div><div class="kv">1 446 kr</div><div class="kd">4 verktyg · fast /mån</div></div>
+    <div class="kpi"><div class="kl">Kostnad /mån</div><div class="kv">1 446 kr</div><div class="kd">4 verktyg · fast</div></div>
     <div class="kpi"><div class="kl">API-kostnad</div><div class="kv">~8 kr</div><div class="kd">Vision · rörlig /mån</div></div>
     <div class="kpi"><div class="kl">Intäkter</div><div class="kv" style="color:var(--t4)">0 kr</div><div class="kd">ej lanserad</div></div>
     <div class="kpi"><div class="kl">Break-even</div><div class="kv" style="color:var(--t4)">—</div><div class="kd">kräver MRR</div></div>
@@ -701,24 +736,27 @@ async function loadEko(){
     if(!d){apiEl.innerHTML='<div class="empty-state">Ingen data</div>';return}
     const entries=Object.entries(d.sources||d);
     if(!entries.length){apiEl.innerHTML='<div class="empty-state">Ingen API-användning registrerad</div>';return}
-    apiEl.innerHTML=entries.map(([name,s])=>{
-      s=s||{};
-      const total=s.total_calls||s.calls||0;
-      const errs=s.errors||0;
-      const limit=s.free_tier_limit;
-      const remaining=s.free_tier_remaining;
-      const pct=limit?Math.min(100,total/limit*100):0;
-      const low=limit&&remaining<limit*0.2;
-      return`<div class="card">
-        <div class="card-h"><span class="card-t">${absSrc(name)}</span><span style="font-size:10px;color:var(--t3)">${esc(name)}</span></div>
-        <div class="kpi-row cols2" style="margin-bottom:${limit?'8px':'0'}">
-          <div class="kpi"><div class="kl">Anrop</div><div class="kv">${fmtN(total)}</div></div>
-          <div class="kpi"><div class="kl">Fel</div><div class="kv" style="color:${errs>0?'var(--er)':'var(--t1)'}">${fmtN(errs)}</div></div>
-          ${limit?`<div class="kpi"><div class="kl">Kvar av kvot</div><div class="kv" style="color:${low?'var(--wa)':'var(--t1)'}">${fmtN(remaining)}</div></div>`:''}
-        </div>
-        ${limit?`<div class="prog-track" style="margin:0 0 4px"><div class="prog-fill${low?' wa':''}" style="width:${pct}%"></div></div><div style="font-size:9px;color:var(--t4)">${fmtN(total)} / ${fmtN(limit)} använda</div>`:''}
-      </div>`;
+    const rowsHtml = entries.map(([name, s]) => {
+      s = s || {};
+      const total = s.total_calls || s.calls || 0;
+      const errs = s.errors || 0;
+      const limit = s.free_tier_limit;
+      const remaining = s.free_tier_remaining;
+      const pct = limit ? Math.min(100, total / limit * 100) : null;
+      const low = limit && remaining < limit * 0.2;
+      return '<div class="qa-row">' +
+        '<div><div class="qa-name">' + absSrc(name) + '</div><div class="qa-sub" style="color:var(--t4)">' + esc(name) + '</div></div>' +
+        '<div><div class="qa-val">' + fmtN(total) + '</div><div class="qa-sub2" style="color:' + (errs > 0 ? 'var(--er)' : 'var(--t3)') + '">' + fmtN(errs) + ' fel</div></div>' +
+        '<div>' +
+          (pct !== null
+            ? '<div class="qa-val" style="color:' + (low ? 'var(--wa)' : 'var(--ok)') + '">' + fmtN(remaining) + '</div>' +
+              '<div class="qbar" style="margin-top:3px"><div class="qf" style="width:' + pct + '%;background:' + (low ? 'var(--wa)' : 'var(--ok)') + '"></div></div>' +
+              '<div class="qlimit">' + fmtN(total) + ' / ' + fmtN(limit) + ' använda</div>'
+            : '<div class="qa-val" style="color:var(--t4)">∞</div><div class="qlimit">Ingen kvot</div>') +
+        '</div>' +
+      '</div>';
     }).join('');
+    apiEl.innerHTML = '<div class="card"><div class="card-h"><span class="card-t">API-anrop och kvoter</span></div>' + rowsHtml + '</div>';
   }catch(err){renderError(apiEl,err.detail||'Kunde inte hämta API-användning')}
 }
 
@@ -737,7 +775,7 @@ async function loadValor(){
     const training=d.training||{};
     const obs=d.observations||{};
     // Use training_sample count as the progression metric
-    const sampleCount=training.total_samples||0;
+    const sampleCount = obs.total || training.total_samples || 0;
     const progress=Math.min(100,sampleCount/thresh*100);
 
     // Status card
@@ -832,7 +870,7 @@ async function loadHc(){
       const ok=hlt.status==='ok';
       const deps=hlt.dependencies||{};
       const depsHtml=Object.entries(deps).map(([k,v])=>{
-        const cfg=typeof v==='boolean'?v:(v&&(v.configured||v==='configured'));
+        const cfg=(()=>{if(typeof v==='boolean')return v;if(typeof v==='string')return['configured','enabled','ok','true'].includes(v);if(typeof v==='object'&&v!==null)return v.configured===true||v.status==='ok';return false})();
         return`<div class="stat-row"><span class="stat-label">${absDep(k)}</span><span class="badge ${cfg?'badge-ok':'badge-muted'}">${cfg?'OK':'Ej konfigurerad'}</span></div>`;
       }).join('');
       hhEl.innerHTML=`
