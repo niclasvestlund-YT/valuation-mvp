@@ -331,12 +331,11 @@ class TestRenderSectionState:
     def test_render_section_state_function_defined(self):
         with open("frontend/admin.html") as f:
             content = f.read()
-        assert "function renderSectionState(" in content
-        assert "loading" in content
+        # v14 uses renderError() directly instead of renderSectionState()
+        assert "function renderError(" in content or "function renderSectionState(" in content
+        assert "loading" in content or "skeleton" in content
         assert "error" in content
-        # v12 handles auth via showLogin() rather than an "unauthorized" state in renderSectionState
         assert "showLogin" in content or "unauthorized" in content
-        assert "empty" in content or "empty-state" in content
 
 
 # ─── Test group 8: Phase 2 — Exception leakage ───

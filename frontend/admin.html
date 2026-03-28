@@ -3,1437 +3,883 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="build-version" content="v13.0">
-  <title>Admin v13 — Vardagsvärde</title>
+  <meta name="build-version" content="v14.0">
+  <title>Admin v14 — Vardagsvärde</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #F7F5F0;
-      --sf: #EDEAE3;
-      --w:  #FFFFFF;
-      --b1: #E8E4DB;
-      --b2: #D5D0C5;
-      --t1: #2C2A25;
-      --t2: #5C5850;
-      --t3: #8A8578;
-      --t4: #B0AA9E;
-      --ok:   #34a873;
-      --okbg: #e8f5ee;
-      --oktx: #1a5c37;
-      --wa:   #d4a017;
-      --wabg: #fff8e1;
-      --watx: #7a5800;
-      --er:   #c4432a;
-      --erbg: #fdecea;
-      --ertx: #7d1f14;
+      --bg:#F7F5F0; --sf:#EDEAE3; --w:#FFFFFF;
+      --b1:#E8E4DB; --b2:#D5D0C5;
+      --t1:#2C2A25; --t2:#5C5850; --t3:#8A8578; --t4:#B0AA9E;
+      --ok:#34a873; --okbg:#e8f5ee; --oktx:#1a5c37;
+      --wa:#d4a017; --wabg:#fff8e1; --watx:#7a5800;
+      --er:#c4432a; --erbg:#fdecea; --ertx:#7d1f14;
     }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.5;min-height:100vh}
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Login */
+    .login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+    .login-overlay.hidden{display:none}
+    .login-box{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:32px;width:320px;text-align:center}
+    .login-box h2{font-size:15px;font-weight:600;margin-bottom:4px}
+    .login-box p{font-size:11px;color:var(--t3);margin-bottom:18px}
+    .login-box input{width:100%;padding:9px 12px;border:0.5px solid var(--b2);border-radius:7px;font-family:inherit;font-size:13px;background:var(--sf);color:var(--t1);outline:none;margin-bottom:10px}
+    .login-box input:focus{border-color:var(--t3)}
+    .login-box button{width:100%;padding:9px;border:none;border-radius:7px;background:var(--t1);color:var(--w);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer}
+    .login-error{font-size:11px;color:var(--er);margin-top:7px;display:none}
 
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--t1);
-      line-height: 1.5;
-      min-height: 100vh;
-      font-size: 13px;
-    }
+    /* Shell */
+    .admin-shell{display:none}
+    .admin-shell.active{display:flex;min-height:100vh}
 
-    /* ── Login ── */
-    .login-overlay {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 9999;
-    }
-    .login-overlay.hidden { display: none; }
-    .login-box {
-      background: var(--w);
-      border: 0.5px solid var(--b1);
-      border-radius: 10px;
-      padding: 32px;
-      width: 320px;
-      text-align: center;
-    }
-    .login-box h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-    .login-box p { font-size: 11px; color: var(--t3); margin-bottom: 20px; }
-    .login-box input {
-      width: 100%; padding: 9px 12px;
-      border: 0.5px solid var(--b2); border-radius: 7px;
-      font-family: inherit; font-size: 13px;
-      background: var(--sf); color: var(--t1); outline: none;
-      margin-bottom: 10px;
-    }
-    .login-box input:focus { border-color: var(--t3); }
-    .login-box button {
-      width: 100%; padding: 9px;
-      border: none; border-radius: 7px;
-      background: var(--t1); color: var(--w);
-      font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
-    }
-    .login-error { font-size: 11px; color: var(--er); margin-top: 7px; display: none; }
+    /* Sidebar */
+    .sidebar{width:186px;min-width:186px;background:var(--w);border-right:0.5px solid var(--b1);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100}
+    .sb-top{padding:16px 14px 11px;border-bottom:0.5px solid var(--b1)}
+    .sb-name{font-size:13px;font-weight:600}
+    .sb-sub{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1px;margin-top:1px}
+    .sb-ver{font-size:9px;color:var(--t4);margin-top:2px}
+    .sb-sec{padding:5px 0}
+    .sb-lbl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.8px;font-weight:500;padding:7px 14px 2px}
+    .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:12px;color:var(--t2);cursor:pointer;border-left:2px solid transparent}
+    .nav-item:hover{background:var(--bg)}
+    .nav-item.active{background:var(--sf);color:var(--t1);font-weight:500;border-left-color:var(--t1)}
+    .nav-item svg{width:13px;height:13px;flex-shrink:0;color:var(--t3)}
+    .nav-item.active svg{color:var(--t1)}
+    .sb-bot{margin-top:auto;padding:10px 14px;border-top:0.5px solid var(--b1)}
+    .env-badge{display:inline-block;font-size:9px;padding:2px 7px;border-radius:20px;font-weight:500;background:var(--sf);color:var(--t3);letter-spacing:1px;text-transform:uppercase}
+    .auth-row{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t3);margin-top:5px}
+    .auth-dot{width:5px;height:5px;border-radius:50%;background:var(--ok)}
 
-    /* ── Shell ── */
-    .admin-shell { display: none; }
-    .admin-shell.active { display: flex; min-height: 100vh; }
+    /* Main */
+    .main-content{margin-left:186px;flex:1;background:var(--bg);overflow-y:auto}
+    .tab-panel{display:none;padding:18px 20px;max-width:760px}
+    .tab-panel.active{display:block}
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 186px; min-width: 186px;
-      background: var(--w);
-      border-right: 0.5px solid var(--b1);
-      display: flex; flex-direction: column;
-      position: fixed; top: 0; left: 0; bottom: 0;
-      overflow-y: auto; z-index: 100;
-    }
-    .sb-top {
-      padding: 16px 14px 11px;
-      border-bottom: 0.5px solid var(--b1);
-    }
-    .sb-top-name { font-size: 13px; font-weight: 600; color: var(--t1); }
-    .sb-top-sub { font-size: 9px; color: var(--t4); text-transform: uppercase; letter-spacing: 1px; margin-top: 1px; }
-    .sb-top-ver { font-size: 9px; color: var(--t4); margin-top: 2px; }
-    .sb-section { padding: 5px 0; }
-    .sb-label {
-      font-size: 9px; color: var(--t4);
-      text-transform: uppercase; letter-spacing: 1.8px; font-weight: 500;
-      padding: 7px 14px 2px;
-    }
-    .nav-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 14px;
-      font-size: 12px; color: var(--t2);
-      cursor: pointer;
-      border-left: 2px solid transparent;
-      overflow: hidden;
-    }
-    .nav-item:hover { background: var(--bg); }
-    .nav-item.active {
-      background: var(--sf); color: var(--t1);
-      font-weight: 500; border-left-color: var(--t1);
-    }
-    .nav-item svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--t3); }
-    .nav-item.active svg { color: var(--t1); }
-    .sb-bot {
-      margin-top: auto;
-      padding: 10px 14px;
-      border-top: 0.5px solid var(--b1);
-    }
-    .env-badge {
-      display: inline-block; font-size: 9px; padding: 2px 7px;
-      border-radius: 20px; font-weight: 500;
-      background: var(--sf); color: var(--t3);
-      letter-spacing: 1px; text-transform: uppercase;
-    }
-    .auth-indicator {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 10px; color: var(--t3); margin-top: 5px;
-    }
-    .auth-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
+    /* Page header */
+    .pg-h{font-size:14px;font-weight:500;margin-bottom:2px}
+    .pg-s{font-size:11px;color:var(--t3);margin-bottom:14px}
 
-    /* ── Main ── */
-    .main-content {
-      margin-left: 186px; flex: 1;
-      background: var(--bg); overflow-y: auto;
-    }
-    .tab-panel { display: none; padding: 18px 20px; max-width: 760px; }
-    .tab-panel.active { display: block; }
+    /* Cards */
+    .card{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:13px;margin-bottom:10px;min-width:0}
+    .card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;gap:8px}
+    .card-t{font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    .card-link{font-size:11px;color:var(--t3);text-decoration:underline;cursor:pointer;flex-shrink:0;border:none;background:none;font-family:inherit}
 
-    /* ── Page header ── */
-    .pg-h { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
-    .pg-s { font-size: 11px; color: var(--t3); margin-bottom: 14px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* KPI */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:10px}
+    .kpi-row.cols3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .kpi-row.cols2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .kpi{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:12px 14px;min-width:0}
+    .kl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kv{font-size:21px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+    .kd{font-size:10px;color:var(--t3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    /* ── Cards ── */
-    .card {
-      background: var(--w);
-      border: 0.5px solid var(--b1);
-      border-radius: 10px;
-      padding: 13px;
-      margin-bottom: 10px;
-      min-width: 0;
-    }
-    .card-h {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 9px; gap: 8px;
-    }
-    .card-t {
-      font-size: 10px; color: var(--t4);
-      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
-    }
-    .card-link { font-size: 11px; color: var(--t3); text-decoration: underline; cursor: pointer; flex-shrink: 0; }
+    /* SF row */
+    .sf-row{display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:5px;min-width:0}
+    .sf-row:last-child{margin-bottom:0}
+    .sf-row.faded{opacity:0.42}
+    .sf-body{flex:1;min-width:0}
+    .sf-name{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sf-sub{font-size:10px;color:var(--t3);margin-top:1px}
+    .sf-right{text-align:right;flex-shrink:0}
+    .sf-val{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1}
+    .sf-unit{font-size:9px;color:var(--t3);margin-top:1px}
 
-    /* ── KPI ── */
-    .kpi-row, .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap: 9px; margin-bottom: 10px;
-    }
-    .kpi, .kpi-card {
-      background: var(--w); border: 0.5px solid var(--b1);
-      border-radius: 10px; padding: 12px 14px; min-width: 0;
-    }
-    .kl, .kpi-label {
-      font-size: 9px; color: var(--t4);
-      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;
-      margin-bottom: 5px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .kv, .kpi-value {
-      font-size: 21px; font-weight: 500; line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-    .kpi-sub, .kd {
-      font-size: 10px; color: var(--t3); margin-top: 4px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    /* ── SF row (used for val-rows, source rows etc) ── */
-    .sf-row {
-      display: flex; align-items: center; gap: 9px;
-      padding: 7px 9px; background: var(--sf);
-      border-radius: 7px; margin-bottom: 5px; min-width: 0;
-    }
-    .sf-row:last-child { margin-bottom: 0; }
-    .sf-row.faded { opacity: 0.42; }
-    .sf-row-body { flex: 1; min-width: 0; }
-    .sf-row-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sf-row-sub { font-size: 10px; color: var(--t3); margin-top: 1px; }
-    .sf-row-right { text-align: right; flex-shrink: 0; }
-    .sf-row-val { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1; }
-    .sf-row-unit { font-size: 9px; color: var(--t3); margin-top: 1px; }
-    .sf-row-age { font-size: 9px; color: var(--t4); margin-top: 1px; }
-
-    /* val-row left accent */
-    .val-acc { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
-    .acc-ok  { background: var(--ok); }
-    .acc-wa  { background: var(--wa); }
-    .acc-in  { background: var(--t4); }
-    .acc-er  { background: var(--er); }
+    /* val accent */
+    .val-acc{width:3px;height:28px;border-radius:2px;flex-shrink:0}
+    .a-ok{background:var(--ok)} .a-wa{background:var(--wa)} .a-in{background:var(--t4)} .a-er{background:var(--er)}
 
     /* dot */
-    .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .dok { background: var(--ok); }
-    .dwa { background: var(--wa); }
-    .din { background: var(--t4); }
+    .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .dok{background:var(--ok)} .dwa{background:var(--wa)} .din{background:var(--t4)}
 
-    /* src-group label */
-    .src-gl {
-      font-size: 9px; color: var(--t4);
-      text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;
-      margin-bottom: 5px; margin-top: 2px;
-    }
-    .src-div { height: 0.5px; background: var(--b1); margin: 8px 0; }
+    /* src labels */
+    .src-gl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px;margin-top:2px}
+    .src-div{height:0.5px;background:var(--b1);margin:8px 0}
 
-    /* ── Sparkline ── */
-    .spk {
-      background: var(--w); border: 0.5px solid var(--b1);
-      border-radius: 10px; padding: 12px; margin-bottom: 10px;
-    }
-    .spk-hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+    /* Stat row */
+    .stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--sf);font-size:12px}
+    .stat-row:last-child{border-bottom:none}
+    .stat-label{color:var(--t3)}
+    .stat-value{color:var(--t1);font-weight:500;font-variant-numeric:tabular-nums}
 
-    /* ── Health banner ── */
-    .hb {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 13px; border-radius: 8px; margin-bottom: 12px;
-    }
-    .hb.ok { background: var(--okbg); border: 0.5px solid rgba(52,168,115,0.25); }
-    .hb.wa { background: var(--wabg); border: 0.5px solid rgba(212,160,23,0.3); }
-    .hb.er { background: var(--erbg); border: 0.5px solid rgba(196,67,42,0.2); }
-    .hb-icon {
-      width: 20px; height: 20px; border-radius: 50%;
-      background: var(--ok); flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .hb-text { flex: 1; font-size: 12px; font-weight: 500; color: var(--oktx); }
-    .hb-chip {
-      font-size: 10px; padding: 2px 7px; border-radius: 8px;
-      background: rgba(52,168,115,0.12); color: var(--oktx); white-space: nowrap;
-    }
-    .hb-link { font-size: 10px; color: var(--t4); cursor: pointer; flex-shrink: 0; }
+    /* Table */
+    .data-table{width:100%;border-collapse:collapse;font-size:12px}
+    .data-table th{text-align:left;padding:6px 10px;font-size:9px;font-weight:500;color:var(--t4);text-transform:uppercase;letter-spacing:1.2px;border-bottom:0.5px solid var(--b1)}
+    .data-table td{padding:7px 10px;border-bottom:0.5px solid var(--sf);color:var(--t2)}
+    .data-table tr:last-child td{border-bottom:none}
 
-    /* ── Overview 3-col grid ── */
-    .ov-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 10px;
-    }
+    /* Badge */
+    .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500}
+    .badge-ok{background:var(--okbg);color:var(--oktx)}
+    .badge-wa{background:var(--wabg);color:var(--watx)}
+    .badge-er{background:var(--erbg);color:var(--ertx)}
+    .badge-muted{background:var(--sf);color:var(--t3)}
 
-    /* ── Status bar ── */
-    .stat-bar {
-      display: flex; gap: 2px; height: 4px;
-      margin-top: 6px; margin-bottom: 16px;
-    }
-    .stat-bar div { border-radius: 1px; }
+    /* Health banner */
+    .hb{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:8px;margin-bottom:12px}
+    .hb.ok{background:var(--okbg);border:0.5px solid rgba(52,168,115,0.25)}
+    .hb.wa{background:var(--wabg);border:0.5px solid rgba(212,160,23,0.3)}
+    .hb.er{background:var(--erbg);border:0.5px solid rgba(196,67,42,0.2)}
+    .hb-icon{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .hb-icon.ok{background:var(--ok)} .hb-icon.wa{background:var(--wa)} .hb-icon.er{background:var(--er)}
+    .hb-chip{font-size:10px;padding:2px 7px;border-radius:8px;white-space:nowrap}
+    .hb-chip.ok{background:rgba(52,168,115,0.12);color:var(--oktx)}
+    .hb-chip.wa{background:rgba(212,160,23,0.12);color:var(--watx)}
 
-    /* ── Badges ── */
-    .badge {
-      display: inline-block; padding: 2px 7px;
-      border-radius: 4px; font-size: 10px; font-weight: 500;
-    }
-    .badge-ok  { background: var(--okbg); color: var(--oktx); }
-    .badge-wa  { background: var(--wabg); color: var(--watx); }
-    .badge-er  { background: var(--erbg); color: var(--ertx); }
-    .badge-muted { background: var(--sf); color: var(--t3); }
+    /* 3-col overview */
+    .ov-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 
-    /* ── Tables ── */
-    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .data-table th {
-      text-align: left; padding: 6px 10px;
-      font-size: 9px; font-weight: 500; color: var(--t4);
-      text-transform: uppercase; letter-spacing: 1.2px;
-      border-bottom: 0.5px solid var(--b1);
-    }
-    .data-table td { padding: 7px 10px; border-bottom: 0.5px solid var(--sf); color: var(--t2); }
-    .data-table tr:last-child td { border-bottom: none; }
+    /* Progress */
+    .prog-track{background:var(--sf);border-radius:4px;height:7px;overflow:hidden;margin:7px 0}
+    .prog-fill{height:100%;border-radius:4px;background:var(--ok);transition:width 0.4s}
+    .prog-fill.wa{background:var(--wa)}
 
-    /* ── Error card ── */
-    .error-card {
-      background: var(--erbg); border: 0.5px solid rgba(196,67,42,0.2);
-      border-radius: 10px; padding: 13px; margin-bottom: 10px;
-    }
-    .error-header { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-    .error-code {
-      font-size: 10px; font-weight: 600; color: var(--ertx);
-      background: rgba(196,67,42,0.1); padding: 2px 6px; border-radius: 4px;
-      text-transform: uppercase;
-    }
-    .error-msg { font-size: 12px; color: var(--ertx); }
-    .copy-btn {
-      padding: 5px 11px; border: none; border-radius: 6px;
-      background: var(--er); color: var(--w);
-      font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer;
-      margin-bottom: 7px;
-    }
-    .error-detail {
-      font-size: 10px; font-family: monospace;
-      background: var(--w); border: 0.5px solid var(--b1);
-      border-radius: 6px; padding: 8px;
-      white-space: pre-wrap; max-height: 200px; overflow-y: auto; color: var(--t2);
-    }
-    details summary { cursor: pointer; font-size: 11px; color: var(--t3); }
+    /* Milestone */
+    .ms-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--b1)}
+    .ms-row:last-child{border-bottom:none}
+    .ms-num{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+    .ms-done{background:var(--ok);color:#fff} .ms-next{background:var(--t1);color:#fff} .ms-future{background:var(--sf);color:var(--t4)}
+    .ms-body{flex:1;min-width:0}
+    .ms-lbl{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .ms-desc{font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+    .ms-st{font-size:11px;flex-shrink:0;white-space:nowrap}
 
-    /* ── Skeleton ── */
-    .skeleton-rows { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
-    .skeleton-row {
-      height: 14px; background: var(--sf); border-radius: 4px;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    /* Ekonomi subtabs */
+    .etabs{display:flex;gap:2px;background:var(--sf);border-radius:6px;padding:3px;margin-bottom:10px;width:fit-content}
+    .et{padding:4px 10px;border-radius:4px;font-size:11px;color:var(--t2);cursor:pointer;white-space:nowrap;border:none;background:transparent;font-family:inherit}
+    .et.active{background:var(--w);color:var(--t1);font-weight:500}
+    .subtab-panel{display:none} .subtab-panel.active{display:block}
 
-    /* ── Progress ── */
-    .prog-track { background: var(--sf); border-radius: 4px; height: 7px; overflow: hidden; margin: 7px 0; }
-    .prog-fill  { height: 100%; border-radius: 4px; background: var(--ok); transition: width 0.4s; }
-    .prog-fill.wa { background: var(--wa); }
+    /* Tool row */
+    .tool-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--b1)}
+    .tool-row:last-child{border-bottom:none}
+    .tool-ic{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+    .tool-amt{font-size:14px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .tool-sub2{font-size:10px;color:var(--t3);text-align:right;margin-top:1px}
+    .total-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0 0;border-top:1px solid var(--b1);margin-top:3px}
 
-    /* ── Milestones ── */
-    .ms-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--b1); }
-    .ms-row:last-child { border-bottom: none; }
-    .ms-num {
-      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 600;
-    }
-    .ms-done { background: var(--ok); color: #fff; }
-    .ms-next { background: var(--t1); color: #fff; }
-    .ms-future { background: var(--sf); color: var(--t4); }
-    .ms-body { flex: 1; min-width: 0; }
-    .ms-lbl { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ms-desc { font-size: 10px; color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
-    .ms-st { font-size: 11px; flex-shrink: 0; white-space: nowrap; }
+    /* Error card */
+    .error-card{background:var(--erbg);border:0.5px solid rgba(196,67,42,0.2);border-radius:10px;padding:13px;margin-bottom:10px}
+    .error-header{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+    .error-code{font-size:10px;font-weight:600;color:var(--ertx);background:rgba(196,67,42,0.1);padding:2px 6px;border-radius:4px;text-transform:uppercase}
+    .error-msg{font-size:12px;color:var(--ertx)}
+    .copy-btn{padding:5px 11px;border:none;border-radius:6px;background:var(--er);color:var(--w);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;margin-bottom:7px}
+    .error-detail{font-size:10px;font-family:monospace;background:var(--w);border:0.5px solid var(--b1);border-radius:6px;padding:8px;white-space:pre-wrap;max-height:200px;overflow-y:auto;color:var(--t2)}
+    details summary{cursor:pointer;font-size:11px;color:var(--t3)}
 
-    /* ── Ekonomi sub-tabs ── */
-    .etabs {
-      display: flex; gap: 2px;
-      background: var(--sf); border-radius: 6px; padding: 3px;
-      margin-bottom: 10px; width: fit-content;
-    }
-    .et {
-      padding: 4px 10px; border-radius: 4px;
-      font-size: 11px; color: var(--t2);
-      cursor: pointer; white-space: nowrap; border: none;
-      background: transparent; font-family: inherit;
-    }
-    .et.active { background: var(--w); color: var(--t1); font-weight: 500; }
-    .subtab-panel { display: none; }
-    .subtab-panel.active { display: block; }
+    /* Skeleton */
+    .skeleton-rows{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+    .skeleton-row{height:14px;background:var(--sf);border-radius:4px;animation:pulse 1.5s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-    /* ── Tool row (Ekonomi) ── */
-    .tool-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 0; border-bottom: 0.5px solid var(--b1);
-    }
-    .tool-row:last-child { border-bottom: none; }
-    .tool-ic {
-      width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700; color: #fff;
-    }
-    .tool-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tool-plan { font-size: 10px; color: var(--t3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tool-amt  { font-size: 14px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .tool-sub2 { font-size: 10px; color: var(--t3); text-align: right; margin-top: 1px; }
-    .total-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 9px 0 0; border-top: 1px solid var(--b1); margin-top: 3px;
-    }
+    /* Empty */
+    .empty-state{text-align:center;padding:28px 16px;color:var(--t3);font-size:12px}
 
-    /* ── Quota rows ── */
-    .qa-row {
-      display: grid; grid-template-columns: minmax(0,1fr) 78px 118px;
-      gap: 10px; align-items: center;
-      padding: 10px 0; border-bottom: 0.5px solid var(--b1);
-    }
-    .qa-row:last-child { border-bottom: none; }
-    .qa-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .qa-sub  { font-size: 10px; color: var(--t3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .qa-used { font-size: 12px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
-    .qa-sub2 { font-size: 10px; text-align: right; margin-top: 1px; }
-    .qa-wrap { display: flex; flex-direction: column; gap: 2px; }
-    .qa-pct  { font-size: 10px; text-align: right; }
-    .qbar    { height: 4px; background: var(--sf); border-radius: 2px; overflow: hidden; }
-    .qf      { height: 100%; border-radius: 2px; }
-    .qlimit  { font-size: 9px; color: var(--t4); }
-    .warn-box {
-      background: var(--erbg); border: 0.5px solid var(--er);
-      border-radius: 7px; padding: 9px 12px;
-      font-size: 11px; color: var(--ertx);
-      margin-top: 10px; display: flex; gap: 7px; line-height: 1.5;
-    }
+    /* Info note */
+    .info-note{background:var(--wabg);border:0.5px solid rgba(212,160,23,0.3);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--watx);margin-bottom:10px}
 
-    /* ── Stat row ── */
-    .stat-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-bottom: 0.5px solid var(--sf); font-size: 12px;
-    }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-label { color: var(--t3); }
-    .stat-value { color: var(--t1); font-weight: 500; font-variant-numeric: tabular-nums; }
+    /* Commit */
+    .commit-entry{padding:5px 0;border-bottom:0.5px solid var(--sf)}
+    .commit-entry:last-child{border-bottom:none}
+    .commit-sha{font-family:monospace;font-size:10px;color:var(--t4);margin-right:5px}
+    .commit-type{font-size:10px;font-weight:500;color:var(--t3);background:var(--sf);padding:1px 5px;border-radius:3px;margin-right:4px}
+    .commit-msg{font-size:12px;color:var(--t2)}
+    .fun-fact{background:var(--sf);border-radius:7px;padding:10px 13px;font-size:12px;color:var(--t2);font-style:italic;margin-bottom:10px}
 
-    /* ── Commit entries ── */
-    .commit-entry { padding: 6px 0; border-bottom: 0.5px solid var(--sf); }
-    .commit-entry:last-child { border-bottom: none; }
-    .commit-sha  { font-family: monospace; font-size: 10px; color: var(--t4); margin-right: 5px; }
-    .commit-type { font-size: 10px; font-weight: 500; color: var(--t3); background: var(--sf); padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
-    .commit-msg  { font-size: 12px; color: var(--t2); }
+    /* Query */
+    .query-row{padding:8px 0;border-bottom:0.5px solid var(--sf)}
+    .query-row:last-child{border-bottom:none}
+    .query-text{font-family:monospace;font-size:11px;color:var(--t2);word-break:break-all}
+    .query-dur{font-size:10px;font-weight:600;color:var(--wa)}
 
-    /* ── Fun fact ── */
-    .fun-fact {
-      background: var(--sf); border-radius: 7px;
-      padding: 10px 13px; font-size: 12px; color: var(--t2);
-      font-style: italic; margin-bottom: 10px;
-    }
+    /* DB table */
+    .db-table-item{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:6px 0;border-bottom:0.5px solid var(--sf);font-size:12px;align-items:center}
+    .db-table-item:last-child{border-bottom:none}
 
-    /* ── Valor ── */
-    .valor-untrained { border-left: 3px solid var(--wa); }
-    .valor-trained   { border-left: 3px solid var(--ok); }
-    .info-note {
-      background: var(--wabg); border: 0.5px solid rgba(212,160,23,0.3);
-      border-radius: 7px; padding: 9px 12px;
-      font-size: 11px; color: var(--watx); margin-bottom: 10px;
-    }
+    /* Phase bar */
+    .phase-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:0.5px solid var(--b1);font-size:11px}
+    .phase-row:last-child{border-bottom:none}
+    .phase-bar{flex:1;height:4px;background:var(--sf);border-radius:2px;overflow:hidden}
+    .phase-fill{height:100%;border-radius:2px}
 
-    /* ── Health banner (Hälsokoll) ── */
-    .hc-banner {
-      display: flex; align-items: center; gap: 9px;
-      padding: 10px 14px; border-radius: 8px; margin-bottom: 10px;
-      font-size: 12px; font-weight: 500;
-    }
-    .hc-banner.ok { background: var(--okbg); border: 0.5px solid rgba(52,168,115,0.25); color: var(--oktx); }
-    .hc-banner.wa { background: var(--wabg); border: 0.5px solid rgba(212,160,23,0.3); color: var(--watx); }
-    .hc-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .hc-dot.ok { background: var(--ok); }
-    .hc-dot.wa { background: var(--wa); }
+    /* Quota */
+    .qa-row{display:grid;grid-template-columns:minmax(0,1fr) 80px 110px;gap:10px;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--b1)}
+    .qa-row:last-child{border-bottom:none}
+    .qa-name{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .qa-sub{font-size:10px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .qa-val{font-size:12px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+    .qa-sub2{font-size:10px;text-align:right;margin-top:1px}
+    .qbar{height:4px;background:var(--sf);border-radius:2px;overflow:hidden}
+    .qf{height:100%;border-radius:2px}
+    .qlimit{font-size:9px;color:var(--t4)}
 
-    /* ── DB table list ── */
-    .db-table-item {
-      display: grid; grid-template-columns: 1fr auto auto;
-      gap: 12px; padding: 6px 0;
-      border-bottom: 0.5px solid var(--sf); font-size: 12px; align-items: center;
-    }
-    .db-table-item:last-child { border-bottom: none; }
+    /* Valor */
+    .valor-untrained{border-left:3px solid var(--wa)}
+    .valor-trained{border-left:3px solid var(--ok)}
 
-    /* ── Query row ── */
-    .query-row { padding: 8px 0; border-bottom: 0.5px solid var(--sf); }
-    .query-row:last-child { border-bottom: none; }
-    .query-text { font-family: monospace; font-size: 11px; color: var(--t2); word-break: break-all; }
-    .query-dur  { font-size: 10px; font-weight: 600; color: var(--wa); }
+    /* Mobile */
+    .mobile-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--w);border-top:0.5px solid var(--b1);z-index:200;padding:8px 0 calc(4px + env(safe-area-inset-bottom,0px))}
+    .mobile-tab-bar-inner{display:flex;justify-content:space-around}
+    .mobile-tab-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px;border:none;background:transparent;color:var(--t4);font-family:inherit;font-size:9px;cursor:pointer;min-width:44px}
+    .mobile-tab-btn.active{color:var(--t1);font-weight:500}
+    .mobile-tab-btn svg{width:18px;height:18px}
 
-    /* ── Empty state ── */
-    .empty-state { text-align: center; padding: 28px 16px; color: var(--t3); font-size: 12px; }
-
-    /* ── Mobile tab bar ── */
-    .mobile-tab-bar {
-      display: none;
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--w); border-top: 0.5px solid var(--b1);
-      z-index: 200; padding: 8px 0 4px;
-      padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
-    }
-    .mobile-tab-bar-inner { display: flex; justify-content: space-around; }
-    .mobile-tab-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
-      padding: 4px 6px; border: none; background: transparent;
-      color: var(--t4); font-family: inherit; font-size: 9px;
-      cursor: pointer; min-width: 44px;
-    }
-    .mobile-tab-btn.active { color: var(--t1); font-weight: 500; }
-    .mobile-tab-btn svg { width: 18px; height: 18px; }
-
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      .sidebar { display: none; }
-      .main-content { margin-left: 0; padding-bottom: 80px; }
-      .mobile-tab-bar { display: block; }
-      .kpi-row, .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      .ov-grid { grid-template-columns: 1fr; }
-      .tab-panel { padding: 14px 16px; }
+    @media(max-width:640px){
+      .sidebar{display:none}
+      .main-content{margin-left:0;padding-bottom:80px}
+      .mobile-tab-bar{display:block}
+      .kpi-row{grid-template-columns:repeat(2,1fr)}
+      .ov-grid{grid-template-columns:1fr}
+      .tab-panel{padding:14px 16px}
     }
   </style>
 </head>
 <body>
 
-  <!-- Login -->
-  <div class="login-overlay" id="loginOverlay">
-    <div class="login-box">
-      <h2>Vardagsvärde Admin</h2>
-      <p>Ange admin-nyckel för att fortsätta</p>
-      <input type="password" id="adminKeyInput" placeholder="Admin-nyckel" autocomplete="off">
-      <button id="loginBtn">Logga in</button>
-      <div class="login-error" id="loginError">Ogiltig nyckel</div>
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>Vardagsvärde Admin</h2>
+    <p>Ange admin-nyckel för att fortsätta</p>
+    <input type="password" id="adminKeyInput" placeholder="Admin-nyckel" autocomplete="off">
+    <button id="loginBtn">Logga in</button>
+    <div class="login-error" id="loginError">Ogiltig nyckel</div>
+  </div>
+</div>
+
+<div class="admin-shell" id="adminShell">
+
+  <nav class="sidebar">
+    <div class="sb-top">
+      <div class="sb-name">Vardagsvärde</div>
+      <div class="sb-sub">Admin</div>
+      <div class="sb-ver" id="build-info">v14.0 · 2026-03-28</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">Drift</div>
+      <div class="nav-item active" data-tab="tab-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Översikt</div>
+      <div class="nav-item" data-tab="tab-cr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>Crawler</div>
+      <div class="nav-item" data-tab="tab-vibe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Vibe Check</div>
+      <div class="nav-item" data-tab="tab-eko"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Ekonomi</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">System</div>
+      <div class="nav-item" data-tab="tab-valor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Valor ML</div>
+      <div class="nav-item" data-tab="tab-hc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Hälsokoll</div>
+    </div>
+    <div class="sb-bot">
+      <span class="env-badge">Lokal</span>
+      <div class="auth-row"><div class="auth-dot"></div>Autentiserad</div>
+    </div>
+  </nav>
+
+  <div class="mobile-tab-bar">
+    <div class="mobile-tab-bar-inner">
+      <button class="mobile-tab-btn active" data-tab="tab-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Översikt</button>
+      <button class="mobile-tab-btn" data-tab="tab-cr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>Crawler</button>
+      <button class="mobile-tab-btn" data-tab="tab-vibe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Vibe</button>
+      <button class="mobile-tab-btn" data-tab="tab-eko"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Ekonomi</button>
+      <button class="mobile-tab-btn" data-tab="tab-valor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Valor</button>
+      <button class="mobile-tab-btn" data-tab="tab-hc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Hälsa</button>
     </div>
   </div>
 
-  <!-- Shell -->
-  <div class="admin-shell" id="adminShell">
+  <div class="main-content">
 
-    <!-- Sidebar -->
-    <nav class="sidebar">
-      <div class="sb-top">
-        <div class="sb-top-name">Vardagsvärde</div>
-        <div class="sb-top-sub">Admin</div>
-        <div class="sb-top-ver" id="build-info">v13.0 · 2026-03-28</div>
-      </div>
-      <div class="sb-section">
-        <div class="sb-label">Drift</div>
-        <div class="nav-item active" data-tab="tab-ov">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          Översikt
-        </div>
-        <div class="nav-item" data-tab="tab-cr">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/></svg>
-          Crawler
-        </div>
-        <div class="nav-item" data-tab="tab-vibe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Vibe Check
-        </div>
-        <div class="nav-item" data-tab="tab-eko">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          Ekonomi
-        </div>
-      </div>
-      <div class="sb-section">
-        <div class="sb-label">System</div>
-        <div class="nav-item" data-tab="tab-valor">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          Valor ML
-        </div>
-        <div class="nav-item" data-tab="tab-hc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          Hälsokoll
-        </div>
-      </div>
-      <div class="sb-bot">
-        <span class="env-badge">Lokal</span>
-        <div class="auth-indicator"><div class="auth-dot"></div>Autentiserad</div>
-      </div>
-    </nav>
-
-    <!-- Mobile tab bar -->
-    <div class="mobile-tab-bar">
-      <div class="mobile-tab-bar-inner">
-        <button class="mobile-tab-btn active" data-tab="tab-ov">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          Översikt
-        </button>
-        <button class="mobile-tab-btn" data-tab="tab-cr">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-          Crawler
-        </button>
-        <button class="mobile-tab-btn" data-tab="tab-vibe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
-          Vibe
-        </button>
-        <button class="mobile-tab-btn" data-tab="tab-eko">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          Ekonomi
-        </button>
-        <button class="mobile-tab-btn" data-tab="tab-valor">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          Valor
-        </button>
-        <button class="mobile-tab-btn" data-tab="tab-hc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-          Hälsa
-        </button>
+    <!-- ÖVERSIKT -->
+    <div class="tab-panel active" id="tab-ov">
+      <div class="pg-h">Översikt</div>
+      <div class="pg-s">Systemstatus och nyckeltal</div>
+      <div id="ov-banner" class="health-banner"></div>
+      <div id="ov-kpis"></div>
+      <div class="ov-grid">
+        <div class="card"><div class="card-h"><span class="card-t">Senaste värderingar</span></div><div id="ov-recent"></div></div>
+        <div class="card"><div class="card-h"><span class="card-t">Datakällor</span><button class="card-link" onclick="switchTab('tab-hc')">Hälsokoll →</button></div><div id="ov-sources"></div></div>
+        <div class="card"><div class="card-h"><span class="card-t">Prisassistent</span><span style="font-size:10px;color:var(--t3)">Chattbot</span></div><div id="ov-assistant"></div></div>
       </div>
     </div>
 
-    <!-- Main -->
-    <div class="main-content">
+    <!-- CRAWLER -->
+    <div class="tab-panel" id="tab-cr">
+      <div class="pg-h">Crawler</div>
+      <div class="pg-s">Marknadsdata och prisbevakning</div>
+      <div id="cr-kpis"></div>
+      <div id="cr-sources"></div>
+      <div class="card"><div class="card-h"><span class="card-t">Senaste jämförelser</span></div><div id="cr-latest"></div></div>
+      <div class="card"><div class="card-h"><span class="card-t">Produkttäckning</span></div><div id="cr-coverage"></div></div>
+      <div class="card"><div class="card-h"><span class="card-t">Schema</span><button class="card-link" id="crSchemaBtn">Ändra →</button></div><div id="cr-schedule"></div></div>
+    </div>
 
-      <!-- ÖVERSIKT -->
-      <div class="tab-panel active" id="tab-ov">
-        <div class="pg-h">Översikt</div>
-        <div class="pg-s">Systemstatus och nyckeltal</div>
-        <div id="ov-health-banner" class="health-banner"></div>
-        <div id="ov-kpis"></div>
-        <div class="ov-grid">
-          <div class="card">
-            <div class="card-h"><span class="card-t">Senaste värderingar</span></div>
-            <div id="ov-recent"></div>
-          </div>
-          <div class="card">
-            <div class="card-h"><span class="card-t">Datakällor</span><span class="card-link" onclick="switchTab('hc')">Hälsokoll →</span></div>
-            <div id="ov-sources"></div>
-          </div>
-          <div class="card">
-            <div class="card-h"><span class="card-t">Prisassistent</span><span style="font-size:10px;color:var(--t3)">Chattbot</span></div>
-            <div id="ov-assistant"></div>
-          </div>
-        </div>
+    <!-- VIBE CHECK -->
+    <div class="tab-panel" id="tab-vibe">
+      <div class="pg-h">Vibe Check</div>
+      <div class="pg-s">Utvecklingsdagbok och framsteg</div>
+      <div id="vibe-fact"></div>
+      <div class="card"><div class="card-h"><span class="card-t">Statistik</span></div><div id="vibe-kpis"></div></div>
+      <div class="card"><div class="card-h"><span class="card-t">Git-historik per dag</span></div><div id="vibe-commits"></div></div>
+    </div>
+
+    <!-- EKONOMI -->
+    <div class="tab-panel" id="tab-eko">
+      <div class="pg-h">Ekonomi</div>
+      <div class="pg-s">Kostnader, API-användning och intäkter</div>
+      <div id="eko-kpis"></div>
+      <div class="etabs">
+        <button class="et active" data-subtab="eko-sub">Prenumerationer</button>
+        <button class="et" data-subtab="eko-api">API-användning</button>
+        <button class="et" data-subtab="eko-rev">Intäkter</button>
       </div>
+      <div class="subtab-panel active" id="eko-sub"><div class="card"><div id="eko-subscriptions"></div></div></div>
+      <div class="subtab-panel" id="eko-api"><div id="eko-api-usage"></div></div>
+      <div class="subtab-panel" id="eko-rev"><div id="eko-revenue"></div></div>
+    </div>
 
-      <!-- CRAWLER -->
-      <div class="tab-panel" id="tab-cr">
-        <div class="pg-h">Crawler</div>
-        <div class="pg-s">Marknadsdata och prisbevakning</div>
-        <div id="cr-stats"></div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Senaste jämförelser</span></div>
-          <div id="cr-latest"></div>
+    <!-- VALOR ML -->
+    <div class="tab-panel" id="tab-valor">
+      <div class="pg-h">Valor ML</div>
+      <div class="pg-s">XGBoost · price_observations via /api/ingest</div>
+      <div class="info-note">Produktionsgräns: 50 observationer krävs innan ML-estimat visas för användare.</div>
+      <div id="valor-status"></div>
+      <div id="valor-training"></div>
+      <div id="valor-details"></div>
+    </div>
+
+    <!-- HÄLSOKOLL -->
+    <div class="tab-panel" id="tab-hc">
+      <div class="pg-h">Hälsokoll</div>
+      <div class="pg-s">Systemhälsa, databas och prestanda</div>
+      <div id="hc-health"></div>
+      <div class="card"><div class="card-h"><span class="card-t">Index-hälsa</span></div><div id="hc-index"></div></div>
+      <div class="card"><div class="card-h"><span class="card-t">Långsamma queries</span></div><div id="hc-slow"></div></div>
+      <div class="card"><div class="card-h"><span class="card-t">Databas-översikt</span></div><div id="hc-db"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let adminKey = '';
+
+function esc(s){const d=document.createElement('div');d.appendChild(document.createTextNode(String(s??'')));return d.innerHTML}
+
+async function apiFetch(path,opts={}){
+  try{
+    const res=await fetch(path,{...opts,headers:{'Content-Type':'application/json','X-Admin-Key':adminKey,...(opts.headers||{})}});
+    if(res.status===401||res.status===403){adminKey='';showLogin();return null}
+    if(!res.ok){const det=await res.json().then(d=>d.detail).catch(()=>`HTTP ${res.status}`);throw{isApiError:true,detail:det,status:res.status}}
+    return await res.json()
+  }catch(err){if(err.isApiError)throw err;throw{isApiError:true,detail:`Nätverksfel: ${err.message}`,status:0}}
+}
+
+function copyToClipboard(text){
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=event.target;const orig=btn.textContent;
+    btn.textContent='✓ Kopierad!';btn.style.background='var(--ok)';
+    setTimeout(()=>{btn.textContent=orig;btn.style.background=''},1500)
+  })
+}
+
+function renderError(el,detail){
+  if(typeof detail==='object'&&detail.copy_paste_context){
+    el.innerHTML=`<div class="error-card"><div class="error-header"><span class="error-code">${esc(detail.error_code)}</span><span class="error-msg">${esc(detail.message)}</span></div><button class="copy-btn" onclick="copyToClipboard(${esc(JSON.stringify(detail.copy_paste_context))})">📋 Kopiera för Claude Code</button><details><summary>Visa detaljer</summary><pre class="error-detail">${esc(detail.copy_paste_context)}</pre></details></div>`
+  }else{
+    el.innerHTML=`<div class="error-card"><div class="error-header"><span class="error-msg">${esc(String(detail))}</span></div></div>`
+  }
+}
+
+function skel(el){el.innerHTML='<div class="skeleton-rows"><div class="skeleton-row" style="width:80%"></div><div class="skeleton-row" style="width:60%"></div><div class="skeleton-row" style="width:70%"></div></div>'}
+function ge(id){return document.getElementById(id)}
+function fmtN(n){if(n==null)return'—';return Number(n).toLocaleString('sv-SE')}
+function fmtP(n){if(n==null)return'—';return Number(n).toFixed(1)+'%'}
+function fmtK(n){if(n==null)return'—';return Math.round(Number(n)).toLocaleString('sv-SE')+' kr'}
+function ago(iso){if(!iso)return'—';const d=(new Date()-new Date(iso))/1000;if(d<60)return'Just nu';if(d<3600)return Math.floor(d/60)+' min sedan';if(d<86400)return Math.floor(d/3600)+' h sedan';return Math.floor(d/86400)+' d sedan'}
+
+function absSrc(n){
+  const s=(n||'').toLowerCase().trim();
+  if(s==='tradera')return'Källa A';
+  if(s==='blocket')return'Källa B';
+  if(s==='pipeline'||s==='facebook'||s==='fb'||s==='vinted')return'Källa C';
+  if(s==='webhallen')return'Nypris-källa';
+  if(s==='inet')return'Nypris-fallback';
+  if(s.includes('serper')||s.includes('serpapi')||s.includes('google'))return'Prisjämförelse-källa';
+  return'Källa';
+}
+
+function absDep(k){
+  const m={'vision':'Vision API','tradera':'Källa A','blocket':'Källa B','serper':'Prisjämförelse-källa','serpapi':'Prisjämförelse-fallback','database':'Databas','google_vision_ocr':'Google Cloud Vision OCR','easyocr':'EasyOCR (lokal)','embeddings':'Embeddings','crawler':'Crawler','valor':'Valor ML'};
+  return m[k]||k;
+}
+
+/* ── Auth ── */
+function showLogin(){ge('loginOverlay').classList.remove('hidden');ge('adminShell').classList.remove('active');ge('adminKeyInput').value='';ge('adminKeyInput').focus()}
+function showAdmin(){ge('loginOverlay').classList.add('hidden');ge('adminShell').classList.add('active');loadActiveTab()}
+async function attemptLogin(){
+  const inp=ge('adminKeyInput');const err=ge('loginError');const key=inp.value.trim();
+  if(!key){err.style.display='block';err.textContent='Ange en nyckel';return}
+  adminKey=key;
+  try{const d=await apiFetch('/health');if(d===null){err.style.display='block';err.textContent='Ogiltig nyckel';adminKey='';return}showAdmin()}
+  catch(e){err.style.display='block';err.textContent='Kunde inte ansluta';adminKey=''}
+}
+ge('loginBtn').addEventListener('click',attemptLogin);
+ge('adminKeyInput').addEventListener('keydown',e=>{if(e.key==='Enter')attemptLogin()});
+
+/* ── Nav ── */
+const tabLoaded={};
+function switchTab(id){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item,.mobile-tab-btn').forEach(n=>n.classList.remove('active'));
+  const p=ge(id);if(p)p.classList.add('active');
+  document.querySelectorAll(`[data-tab="${id}"]`).forEach(n=>n.classList.add('active'));
+  loadActiveTab(id);
+}
+function loadActiveTab(id){
+  const tabId=id||(document.querySelector('.tab-panel.active')||{}).id;
+  if(!tabId||tabLoaded[tabId])return;tabLoaded[tabId]=true;
+  ({tab_ov:loadOv,tab_cr:loadCr,tab_vibe:loadVibe,tab_eko:loadEko,tab_valor:loadValor,tab_hc:loadHc})[tabId]?.();
+}
+document.querySelectorAll('[data-tab]').forEach(el=>el.addEventListener('click',()=>switchTab(el.dataset.tab)));
+document.querySelectorAll('.etabs .et').forEach(btn=>btn.addEventListener('click',function(){
+  const par=btn.closest('.tab-panel');
+  par.querySelectorAll('.et').forEach(b=>b.classList.remove('active'));
+  par.querySelectorAll('.subtab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');const t=ge(btn.dataset.subtab);if(t)t.classList.add('active');
+}));
+
+/* ══════════════════════════════════════════════════
+   ÖVERSIKT  /admin/metrics + /health
+══════════════════════════════════════════════════ */
+async function loadOv(){
+  ['ov-banner','ov-kpis','ov-recent','ov-sources','ov-assistant'].forEach(id=>skel(ge(id)));
+  try{
+    const [met,hlt]=await Promise.all([apiFetch('/admin/metrics'),apiFetch('/health')]);
+    if(!met)return;
+
+    // Banner
+    const hEl=ge('ov-banner');
+    if(hlt){
+      const ok=hlt.status==='ok';
+      const deps=hlt.dependencies||{};
+      let chips='';
+      if(deps.vision&&deps.vision!=='missing_key')chips+=`<span class="hb-chip ok">API:er aktiva</span>`;
+      if(deps.database==='configured')chips+=`<span class="hb-chip ok">Databas OK</span>`;
+      if(deps.crawler==='enabled')chips+=`<span class="hb-chip ok">Crawler kör</span>`;
+      if(!ok)chips+=`<span class="hb-chip wa">Systemvarning</span>`;
+      hEl.innerHTML=`<div class="hb ${ok?'ok':'wa'}">
+        <div class="hb-icon ${ok?'ok':'wa'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <span style="font-size:12px;font-weight:500;color:${ok?'var(--oktx)':'var(--watx)'};flex:1">${ok?'Systemet fungerar':'Systemvarning aktiv'}</span>
+        ${chips}
+        <span style="font-size:10px;color:var(--t4);cursor:pointer" onclick="switchTab('tab-hc')">Hälsokoll →</span>
+      </div>`;
+    }else{
+      hEl.innerHTML=`<div class="hb er"><div class="hb-icon er"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><span style="font-size:12px;font-weight:500;color:var(--ertx)">Kunde inte hämta systemstatus</span></div>`;
+    }
+
+    // KPIs — status_breakdown_dict from backend
+    const sd=met.status_breakdown_dict||{};
+    const okN=sd.ok||0,deN=sd.degraded||0,ieN=(sd.insufficient_evidence||0)+(sd.ambiguous_model||0),erN=sd.error||0;
+    const totalV=met.total_valuations||0;
+    const okRate=totalV>0?((okN/totalV)*100).toFixed(1):'—';
+    const vs=met.valor_stats||{};
+    const vSamp=vs.sample_count||0,vThresh=vs.threshold||50;
+    ge('ov-kpis').innerHTML=`
+      <div class="kpi-row">
+        <div class="kpi"><div class="kl">Värderingar</div><div class="kv">${fmtN(totalV)}</div><div class="kd" style="color:var(--ok)">${fmtN(met.last_24h)} idag</div></div>
+        <div class="kpi"><div class="kl">Konfidens snitt</div><div class="kv">${met.avg_confidence!=null?(met.avg_confidence*100).toFixed(0)+'%':'—'}</div><div class="kd">${fmtN(met.last_7d)} / 7 dagar</div></div>
+        <div class="kpi"><div class="kl">Resultat ok</div><div class="kv" style="color:var(--ok)">${okRate}${okRate!=='—'?'%':''}</div>
+          <div style="display:flex;gap:2px;height:3px;margin-top:5px"><div style="flex:${okN};background:var(--ok);border-radius:1px"></div><div style="flex:${deN};background:var(--wa)"></div><div style="flex:${ieN};background:var(--t4)"></div><div style="flex:${erN};background:var(--er);border-radius:1px"></div></div>
+          <div class="kd" style="margin-top:3px">${okN} ok · ${deN} deg · ${ieN} övr</div>
         </div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Produkttäckning</span></div>
-          <div id="cr-coverage"></div>
+        <div class="kpi" style="cursor:pointer" onclick="switchTab('tab-valor')">
+          <div class="kl">Valor ML</div>
+          <div class="kv" style="color:var(--wa)">${vSamp}/${vThresh}</div>
+          <div style="height:3px;background:var(--sf);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${Math.min(100,vSamp/vThresh*100)}%;background:var(--wa)"></div></div>
+          <div class="kd" style="color:var(--watx);margin-top:3px">Aktiveras vid ${vThresh} →</div>
         </div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Schema</span><button class="card-link" id="crSchemaBtn" style="border:none;background:none;cursor:pointer;font-family:inherit">Ändra →</button></div>
-          <div id="cr-schedule"></div>
+      </div>`;
+
+    // Recent valuations
+    const recEl=ge('ov-recent');
+    if(met.recent_valuations&&met.recent_valuations.length>0){
+      recEl.innerHTML=met.recent_valuations.map(v=>{
+        const acc=v.status==='ok'?'a-ok':v.status==='degraded'?'a-wa':v.status==='error'?'a-er':'a-in';
+        const price=v.estimated_value_sek!=null?fmtK(v.estimated_value_sek):(v.comparable_count?v.comparable_count+' obj':'—');
+        const pc=v.status==='ok'?'var(--t1)':v.status==='degraded'?'var(--watx)':'var(--t4)';
+        return`<div class="sf-row"><div class="val-acc ${acc}"></div><div class="sf-body"><div class="sf-name">${esc(v.product_name)}</div><div class="sf-sub">${esc(v.category||'')} · ${ago(v.created_at)}</div></div><div class="sf-right"><div class="sf-val" style="font-size:13px;color:${pc}">${price}</div></div></div>`;
+      }).join('');
+    }else{recEl.innerHTML='<div class="empty-state">Inga värderingar ännu</div>'}
+
+    // Sources — use source_stats from /admin/metrics
+    const ss=met.source_stats||{};
+    ge('ov-sources').innerHTML=`
+      <div class="src-gl">Begagnat</div>
+      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa A</div><div class="sf-sub">Officiellt avtal · realtid</div></div><div class="sf-right"><div class="sf-val">${ss.source_a_count!=null?ss.source_a_count:'—'}</div><div class="sf-unit">annonser</div></div></div>
+      <div class="sf-row" style="margin-bottom:8px"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa B</div><div class="sf-sub">1h cache</div></div><div class="sf-right"><div class="sf-val">${ss.source_b_count!=null?ss.source_b_count:'—'}</div><div class="sf-unit">annonser</div></div></div>
+      <div class="src-div"></div>
+      <div class="src-gl">Nypris</div>
+      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Nypris-källa</div><div class="sf-sub">Primär · gratis</div></div><div class="sf-right"><div class="sf-val">${ss.new_price_sek!=null?fmtK(ss.new_price_sek):'—'}</div><div class="sf-unit">senaste</div></div></div>
+      <div class="sf-row faded"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Nypris-fallback</div><div class="sf-sub">Ej behövd</div></div><div class="sf-right"><div class="sf-val" style="color:var(--t4)">—</div><div class="sf-unit">standby</div></div></div>
+      <div class="src-div"></div>
+      <div class="src-gl">Prisjämförelse</div>
+      <div class="sf-row faded"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Google Shopping-källa</div><div class="sf-sub">Ej behövd · renewal 21/4</div></div><div class="sf-right"><div class="sf-val" style="color:var(--t4)">—</div><div class="sf-unit">standby</div></div></div>`;
+
+  }catch(err){['ov-banner','ov-kpis','ov-recent','ov-sources'].forEach(id=>renderError(ge(id),err.detail||'Okänt fel'))}
+
+  loadAssistant();
+}
+
+async function loadAssistant(){
+  const el=ge('ov-assistant');
+  try{
+    const d=await apiFetch('/admin/assistant-stats');
+    if(!d)return;
+    const pb=d.phase_breakdown||{};
+    const tot=d.total_conversations||1;
+    const phases=[['Bekräftad',pb.complete||0,'var(--ok)'],['Rättad',pb.correcting||0,'var(--wa)'],['Ej stödd',pb.unsupported||0,'var(--t4)']];
+    el.innerHTML=`
+      <div class="sf-row"><div class="sf-body"><div class="sf-name">Konversationer</div><div class="sf-sub">senaste 7 dagar</div></div><div style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">${d.total_conversations||'—'}</div></div>
+      <div class="sf-row"><div class="sf-body"><div class="sf-name">Bekräftade direkt</div><div class="sf-sub">ingen rättelse</div></div><div style="font-size:15px;font-weight:500;color:var(--ok);font-variant-numeric:tabular-nums">${d.confirmed_pct!=null?d.confirmed_pct+'%':'—'}</div></div>
+      <div class="sf-row" style="margin-bottom:8px"><div class="sf-body"><div class="sf-name">Rättelser</div><div class="sf-sub">fel produkt identifierad</div></div><div style="font-size:15px;font-weight:500;color:var(--wa);font-variant-numeric:tabular-nums">${d.corrections||'0'}</div></div>
+      <div style="height:0.5px;background:var(--b1);margin:6px 0"></div>
+      <div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">Fas-fördelning</div>
+      ${phases.map(([lbl,cnt,col])=>{const pct=Math.round(cnt/tot*100);return`<div class="phase-row"><span style="display:flex;align-items:center;gap:4px;min-width:72px;color:var(--t2)"><div style="width:7px;height:7px;border-radius:50%;background:${col}"></div>${lbl}</span><div class="phase-bar"><div class="phase-fill" style="width:${pct}%;background:${col}"></div></div><span style="font-size:11px;color:var(--t2);width:28px;text-align:right">${pct}%</span></div>`}).join('')}
+      <div style="font-size:10px;color:var(--t4);margin-top:7px">Hämtar från /admin/assistant-stats</div>`;
+  }catch(e){ge('ov-assistant').innerHTML='<div style="font-size:11px;color:var(--t3);padding:8px 0">Kunde inte hämta assistentstatistik</div>'}
+}
+
+/* ══════════════════════════════════════════════════
+   CRAWLER  /admin/market-data
+══════════════════════════════════════════════════ */
+async function loadCr(){
+  ['cr-kpis','cr-sources','cr-latest','cr-coverage','cr-schedule'].forEach(id=>{const e=ge(id);if(e)skel(e)});
+  try{
+    const d=await apiFetch('/admin/market-data');
+    if(!d)return;
+    const cr=d.crawl||{},pr=d.products||{};
+
+    // KPIs
+    ge('cr-kpis').innerHTML=`<div class="kpi-row">
+      <div class="kpi"><div class="kl">Totala jämförel.</div><div class="kv">${fmtN(cr.total_comparables)}</div></div>
+      <div class="kpi"><div class="kl">Aktiva</div><div class="kv">${fmtN(cr.active_comparables)}</div></div>
+      <div class="kpi"><div class="kl">Flaggade</div><div class="kv">${fmtN(cr.flagged_count)}</div></div>
+      <div class="kpi"><div class="kl">Produkter</div><div class="kv">${fmtN(pr.total)}</div></div>
+    </div>`;
+
+    // Per källa — abstraherat
+    if(cr.by_source&&cr.by_source.length){
+      ge('cr-sources').innerHTML=`<div class="card">
+        <div class="card-h"><span class="card-t">Per källa</span></div>
+        ${cr.by_source.map(s=>`
+          <div class="sf-row">
+            <div class="dot dok"></div>
+            <div class="sf-body"><div class="sf-name">${absSrc(s.source)}</div></div>
+            <div style="font-size:12px;color:var(--t2);text-align:right;flex-shrink:0">${fmtN(s.count)} st · snitt ${fmtK(s.avg_price_sek)}</div>
+          </div>`).join('')}
+      </div>`;
+    }else{ge('cr-sources').innerHTML=''}
+
+    // Senaste jämförelser
+    const latEl=ge('cr-latest');
+    if(cr.latest&&cr.latest.length){
+      latEl.innerHTML=`<table class="data-table"><thead><tr><th>Titel</th><th>Pris</th><th>Källa</th><th>Sedd</th></tr></thead><tbody>
+        ${cr.latest.map(r=>`<tr>
+          <td><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${esc(r.title)}</div><div style="font-size:10px;color:var(--t3)">${esc(r.condition||'—')}</div></td>
+          <td>${fmtK(r.price_sek)}</td>
+          <td style="color:var(--t3)">${absSrc(r.source)}</td>
+          <td style="color:var(--t3)">${ago(r.last_seen)}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }else{latEl.innerHTML='<div class="empty-state">Inga jämförelser ännu</div>'}
+
+    // Täckning
+    const covEl=ge('cr-coverage');
+    if(pr.top_by_comparables&&pr.top_by_comparables.length){
+      covEl.innerHTML=`<table class="data-table"><thead><tr><th>Produkt</th><th>Kategori</th><th>Jämförel.</th><th>Snittpris</th></tr></thead><tbody>
+        ${pr.top_by_comparables.map(p=>`<tr>
+          <td style="font-weight:500">${esc(p.brand)} ${esc(p.model)}</td>
+          <td style="color:var(--t3)">${esc(p.category||'—')}</td>
+          <td>${fmtN(p.comparable_count)}</td>
+          <td>${fmtK(p.avg_price_sek)}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    }else{covEl.innerHTML='<div class="empty-state">Ingen produkttäckning ännu</div>'}
+
+    // Schema
+    ge('cr-schedule').innerHTML=`
+      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Prio 1 · Hörlurar + Smartphones</div><div class="sf-sub">24 produkter · daglig</div></div><div style="font-size:11px;color:var(--t3)">Imorgon 06:00</div></div>
+      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Prio 2 · Laptops + Kameror</div><div class="sf-sub">30 produkter · 3×/vecka</div></div><div style="font-size:11px;color:var(--t3)">Måndag 06:00</div></div>
+      <div class="sf-row faded"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Prio 3 · Gaming + Övrigt</div><div class="sf-sub">26 produkter · veckovis</div></div><div style="font-size:11px;color:var(--t4)">Söndag 06:00</div></div>
+      <div style="background:var(--sf);border-radius:7px;padding:9px 11px;margin-top:8px;font-size:11px;color:var(--t2);line-height:1.6;display:flex;gap:7px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="var(--t3)" stroke-width="2"/></svg>
+        <div>"Ändra" kräver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div>
+      </div>`;
+
+  }catch(err){['cr-kpis','cr-latest'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta crawlerdata'))}
+  ge('crSchemaBtn').addEventListener('click',()=>alert('Kräver PATCH /api/crawler/schedule i backend.'));
+}
+
+/* ══════════════════════════════════════════════════
+   VIBE CHECK  /admin/dev-stats
+══════════════════════════════════════════════════ */
+async function loadVibe(){
+  ['vibe-fact','vibe-kpis','vibe-commits'].forEach(id=>skel(ge(id)));
+  try{
+    const d=await apiFetch('/admin/dev-stats');
+    if(!d)return;
+    const hist=d.history||[];
+
+    // Fun fact
+    const ff=hist.length>0&&hist[0].fun_facts&&hist[0].fun_facts.length>0?hist[0].fun_facts[0]:'';
+    ge('vibe-fact').innerHTML=ff?`<div class="fun-fact">${esc(ff)}</div>`:'';
+
+    // KPIs
+    ge('vibe-kpis').innerHTML=`<div class="kpi-row cols3">
+      <div class="kpi"><div class="kl">Tester totalt</div><div class="kv">${fmtN(d.test_count)}</div></div>
+      <div class="kpi"><div class="kl">Commits (30d)</div><div class="kv">${fmtN(d.total_commits)}</div></div>
+      <div class="kpi"><div class="kl">Aktiva dagar</div><div class="kv">${fmtN(d.total_days)}</div></div>
+    </div>`;
+
+    // Commits per dag
+    const cmEl=ge('vibe-commits');
+    if(hist.length){
+      cmEl.innerHTML=hist.map(day=>{
+        const commits=day.commits.map(c=>`<div class="commit-entry"><span class="commit-sha">${esc(c.sha)}</span><span class="commit-type">${esc(c.type)}</span><span class="commit-msg">${esc(c.message)}</span></div>`).join('');
+        const fact=day.fun_facts&&day.fun_facts.length>0?`<div class="fun-fact" style="margin-top:8px">${esc(day.fun_facts[0])}</div>`:'';
+        return`<div style="margin-bottom:14px"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">${esc(day.date)} — ${day.commit_count} commits</div>${commits}${fact}</div>`;
+      }).join('');
+    }else{cmEl.innerHTML='<div class="empty-state">Ingen git-historik tillgänglig</div>'}
+
+  }catch(err){['vibe-kpis','vibe-commits'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta dev-stats'))}
+}
+
+/* ══════════════════════════════════════════════════
+   EKONOMI  /admin/api-usage (hårdkodade prenumsubs)
+══════════════════════════════════════════════════ */
+async function loadEko(){
+  // KPIs (statiska)
+  ge('eko-kpis').innerHTML=`<div class="kpi-row">
+    <div class="kpi"><div class="kl">Prenumeration</div><div class="kv">1 446 kr</div><div class="kd">4 verktyg · fast /mån</div></div>
+    <div class="kpi"><div class="kl">API-kostnad</div><div class="kv">~8 kr</div><div class="kd">Vision · rörlig /mån</div></div>
+    <div class="kpi"><div class="kl">Intäkter</div><div class="kv" style="color:var(--t4)">0 kr</div><div class="kd">ej lanserad</div></div>
+    <div class="kpi"><div class="kl">Break-even</div><div class="kv" style="color:var(--t4)">—</div><div class="kd">kräver MRR</div></div>
+  </div>`;
+
+  // Prenumerationer (statiska)
+  const svcs=[
+    {ic:'CC',col:'#2C2A25',tc:'#EDEAE3',name:'Claude Code',plan:'Max 5x · $90/mån',sek:'936 kr',per4d:'125 kr'},
+    {ic:'GP',col:'#10a37f',tc:'#fff',name:'ChatGPT',plan:'Plus · 23€/mån inkl. moms',sek:'250 kr',per4d:'33 kr'},
+    {ic:'Ge',col:'#1a73e8',tc:'#fff',name:'Gemini AI Pro',plan:'Google AI Pro · ~23€/mån',sek:'~250 kr',per4d:'~33 kr'},
+    {ic:'Ry',col:'#8B5CF6',tc:'#fff',name:'Railway',plan:'Hobby · $5/mån',sek:'52 kr',per4d:'7 kr'},
+  ];
+  ge('eko-subscriptions').innerHTML=svcs.map(s=>`
+    <div class="tool-row">
+      <div class="tool-ic" style="background:${s.col};color:${s.tc}">${s.ic}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${esc(s.name)}</div><div style="font-size:10px;color:var(--t3)">${esc(s.plan)}</div></div>
+      <div><div class="tool-amt">${s.sek}</div><div class="tool-sub2">${s.per4d} /4d</div></div>
+    </div>`).join('')+
+    `<div class="total-row"><div><span style="font-size:12px;font-weight:500">Totalt /mån</span><div style="font-size:10px;color:var(--t3);margin-top:1px">exkl. Vision API (~8 kr/mån)</div></div><span style="font-size:16px;font-weight:500;font-variant-numeric:tabular-nums">~1 488 kr</span></div>`;
+
+  // Intäkter
+  ge('eko-revenue').innerHTML=`<div class="card">
+    <div style="background:var(--sf);border-radius:8px;padding:14px;text-align:center;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:2px">Produkten är inte lanserad ännu</div>
+      <div style="font-size:11px;color:var(--t3)">Break-even: ~1 488 kr/mån i MRR</div>
+      <div style="height:5px;background:var(--b1);border-radius:3px;margin:9px 0 4px;overflow:hidden"><div style="height:100%;width:0%;background:var(--ok)"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t4)"><span>0 kr MRR</span><span>Mål: ~1 488 kr/mån</span></div>
+    </div>
+  </div>`;
+
+  // API-användning — från /admin/api-usage, abstrahera källnamn
+  const apiEl=ge('eko-api-usage');
+  skel(apiEl);
+  try{
+    const d=await apiFetch('/admin/api-usage');
+    if(!d){apiEl.innerHTML='<div class="empty-state">Ingen data</div>';return}
+    const entries=Object.entries(d.sources||d);
+    if(!entries.length){apiEl.innerHTML='<div class="empty-state">Ingen API-användning registrerad</div>';return}
+    apiEl.innerHTML=entries.map(([name,s])=>{
+      s=s||{};
+      const total=s.total_calls||s.calls||0;
+      const errs=s.errors||0;
+      const limit=s.free_tier_limit;
+      const remaining=s.free_tier_remaining;
+      const pct=limit?Math.min(100,total/limit*100):0;
+      const low=limit&&remaining<limit*0.2;
+      return`<div class="card">
+        <div class="card-h"><span class="card-t">${absSrc(name)}</span><span style="font-size:10px;color:var(--t3)">${esc(name)}</span></div>
+        <div class="kpi-row cols2" style="margin-bottom:${limit?'8px':'0'}">
+          <div class="kpi"><div class="kl">Anrop</div><div class="kv">${fmtN(total)}</div></div>
+          <div class="kpi"><div class="kl">Fel</div><div class="kv" style="color:${errs>0?'var(--er)':'var(--t1)'}">${fmtN(errs)}</div></div>
+          ${limit?`<div class="kpi"><div class="kl">Kvar av kvot</div><div class="kv" style="color:${low?'var(--wa)':'var(--t1)'}">${fmtN(remaining)}</div></div>`:''}
         </div>
+        ${limit?`<div class="prog-track" style="margin:0 0 4px"><div class="prog-fill${low?' wa':''}" style="width:${pct}%"></div></div><div style="font-size:9px;color:var(--t4)">${fmtN(total)} / ${fmtN(limit)} använda</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(err){renderError(apiEl,err.detail||'Kunde inte hämta API-användning')}
+}
+
+/* ══════════════════════════════════════════════════
+   VALOR ML  /admin/valor-stats
+   Backend returns: model, training, estimates, observations, jobs, production_threshold
+══════════════════════════════════════════════════ */
+async function loadValor(){
+  ['valor-status','valor-training','valor-details'].forEach(id=>skel(ge(id)));
+  try{
+    const d=await apiFetch('/admin/valor-stats');
+    if(!d)return;
+    const m=d.model||{};
+    const isTrained=!!d.model&&!!m.model_version;
+    const thresh=d.production_threshold||50;
+    const training=d.training||{};
+    const obs=d.observations||{};
+    // Use training_sample count as the progression metric
+    const sampleCount=training.total_samples||0;
+    const progress=Math.min(100,sampleCount/thresh*100);
+
+    // Status card
+    const statusContent=isTrained
+      ?`<div class="kpi-row cols2" style="margin-bottom:10px">
+          <div class="kpi"><div class="kl">Version</div><div class="kv">${esc(m.model_version||'—')}</div></div>
+          <div class="kpi"><div class="kl">MAE</div><div class="kv">${m.mae_sek!=null?fmtK(m.mae_sek):'—'}</div></div>
+          <div class="kpi"><div class="kl">MAPE</div><div class="kv">${m.mape_pct!=null?fmtP(m.mape_pct):'—'}</div></div>
+          <div class="kpi"><div class="kl">Tränad</div><div class="kv" style="font-size:14px">${m.trained_at?ago(m.trained_at):'—'}</div></div>
+        </div>`
+      :`<div style="padding:12px 0;font-size:12px;color:var(--t3)">Modellen är inte tränad ännu. Samla minst ${thresh} träningsprover för att aktivera produktion.</div>`;
+
+    ge('valor-status').innerHTML=`<div class="card ${isTrained?'valor-trained':'valor-untrained'}">
+      <div class="card-h"><span class="card-t">Modellstatus</span><span class="badge ${isTrained?'badge-ok':'badge-wa'}">${isTrained?'Tränad':'Ej tränad'}</span></div>
+      ${statusContent}
+    </div>`;
+
+    // Training progress with milestones
+    const milestones=[
+      {n:10,lbl:'10 observationer',desc:'Manuell träning möjlig',done:sampleCount>=10,next:sampleCount>=0&&sampleCount<10},
+      {n:50,lbl:'50 obs → modellen aktiveras',desc:'Auto-träning · ValorAI i produkt-UI',done:sampleCount>=50,next:sampleCount>=10&&sampleCount<50},
+      {n:200,lbl:'200 obs → bättre precision',desc:'Tillförlitlig på fler kategorier',done:sampleCount>=200,next:false},
+      {n:1000,lbl:'1 000 obs → full precision',desc:'Hög träffsäkerhet · alla kategorier',done:sampleCount>=1000,next:false},
+    ];
+
+    ge('valor-training').innerHTML=`<div class="card">
+      <div class="card-h"><span class="card-t">Träningsframsteg</span></div>
+      <div style="background:var(--sf);border-radius:8px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:500">Träningsprover</span>
+          <span style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">${sampleCount} <span style="font-size:13px;color:var(--t3);font-weight:400">/ ${thresh}</span></span>
+        </div>
+        <div class="prog-track"><div class="prog-fill wa" style="width:${progress}%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3)"><span>${training.included_in_training||0} inkluderade i träning</span><span>Aktiveras automatiskt vid ${thresh}</span></div>
       </div>
-
-      <!-- VIBE CHECK -->
-      <div class="tab-panel" id="tab-vibe">
-        <div class="pg-h">Vibe Check</div>
-        <div class="pg-s">Utvecklingsdagbok och framsteg</div>
-        <div id="vibe-funfact"></div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Tester</span></div>
-          <div id="vibe-tests"></div>
-        </div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Git-historik per dag</span></div>
-          <div id="vibe-commits"></div>
-        </div>
+      <div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:7px">Vad händer vid varje milstolpe</div>
+      ${milestones.map(ms=>{
+        const cls=ms.done?'ms-done':ms.next?'ms-next':'ms-future';
+        const num=ms.done?'✓':ms.n>=1000?'1k':ms.n;
+        const stc=ms.done?'var(--ok)':ms.next?'var(--watx)':'var(--t4)';
+        const st=ms.done?'Uppnått':ms.next?'Nästa mål':'Framtid';
+        return`<div class="ms-row"><div class="ms-num ${cls}">${num}</div><div class="ms-body"><div class="ms-lbl">${esc(ms.lbl)}</div><div class="ms-desc">${esc(ms.desc)}</div></div><div class="ms-st" style="color:${stc}">${st}</div></div>`;
+      }).join('')}
+      <div style="margin-top:12px">
+        <button style="padding:7px 14px;background:var(--sf);color:var(--t4);border:0.5px solid var(--b2);border-radius:7px;font-size:12px;cursor:not-allowed;font-family:inherit" ${sampleCount<thresh?'disabled':''}>
+          ${sampleCount<thresh?'Träna modell — väntar på '+thresh+' prover':'Träna om modell'}
+        </button>
       </div>
+    </div>`;
 
-      <!-- EKONOMI -->
-      <div class="tab-panel" id="tab-eko">
-        <div class="pg-h">Ekonomi</div>
-        <div class="pg-s">Kostnader, API-användning och intäkter</div>
-        <div id="eko-kpis"></div>
-        <div class="etabs">
-          <button class="et active" data-subtab="eko-sub">Prenumerationer</button>
-          <button class="et" data-subtab="eko-api">API-användning</button>
-          <button class="et" data-subtab="eko-rev">Intäkter</button>
+    // Details — observations per source (abstraherat) + quality score
+    let detHtml='';
+    if(obs.total!=null){
+      const perSrc=(obs.per_source||[]).map(s=>`<div class="stat-row"><span class="stat-label">${absSrc(s.source)}</span><span class="stat-value">${fmtN(s.count)}</span></div>`).join('');
+      detHtml+=`<div class="card">
+        <div class="card-h"><span class="card-t">Observationer (price_observation)</span></div>
+        <div class="stat-row"><span class="stat-label">Totalt</span><span class="stat-value">${fmtN(obs.total)}</span></div>
+        <div class="stat-row"><span class="stat-label">Misstänkta</span><span class="stat-value" style="color:${(obs.suspicious_rate||0)>5?'var(--wa)':'var(--t1)'}">${obs.suspicious_rate||0}%</span></div>
+        ${perSrc}
+      </div>`;
+    }
+    if(training.avg_quality_score!=null){
+      detHtml+=`<div class="card">
+        <div class="card-h"><span class="card-t">Träningsdata (training_sample)</span></div>
+        <div class="stat-row"><span class="stat-label">Totala prover</span><span class="stat-value">${fmtN(training.total_samples)}</span></div>
+        <div class="stat-row"><span class="stat-label">Inkluderade i träning</span><span class="stat-value">${fmtN(training.included_in_training)}</span></div>
+        <div class="stat-row"><span class="stat-label">Snitt kvalitetspoäng</span><span class="stat-value">${training.avg_quality_score?.toFixed(2)||'—'}</span></div>
+        ${(training.samples_per_source||[]).map(s=>`<div class="stat-row"><span class="stat-label">${absSrc(s.source_type)}</span><span class="stat-value">${fmtN(s.count)}</span></div>`).join('')}
+      </div>`;
+    }
+    ge('valor-details').innerHTML=detHtml||'';
+
+  }catch(err){['valor-status','valor-training','valor-details'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta Valor-data'))}
+}
+
+/* ══════════════════════════════════════════════════
+   HÄLSOKOLL  /health + /admin/index-health + /admin/slow-queries + /admin/overview
+══════════════════════════════════════════════════ */
+async function loadHc(){
+  ['hc-health','hc-index','hc-slow','hc-db'].forEach(id=>skel(ge(id)));
+  try{
+    const [hlt,idx,slow,ov]=await Promise.all([
+      apiFetch('/health').catch(()=>null),
+      apiFetch('/admin/index-health').catch(()=>null),
+      apiFetch('/admin/slow-queries').catch(()=>null),
+      apiFetch('/admin/overview').catch(()=>null),
+    ]);
+
+    // Health + deps
+    const hhEl=ge('hc-health');
+    if(hlt){
+      const ok=hlt.status==='ok';
+      const deps=hlt.dependencies||{};
+      const depsHtml=Object.entries(deps).map(([k,v])=>{
+        const cfg=typeof v==='boolean'?v:(v&&(v.configured||v==='configured'));
+        return`<div class="stat-row"><span class="stat-label">${absDep(k)}</span><span class="badge ${cfg?'badge-ok':'badge-muted'}">${cfg?'OK':'Ej konfigurerad'}</span></div>`;
+      }).join('');
+      hhEl.innerHTML=`
+        <div class="hb ${ok?'ok':'wa'}" style="margin-bottom:10px">
+          <div class="hb-icon ${ok?'ok':'wa'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <span style="font-size:12px;font-weight:500;color:${ok?'var(--oktx)':'var(--watx)'}">${ok?'System OK':'Systemvarning'}</span>
+          <span style="margin-left:auto;font-size:10px;opacity:0.7;color:${ok?'var(--oktx)':'var(--watx)'}">v${esc(hlt.version||'—')}</span>
         </div>
-        <div class="subtab-panel active" id="eko-sub">
-          <div class="card"><div id="eko-subscriptions"></div></div>
+        <div class="card"><div class="card-h"><span class="card-t">Beroenden</span></div>${depsHtml}</div>`;
+    }else{
+      hhEl.innerHTML=`<div class="hb er"><div class="hb-icon er"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><span style="font-size:12px;font-weight:500;color:var(--ertx)">Kunde inte nå /health</span></div>`;
+    }
+
+    // Index health
+    const ixEl=ge('hc-index');
+    if(idx&&idx.length){
+      ixEl.innerHTML=`<table class="data-table"><thead><tr><th>Tabell</th><th>Seq scans</th><th>Idx scans</th><th>Seq %</th><th>Rader</th></tr></thead><tbody>
+        ${idx.map(r=>{const p=Number(r.seq_scan_pct||0);const s=p>80?'color:var(--er);font-weight:500':p>50?'color:var(--wa);font-weight:500':'';return`<tr><td>${esc(r.table_name)}</td><td>${fmtN(r.seq_scan)}</td><td>${fmtN(r.idx_scan)}</td><td style="${s}">${fmtP(p)}</td><td>${fmtN(r.live_rows)}</td></tr>`}).join('')}
+      </tbody></table>`;
+    }else{ixEl.innerHTML='<div class="empty-state">Ingen indexdata tillgänglig</div>'}
+
+    // Slow queries
+    const sqEl=ge('hc-slow');
+    if(slow&&slow.length){
+      sqEl.innerHTML=slow.map(q=>`<div class="query-row">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span class="query-dur">${q.duration_s!=null?q.duration_s.toFixed(1)+'s':'—'}</span><span class="badge badge-muted">${esc(q.state)}</span></div>
+        <div class="query-text">${esc(q.query)}</div>
+      </div>`).join('');
+    }else{sqEl.innerHTML='<div class="empty-state">Inga långsamma queries just nu</div>'}
+
+    // DB overview
+    const dbEl=ge('hc-db');
+    if(ov){
+      const tables=(ov.tables||[]).map(t=>`<div class="db-table-item"><span style="font-weight:500">${esc(t.name)}</span><span style="color:var(--t3);font-size:11px">${fmtN(t.rows)} rader</span><span style="color:var(--t4);font-size:11px">${esc(t.size)}</span></div>`).join('');
+      dbEl.innerHTML=`
+        <div class="kpi-row cols2" style="margin-bottom:10px">
+          <div class="kpi"><div class="kl">Storlek</div><div class="kv">${esc(String(ov.db_size_mb))} MB</div></div>
+          <div class="kpi"><div class="kl">Uptime</div><div class="kv">${ov.uptime_hours!=null?Math.round(ov.uptime_hours)+'h':'—'}</div></div>
+          <div class="kpi"><div class="kl">Anslutningar</div><div class="kv">${fmtN(ov.active_connections)}/${fmtN(ov.total_connections)}</div></div>
         </div>
-        <div class="subtab-panel" id="eko-api">
-          <div id="eko-api-usage"></div>
-        </div>
-        <div class="subtab-panel" id="eko-rev">
-          <div id="eko-revenue"></div>
-        </div>
-      </div>
-
-      <!-- VALOR ML -->
-      <div class="tab-panel" id="tab-valor">
-        <div class="pg-h">Valor ML</div>
-        <div class="pg-s">XGBoost · price_observations via /api/ingest</div>
-        <div class="info-note">Produktionsgräns: 50 observationer krävs innan ML-estimat visas för användare.</div>
-        <div id="valor-status"></div>
-        <div id="valor-training"></div>
-        <div id="valor-details"></div>
-      </div>
-
-      <!-- HÄLSOKOLL -->
-      <div class="tab-panel" id="tab-hc">
-        <div class="pg-h">Hälsokoll</div>
-        <div class="pg-s">Systemhälsa, databas och prestanda</div>
-        <div id="hc-health"></div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Index-hälsa</span></div>
-          <div id="hc-index"></div>
-        </div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Långsamma queries</span></div>
-          <div id="hc-slow"></div>
-        </div>
-        <div class="card">
-          <div class="card-h"><span class="card-t">Databas-översikt</span></div>
-          <div id="hc-db"></div>
-        </div>
-      </div>
-
-    </div><!-- main-content -->
-  </div><!-- admin-shell -->
-
-  <script>
-    /* ════════════════════════════════════════════════ */
-    /*  Core utilities                                  */
-    /* ════════════════════════════════════════════════ */
-
-    let adminKey = '';
-
-    function esc(s) {
-      const d = document.createElement('div');
-      d.appendChild(document.createTextNode(String(s ?? '')));
-      return d.innerHTML;
-    }
-
-    async function apiFetch(path, options = {}) {
-      try {
-        const res = await fetch(path, {
-          ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Key': adminKey,
-            ...(options.headers || {}),
-          }
-        });
-        if (res.status === 401 || res.status === 403) {
-          adminKey = '';
-          showLogin();
-          return null;
-        }
-        if (!res.ok) {
-          const detail = await res.json().then(d => d.detail).catch(() => `HTTP ${res.status}`);
-          throw { isApiError: true, detail, status: res.status };
-        }
-        return await res.json();
-      } catch (err) {
-        if (err.isApiError) throw err;
-        throw { isApiError: true, detail: `Nätverksfel: ${err.message}`, status: 0 };
-      }
-    }
-
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = event.target;
-        const orig = btn.textContent;
-        btn.textContent = '✓ Kopierad!';
-        btn.style.background = 'var(--ok)';
-        setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
-      });
-    }
-
-    function renderError(container, detail) {
-      if (typeof detail === 'object' && detail.copy_paste_context) {
-        container.innerHTML = `
-          <div class="error-card">
-            <div class="error-header">
-              <span class="error-code">${esc(detail.error_code)}</span>
-              <span class="error-msg">${esc(detail.message)}</span>
-            </div>
-            <button class="copy-btn" onclick="copyToClipboard(${esc(JSON.stringify(detail.copy_paste_context))})">
-              📋 Kopiera för Claude Code
-            </button>
-            <details>
-              <summary>Visa detaljer</summary>
-              <pre class="error-detail">${esc(detail.copy_paste_context)}</pre>
-            </details>
-          </div>`;
-      } else {
-        container.innerHTML = `<div class="error-card">
-          <div class="error-header"><span class="error-msg">${esc(String(detail))}</span></div>
-        </div>`;
-      }
-    }
-
-    function renderSectionState(containerId, state, data, errorDetail) {
-      const el = document.getElementById(containerId);
-      if (!el) return;
-      if (state === 'loading') {
-        el.innerHTML = `<div class="skeleton-rows">
-          <div class="skeleton-row" style="width:80%"></div>
-          <div class="skeleton-row" style="width:60%"></div>
-          <div class="skeleton-row" style="width:70%"></div>
-        </div>`;
-      } else if (state === 'error') {
-        renderError(el, errorDetail);
-      }
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  Auth                                            */
-    /* ════════════════════════════════════════════════ */
-
-    function showLogin() {
-      document.getElementById('loginOverlay').classList.remove('hidden');
-      document.getElementById('adminShell').classList.remove('active');
-      document.getElementById('adminKeyInput').value = '';
-      document.getElementById('adminKeyInput').focus();
-    }
-
-    function showAdmin() {
-      document.getElementById('loginOverlay').classList.add('hidden');
-      document.getElementById('adminShell').classList.add('active');
-      loadActiveTab();
-    }
-
-    async function attemptLogin() {
-      const input = document.getElementById('adminKeyInput');
-      const errEl = document.getElementById('loginError');
-      const key = input.value.trim();
-      if (!key) { errEl.style.display = 'block'; errEl.textContent = 'Ange en nyckel'; return; }
-      adminKey = key;
-      try {
-        const data = await apiFetch('/health');
-        if (data === null) { errEl.style.display = 'block'; errEl.textContent = 'Ogiltig nyckel'; adminKey = ''; return; }
-        showAdmin();
-      } catch (e) {
-        errEl.style.display = 'block'; errEl.textContent = 'Kunde inte ansluta'; adminKey = '';
-      }
-    }
-
-    document.getElementById('loginBtn').addEventListener('click', attemptLogin);
-    document.getElementById('adminKeyInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') attemptLogin(); });
-
-    /* ════════════════════════════════════════════════ */
-    /*  Tab navigation                                  */
-    /* ════════════════════════════════════════════════ */
-
-    const tabLoaded = {};
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
-      const panel = document.getElementById(tabId);
-      if (panel) panel.classList.add('active');
-      document.querySelectorAll('.nav-item[data-tab="' + tabId + '"]').forEach(n => n.classList.add('active'));
-      document.querySelectorAll('.mobile-tab-btn[data-tab="' + tabId + '"]').forEach(b => b.classList.add('active'));
-      loadActiveTab(tabId);
-    }
-
-    function loadActiveTab(tabId) {
-      var id = tabId || (document.querySelector('.tab-panel.active') || {}).id;
-      if (!id) return;
-      if (tabLoaded[id]) return;
-      tabLoaded[id] = true;
-      var loaders = {
-        'tab-ov': loadOverview, 'tab-cr': loadCrawler,
-        'tab-vibe': loadVibe,  'tab-eko': loadEkonomi,
-        'tab-valor': loadValor, 'tab-hc': loadHealth,
-      };
-      if (loaders[id]) loaders[id]();
-    }
-
-    document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
-      item.addEventListener('click', () => switchTab(item.dataset.tab));
-    });
-    document.querySelectorAll('.mobile-tab-btn[data-tab]').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    /* ── Subtab navigation (Ekonomi) ── */
-    document.querySelectorAll('.etabs .et').forEach(btn => {
-      btn.addEventListener('click', function() {
-        var parent = btn.closest('.tab-panel');
-        parent.querySelectorAll('.et').forEach(b => b.classList.remove('active'));
-        parent.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        var target = document.getElementById(btn.dataset.subtab);
-        if (target) target.classList.add('active');
-      });
-    });
-
-    /* ════════════════════════════════════════════════ */
-    /*  Helpers                                         */
-    /* ════════════════════════════════════════════════ */
-
-    function formatNum(n) { if (n == null) return '-'; return Number(n).toLocaleString('sv-SE'); }
-    function formatPct(n) { if (n == null) return '-'; return Number(n).toFixed(1) + '%'; }
-    function formatSEK(n) { if (n == null) return '-'; return Math.round(Number(n)).toLocaleString('sv-SE') + ' kr'; }
-    function timeAgo(iso) {
-      if (!iso) return '-';
-      var diff = (new Date() - new Date(iso)) / 1000;
-      if (diff < 60) return 'Just nu';
-      if (diff < 3600) return Math.floor(diff/60) + ' min sedan';
-      if (diff < 86400) return Math.floor(diff/3600) + ' h sedan';
-      return Math.floor(diff/86400) + ' d sedan';
-    }
-    function statusBadge(s) {
-      var cls = { ok:'badge-ok', degraded:'badge-wa', ambiguous_model:'badge-wa', insufficient_evidence:'badge-muted', depreciation_estimate:'badge-muted', error:'badge-er' };
-      return '<span class="badge ' + (cls[s]||'badge-muted') + '">' + esc(s) + '</span>';
-    }
-
-    function abstractSource(name) {
-      var n = (name || '').toLowerCase().trim();
-      if (n === 'tradera') return 'Källa A';
-      if (n === 'blocket') return 'Källa B';
-      if (n === 'pipeline' || n === 'facebook' || n === 'fb') return 'Källa C';
-      if (n === 'webhallen') return 'Nypris-källa';
-      if (n === 'inet') return 'Nypris-fallback';
-      if (n.includes('serper') || n.includes('serpapi') || n.includes('google')) return 'Prisjämförelse-källa';
-      return 'Källa';
-    }
-
-    function abstractDependency(key) {
-      var map = {
-        'vision': 'Vision API', 'tradera': 'Källa A', 'blocket': 'Källa B',
-        'serper': 'Prisjämförelse-källa', 'serpapi': 'Prisjämförelse-fallback',
-        'database': 'Databas', 'google_vision_ocr': 'Google Cloud Vision OCR',
-        'easyocr': 'EasyOCR (lokal)', 'embeddings': 'Embeddings',
-        'crawler': 'Crawler', 'valor': 'Valor ML'
-      };
-      return map[key] || key;
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Översikt                                   */
-    /* ════════════════════════════════════════════════ */
-
-    async function loadOverview() {
-      var sections = ['ov-health-banner', 'ov-kpis', 'ov-recent', 'ov-assistant', 'ov-sources'];
-      sections.forEach(s => renderSectionState(s, 'loading'));
-
-      try {
-        var [metrics, health] = await Promise.all([apiFetch('/admin/metrics'), apiFetch('/health')]);
-        if (!metrics) return;
-
-        // Health banner
-        var hEl = document.getElementById('ov-health-banner');
-        if (health) {
-          var isOk = health.status === 'ok';
-          var bg = isOk ? 'var(--okbg)' : 'var(--wabg)';
-          var border = isOk ? 'rgba(52,168,115,0.25)' : 'rgba(212,160,23,0.3)';
-          var dotColor = isOk ? 'var(--ok)' : 'var(--wa)';
-          var textColor = isOk ? 'var(--oktx)' : 'var(--watx)';
-          var chipBg = isOk ? 'rgba(52,168,115,0.12)' : 'rgba(212,160,23,0.12)';
-          var label = isOk ? 'Systemet fungerar' : 'Systemvarning aktiv';
-          var deps = health.dependencies || {};
-          var chips = '';
-          if (deps.vision && deps.vision !== 'missing_key') chips += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:'+chipBg+';color:'+textColor+'">API:er aktiva</span>';
-          if (deps.database === 'configured') chips += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:'+chipBg+';color:'+textColor+'">Databas OK</span>';
-          if (deps.crawler === 'enabled') chips += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:'+chipBg+';color:'+textColor+'">Crawler kör</span>';
-          hEl.innerHTML =
-            '<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:'+bg+';border:0.5px solid '+border+';border-radius:8px;margin-bottom:12px">' +
-              '<div style="width:20px;height:20px;border-radius:50%;background:'+dotColor+';display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
-                '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
-              '</div>' +
-              '<span style="font-size:12px;font-weight:500;color:'+textColor+';flex:1">'+label+'</span>' +
-              chips +
-              '<span style="font-size:10px;color:var(--t4);cursor:pointer" onclick="switchTab(\'hc\')">Hälsokoll →</span>' +
-            '</div>';
-        } else {
-          hEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--erbg);border:0.5px solid rgba(196,67,42,0.2);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--ertx)">Kunde inte hämta systemstatus</div>';
-        }
-
-        // KPIs
-        var sd = metrics.status_breakdown_dict || {};
-        var okN = sd.ok||0, deN = sd.degraded||0, ieN = sd.insufficient_evidence||0, erN = sd.error||0;
-        var totalV = metrics.total_valuations || 0;
-        var okRate = totalV > 0 ? (okN/totalV*100).toFixed(1) : '—';
-        var valorStats = metrics.valor_stats || {};
-        var vs = valorStats.sample_count || 0;
-        var vt = valorStats.threshold || 50;
-
-        document.getElementById('ov-kpis').innerHTML =
-          '<div class="kpi-row">' +
-            '<div class="kpi"><div class="kl">Värderingar</div><div class="kv">'+formatNum(totalV)+'</div><div class="kd" style="color:var(--ok)">'+formatNum(metrics.last_24h)+' idag</div></div>' +
-            '<div class="kpi"><div class="kl">Vision idag</div><div class="kv">'+(metrics.vision_cost_today != null ? metrics.vision_cost_today.toFixed(2)+' kr' : '—')+'</div><div class="kd">'+(metrics.vision_calls_today||'—')+' anrop</div></div>' +
-            '<div class="kpi"><div class="kl">Resultat ok</div><div class="kv" style="color:var(--ok)">'+okRate+(okRate!=='—'?'%':'')+'</div>' +
-              '<div style="display:flex;gap:2px;height:3px;margin-top:5px"><div style="flex:'+okN+';background:var(--ok);border-radius:1px"></div><div style="flex:'+deN+';background:var(--wa)"></div><div style="flex:'+ieN+';background:var(--t4)"></div><div style="flex:'+erN+';background:var(--er);border-radius:1px"></div></div>' +
-              '<div class="kd" style="margin-top:3px">'+okN+' ok · '+deN+' deg. · '+ieN+' övr.</div>' +
-            '</div>' +
-            '<div class="kpi" style="cursor:pointer" onclick="switchTab(\'tab-valor\')">' +
-              '<div class="kl">Valor ML</div>' +
-              '<div class="kv" style="color:var(--wa)">'+vs+'/'+vt+'</div>' +
-              '<div style="height:3px;background:var(--sf);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+Math.min(100,vs/vt*100)+'%;background:var(--wa);border-radius:2px"></div></div>' +
-              '<div class="kd" style="color:var(--watx);margin-top:3px">Aktiveras vid '+vt+' →</div>' +
-            '</div>' +
-          '</div>';
-
-        // Recent valuations
-        var recEl = document.getElementById('ov-recent');
-        if (metrics.recent_valuations && metrics.recent_valuations.length > 0) {
-          recEl.innerHTML = metrics.recent_valuations.map(v => {
-            var acc = v.status==='ok' ? 'acc-ok' : v.status==='degraded' ? 'acc-wa' : v.status==='error' ? 'acc-er' : 'acc-in';
-            var price = v.estimated_value_sek != null ? formatSEK(v.estimated_value_sek) : (v.comparable_count ? v.comparable_count+' obj' : '—');
-            var priceColor = v.status==='ok' ? 'var(--t1)' : v.status==='degraded' ? 'var(--watx)' : 'var(--t4)';
-            return '<div class="sf-row">' +
-              '<div class="val-acc '+acc+'"></div>' +
-              '<div class="sf-row-body"><div class="sf-row-name">'+esc(v.product_name)+'</div><div class="sf-row-sub">'+esc(v.category||'')+'&nbsp;·&nbsp;'+timeAgo(v.created_at)+'</div></div>' +
-              '<div class="sf-row-right"><div class="sf-row-val" style="font-size:13px;color:'+priceColor+'">'+price+'</div></div>' +
-            '</div>';
-          }).join('');
-        } else {
-          recEl.innerHTML = '<div class="empty-state">Inga värderingar ännu</div>';
-        }
-
-        // Source stats
-        var srcEl = document.getElementById('ov-sources');
-        var ss = metrics.source_stats || {};
-        srcEl.innerHTML =
-          '<div class="src-gl">Begagnat</div>' +
-          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Källa A</div><div class="sf-row-sub">Officiellt avtal · realtid</div></div><div class="sf-row-right"><div class="sf-row-val">'+(ss.source_a_count!=null?ss.source_a_count:'—')+'</div><div class="sf-row-unit">annonser</div></div></div>' +
-          '<div class="sf-row" style="margin-bottom:8px"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Källa B</div><div class="sf-row-sub">1h cache</div></div><div class="sf-row-right"><div class="sf-row-val">'+(ss.source_b_count!=null?ss.source_b_count:'—')+'</div><div class="sf-row-unit">annonser</div></div></div>' +
-          '<div class="src-div"></div>' +
-          '<div class="src-gl">Nypris</div>' +
-          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Nypris-källa</div><div class="sf-row-sub">Primär · gratis</div></div><div class="sf-row-right"><div class="sf-row-val">'+(ss.new_price_sek!=null?formatSEK(ss.new_price_sek):'—')+'</div><div class="sf-row-unit">senaste</div></div></div>' +
-          '<div class="sf-row faded"><div class="dot din"></div><div class="sf-row-body"><div class="sf-row-name">Nypris-fallback</div><div class="sf-row-sub">Ej behövd</div></div><div class="sf-row-right"><div class="sf-row-val" style="color:var(--t4)">—</div><div class="sf-row-unit">standby</div></div></div>' +
-          '<div class="src-div"></div>' +
-          '<div class="src-gl">Prisjämförelse</div>' +
-          '<div class="sf-row faded"><div class="dot din"></div><div class="sf-row-body"><div class="sf-row-name">Google Shopping-källa</div><div class="sf-row-sub">Ej behövd · renewal 21/4</div></div><div class="sf-row-right"><div class="sf-row-val" style="color:var(--t4)">—</div><div class="sf-row-unit">standby</div></div></div>';
-
-      } catch (err) {
-        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Okänt fel'));
-      }
-
-      loadAssistantStats();
-    }
-
-    async function loadAssistantStats() {
-      var el = document.getElementById('ov-assistant');
-      try {
-        var data = await apiFetch('/admin/assistant-stats');
-        if (!data) return;
-        el.innerHTML =
-          '<div class="sf-row"><div class="sf-row-body"><div class="sf-row-name">Konversationer</div><div class="sf-row-sub">senaste 7 dagar</div></div><div style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums">'+(data.total_conversations||'—')+'</div></div>' +
-          '<div class="sf-row"><div class="sf-row-body"><div class="sf-row-name">Bekräftade direkt</div><div class="sf-row-sub">ingen rättelse</div></div><div style="font-size:15px;font-weight:500;color:var(--ok);font-variant-numeric:tabular-nums">'+(data.confirmed_pct!=null?data.confirmed_pct+'%':'—')+'</div></div>' +
-          '<div class="sf-row" style="margin-bottom:8px"><div class="sf-row-body"><div class="sf-row-name">Rättelser</div><div class="sf-row-sub">fel produkt identifierad</div></div><div style="font-size:15px;font-weight:500;color:var(--wa);font-variant-numeric:tabular-nums">'+(data.corrections||'0')+'</div></div>' +
-          '<div style="height:0.5px;background:var(--b1);margin:6px 0"></div>' +
-          '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">Fas-fördelning</div>' +
-          (data.phase_breakdown ? [
-            ['Bekräftad', data.phase_breakdown.complete||0, 'var(--ok)'],
-            ['Rättad', data.phase_breakdown.correcting||0, 'var(--wa)'],
-            ['Ej stödd', data.phase_breakdown.unsupported||0, 'var(--t4)'],
-          ].map(([label,count,color]) => {
-            var total = (data.total_conversations||1);
-            var pct = total>0 ? Math.round(count/total*100) : 0;
-            return '<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:0.5px solid var(--b1);font-size:11px">' +
-              '<span style="display:flex;align-items:center;gap:4px;min-width:70px;color:var(--t2)"><div style="width:7px;height:7px;border-radius:50%;background:'+color+'"></div>'+label+'</span>' +
-              '<div style="flex:1;height:4px;background:var(--sf);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+color+'"></div></div>' +
-              '<span style="font-size:11px;color:var(--t2);width:28px;text-align:right">'+pct+'%</span>' +
-            '</div>';
-          }).join('') : '') +
-          '<div style="font-size:10px;color:var(--t4);margin-top:7px">Kräver /admin/assistant-stats</div>';
-      } catch(err) {
-        el.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:8px 0">Kunde inte hämta assistentstatistik</div>';
-      }
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Crawler                                    */
-    /* ════════════════════════════════════════════════ */
-
-    async function loadCrawler() {
-      var sections = ['cr-stats', 'cr-latest', 'cr-coverage', 'cr-schedule'];
-      sections.forEach(s => renderSectionState(s, 'loading'));
-
-      try {
-        var data = await apiFetch('/admin/market-data');
-        if (!data) return;
-        var crawl = data.crawl || {};
-        var products = data.products || {};
-
-        // Per-källa (abstraherat)
-        var bySourceHtml = '';
-        if (crawl.by_source && crawl.by_source.length > 0) {
-          bySourceHtml = '<div class="card">' +
-            '<div class="card-h"><span class="card-t">Per källa</span></div>' +
-            crawl.by_source.map(s =>
-              '<div class="sf-row">' +
-                '<div class="dot dok"></div>' +
-                '<div class="sf-row-body"><div class="sf-row-name">'+abstractSource(s.source)+'</div></div>' +
-                '<div style="font-size:12px;color:var(--t2);text-align:right">'+formatNum(s.count)+' st&nbsp;·&nbsp;snitt '+formatSEK(s.avg_price_sek)+'</div>' +
-              '</div>'
-            ).join('') +
-          '</div>';
-        }
-
-        document.getElementById('cr-stats').innerHTML =
-          '<div class="kpi-row">' +
-            '<div class="kpi"><div class="kl">Totala jämförel.</div><div class="kv">'+formatNum(crawl.total_comparables)+'</div></div>' +
-            '<div class="kpi"><div class="kl">Aktiva</div><div class="kv">'+formatNum(crawl.active_comparables)+'</div></div>' +
-            '<div class="kpi"><div class="kl">Flaggade</div><div class="kv">'+formatNum(crawl.flagged_count)+'</div></div>' +
-            '<div class="kpi"><div class="kl">Produkter</div><div class="kv">'+formatNum(products.total)+'</div></div>' +
-          '</div>' + bySourceHtml;
-
-        // Senaste jämförelser
-        var latEl = document.getElementById('cr-latest');
-        if (crawl.latest && crawl.latest.length > 0) {
-          latEl.innerHTML = '<table class="data-table"><thead><tr><th>Titel</th><th>Pris</th><th>Källa</th><th>Sedd</th></tr></thead><tbody>' +
-            crawl.latest.map(r =>
-              '<tr><td><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">'+esc(r.title)+'</div><div style="font-size:10px;color:var(--t3)">'+esc(r.condition||'—')+'</div></td>' +
-              '<td>'+formatSEK(r.price_sek)+'</td>' +
-              '<td style="color:var(--t3)">'+abstractSource(r.source)+'</td>' +
-              '<td style="color:var(--t3)">'+timeAgo(r.last_seen)+'</td></tr>'
-            ).join('') +
-          '</tbody></table>';
-        } else { latEl.innerHTML = '<div class="empty-state">Inga jämförelser ännu</div>'; }
-
-        // Täckning
-        var covEl = document.getElementById('cr-coverage');
-        if (products.top_by_comparables && products.top_by_comparables.length > 0) {
-          covEl.innerHTML = '<table class="data-table"><thead><tr><th>Produkt</th><th>Kategori</th><th>Jämförel.</th><th>Snittpris</th></tr></thead><tbody>' +
-            products.top_by_comparables.map(p =>
-              '<tr><td style="font-weight:500">'+esc(p.brand)+' '+esc(p.model)+'</td>' +
-              '<td style="color:var(--t3)">'+esc(p.category||'—')+'</td>' +
-              '<td>'+formatNum(p.comparable_count)+'</td>' +
-              '<td>'+formatSEK(p.avg_price_sek)+'</td></tr>'
-            ).join('') +
-          '</tbody></table>';
-        } else { covEl.innerHTML = '<div class="empty-state">Ingen produkttäckning ännu</div>'; }
-
-        // Schema
-        document.getElementById('cr-schedule').innerHTML =
-          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Prio 1 · Hörlurar + Smartphones</div><div class="sf-row-sub">24 produkter · daglig</div></div><div style="font-size:11px;color:var(--t3)">Imorgon 06:00</div></div>' +
-          '<div class="sf-row"><div class="dot dok"></div><div class="sf-row-body"><div class="sf-row-name">Prio 2 · Laptops + Kameror</div><div class="sf-row-sub">30 produkter · 3×/vecka</div></div><div style="font-size:11px;color:var(--t3)">Måndag 06:00</div></div>' +
-          '<div class="sf-row"><div class="dot din" style="opacity:0.5"></div><div class="sf-row-body" style="opacity:0.5"><div class="sf-row-name">Prio 3 · Gaming + Övrigt</div><div class="sf-row-sub">26 produkter · veckovis</div></div><div style="font-size:11px;color:var(--t4)">Söndag 06:00</div></div>' +
-          '<div style="background:var(--sf);border-radius:7px;padding:9px 11px;margin-top:8px;font-size:11px;color:var(--t2);line-height:1.6;display:flex;gap:7px">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="var(--t3)" stroke-width="2"/></svg>' +
-            '<div>"Ändra" kräver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div>' +
-          '</div>';
-
-      } catch (err) {
-        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta crawlerdata'));
-      }
-
-      document.getElementById('crSchemaBtn').addEventListener('click', () => {
-        alert('Schemakonfiguration kräver PATCH /api/crawler/schedule i backend.');
-      });
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Vibe Check                                 */
-    /* ════════════════════════════════════════════════ */
-
-    async function loadVibe() {
-      var sections = ['vibe-funfact', 'vibe-tests', 'vibe-commits'];
-      sections.forEach(s => renderSectionState(s, 'loading'));
-
-      try {
-        var data = await apiFetch('/admin/dev-stats');
-        if (!data) return;
-        var history = data.history || [];
-
-        var ffEl = document.getElementById('vibe-funfact');
-        if (history.length > 0 && history[0].fun_facts && history[0].fun_facts.length > 0) {
-          ffEl.innerHTML = '<div class="fun-fact">'+esc(history[0].fun_facts[0])+'</div>';
-        } else { ffEl.innerHTML = ''; }
-
-        document.getElementById('vibe-tests').innerHTML =
-          '<div class="kpi-row">' +
-            '<div class="kpi"><div class="kl">Tester totalt</div><div class="kv">'+formatNum(data.test_count)+'</div></div>' +
-            '<div class="kpi"><div class="kl">Commits (30d)</div><div class="kv">'+formatNum(data.total_commits)+'</div></div>' +
-            '<div class="kpi"><div class="kl">Aktiva dagar</div><div class="kv">'+formatNum(data.total_days)+'</div></div>' +
-          '</div>';
-
-        var cmEl = document.getElementById('vibe-commits');
-        if (history.length > 0) {
-          cmEl.innerHTML = history.map(day => {
-            var commits = day.commits.map(c =>
-              '<div class="commit-entry">' +
-                '<span class="commit-sha">'+esc(c.sha)+'</span>' +
-                '<span class="commit-type">'+esc(c.type)+'</span>' +
-                '<span class="commit-msg">'+esc(c.message)+'</span>' +
-              '</div>'
-            ).join('');
-            var fact = (day.fun_facts && day.fun_facts.length > 0)
-              ? '<div class="fun-fact" style="margin-top:8px">'+esc(day.fun_facts[0])+'</div>' : '';
-            return '<div style="margin-bottom:14px">' +
-              '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">'+esc(day.date)+' — '+day.commit_count+' commits</div>' +
-              commits + fact +
-            '</div>';
-          }).join('');
-        } else { cmEl.innerHTML = '<div class="empty-state">Ingen git-historik tillgänglig</div>'; }
-
-      } catch (err) {
-        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta dev-stats'));
-      }
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Ekonomi                                    */
-    /* ════════════════════════════════════════════════ */
-
-    async function loadEkonomi() {
-      var sections = ['eko-subscriptions', 'eko-api-usage', 'eko-revenue'];
-      sections.forEach(s => renderSectionState(s, 'loading'));
-
-      // KPIs
-      document.getElementById('eko-kpis').innerHTML =
-        '<div class="kpi-row">' +
-          '<div class="kpi"><div class="kl">Prenumeration</div><div class="kv">1 446 kr</div><div class="kd">4 verktyg · fast /mån</div></div>' +
-          '<div class="kpi"><div class="kl">API-kostnad</div><div class="kv">~8 kr</div><div class="kd">Vision · rörlig /mån</div></div>' +
-          '<div class="kpi"><div class="kl">Intäkter</div><div class="kv" style="color:var(--t4)">0 kr</div><div class="kd">ej lanserad</div></div>' +
-          '<div class="kpi"><div class="kl">Break-even</div><div class="kv" style="color:var(--t4)">—</div><div class="kd">kräver MRR</div></div>' +
-        '</div>';
-
-      // Prenumerationer
-      var services = [
-        { ic:'CC', color:'#2C2A25', tc:'#EDEAE3', name:'Claude Code',    plan:'Max 5x · $90/mån',        sek:'936 kr',  per4d:'125 kr' },
-        { ic:'GP', color:'#10a37f', tc:'#fff',     name:'ChatGPT',        plan:'Plus · 23€/mån inkl. moms', sek:'250 kr',  per4d:'33 kr'  },
-        { ic:'Ge', color:'#1a73e8', tc:'#fff',     name:'Gemini AI Pro',  plan:'Google AI Pro · ~23€/mån',  sek:'~250 kr', per4d:'~33 kr' },
-        { ic:'Ry', color:'#8B5CF6', tc:'#fff',     name:'Railway',        plan:'Hobby · $5/mån',            sek:'52 kr',   per4d:'7 kr'   },
-      ];
-      document.getElementById('eko-subscriptions').innerHTML =
-        services.map(s =>
-          '<div class="tool-row">' +
-            '<div class="tool-ic" style="background:'+s.color+';color:'+s.tc+'">'+s.ic+'</div>' +
-            '<div style="flex:1;min-width:0"><div class="tool-name">'+esc(s.name)+'</div><div class="tool-plan">'+esc(s.plan)+'</div></div>' +
-            '<div><div class="tool-amt">'+s.sek+'</div><div class="tool-sub2">'+s.per4d+' /4d</div></div>' +
-          '</div>'
-        ).join('') +
-        '<div class="total-row"><div><span style="font-size:12px;font-weight:500">Totalt /mån</span><div style="font-size:10px;color:var(--t3);margin-top:1px">exkl. Vision API (~8 kr/mån)</div></div><span style="font-size:16px;font-weight:500;font-variant-numeric:tabular-nums">~1 488 kr</span></div>';
-
-      // Intäkter
-      document.getElementById('eko-revenue').innerHTML =
-        '<div class="card">' +
-          '<div style="background:var(--sf);border-radius:8px;padding:12px 14px;text-align:center;margin-bottom:10px">' +
-            '<div style="font-size:13px;font-weight:500;margin-bottom:2px">Produkten är inte lanserad ännu</div>' +
-            '<div style="font-size:11px;color:var(--t3)">Break-even: ~1 488 kr/mån i MRR</div>' +
-            '<div style="height:5px;background:var(--b1);border-radius:3px;margin:9px 0 4px;overflow:hidden"><div style="height:100%;width:0%;background:var(--ok)"></div></div>' +
-            '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t4)"><span>0 kr MRR</span><span>Mål: ~1 488 kr/mån</span></div>' +
-          '</div>' +
-        '</div>';
-
-      // API-användning
-      try {
-        var data = await apiFetch('/admin/api-usage');
-        if (!data) return;
-        var el = document.getElementById('eko-api-usage');
-        var sources = data.sources || data;
-        if (typeof sources === 'object' && !Array.isArray(sources)) {
-          var entries = Object.entries(sources);
-          if (entries.length === 0) { el.innerHTML = '<div class="empty-state">Ingen API-användning registrerad</div>'; return; }
-          el.innerHTML = entries.map(([name, s]) => {
-            s = s || {};
-            var total = s.total_calls || s.calls || 0;
-            var pct = s.free_tier_limit ? Math.min(100, total/s.free_tier_limit*100) : 0;
-            var isLow = s.free_tier_limit && (s.free_tier_remaining||0) < s.free_tier_limit*0.2;
-            return '<div class="card">' +
-              '<div class="card-h"><span class="card-t">'+esc(name)+'</span></div>' +
-              '<div class="kpi-row">' +
-                '<div class="kpi"><div class="kl">Anrop</div><div class="kv">'+formatNum(total)+'</div></div>' +
-                '<div class="kpi"><div class="kl">Fel</div><div class="kv">'+formatNum(s.errors||0)+'</div></div>' +
-                (s.free_tier_limit ? '<div class="kpi"><div class="kl">Kvar</div><div class="kv">'+formatNum(s.free_tier_remaining)+'</div></div>' : '') +
-              '</div>' +
-              (s.free_tier_limit ? '<div class="prog-track"><div class="prog-fill'+(isLow?' wa':'')+'" style="width:'+pct+'%"></div></div><div style="font-size:9px;color:var(--t4)">'+formatNum(total)+' / '+formatNum(s.free_tier_limit)+' använda</div>' : '') +
-            '</div>';
-          }).join('');
-        } else {
-          el.innerHTML = '<div class="empty-state">Ingen API-användning registrerad</div>';
-        }
-      } catch (err) {
-        renderSectionState('eko-api-usage', 'error', null, err.detail || 'Kunde inte hämta API-användning');
-      }
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Valor ML                                   */
-    /* ════════════════════════════════════════════════ */
-
-    async function loadValor() {
-      var sections = ['valor-status', 'valor-training', 'valor-details'];
-      sections.forEach(s => renderSectionState(s, 'loading'));
-
-      try {
-        var data = await apiFetch('/admin/valor-stats');
-        if (!data) return;
-        var model = data.model || {};
-        var isTrained = !!data.model_available || !!model.model_version;
-        var threshold = data.production_threshold || 50;
-        var sampleCount = data.total_samples || model.training_samples || 0;
-        var progress = Math.min(100, sampleCount/threshold*100);
-
-        // Status
-        var stEl = document.getElementById('valor-status');
-        var statusContent = isTrained
-          ? '<div class="kpi-row"><div class="kpi"><div class="kl">Version</div><div class="kv">'+esc(model.model_version||'—')+'</div></div><div class="kpi"><div class="kl">MAE</div><div class="kv">'+(model.mae_sek!=null?formatSEK(model.mae_sek):'—')+'</div></div><div class="kpi"><div class="kl">MAPE</div><div class="kv">'+(model.mape_pct!=null?formatPct(model.mape_pct):'—')+'</div></div></div>' +
-            '<div class="stat-row"><span class="stat-label">Tränad</span><span class="stat-value">'+(model.trained_at?timeAgo(model.trained_at):'—')+'</span></div>'
-          : '<div style="padding:12px 0;font-size:12px;color:var(--t3)">Modellen är inte tränad ännu. Samla minst '+threshold+' träningsprover för att aktivera produktion.</div>';
-
-        stEl.innerHTML =
-          '<div class="card '+(isTrained?'valor-trained':'valor-untrained')+'">' +
-            '<div class="card-h"><span class="card-t">Modellstatus</span><span class="badge '+(isTrained?'badge-ok':'badge-wa')+'">'+(isTrained?'Tränad':'Ej tränad')+'</span></div>' +
-            statusContent +
-          '</div>';
-
-        // Progress / milestones
-        var remaining = threshold - sampleCount;
-        var milestones = [
-          { n:10,  label:'10 observationer',    desc:'Manuell träning möjlig',              state: sampleCount>=10 ? 'done' : sampleCount>=0 ? 'next' : 'future', st: sampleCount>=10 ? 'Uppnått' : '~'+Math.ceil((10-sampleCount)/(data.samples_per_day||1))+' dagar', stc: sampleCount>=10 ? 'var(--ok)' : 'var(--watx)' },
-          { n:50,  label:'50 obs → modellen aktiveras', desc:'Auto-träning · ValorAI i produkt-UI', state: sampleCount>=50 ? 'done' : sampleCount>=10 ? 'next' : 'future', st: sampleCount>=50 ? 'Uppnått' : '~'+Math.ceil((50-sampleCount)/(data.samples_per_day||1))+' dagar', stc: sampleCount>=50 ? 'var(--ok)' : 'var(--watx)' },
-          { n:200, label:'200 obs → bättre precision', desc:'Tillförlitlig på fler kategorier', state: sampleCount>=200 ? 'done' : 'future', st:'Framtid', stc:'var(--t4)' },
-          { n:1000,label:'1 000 obs → full precision',  desc:'Hög träffsäkerhet · alla kategorier', state: sampleCount>=1000 ? 'done' : 'future', st:'Framtid', stc:'var(--t4)' },
-        ];
-
-        document.getElementById('valor-training').innerHTML =
-          '<div class="card">' +
-            '<div class="card-h"><span class="card-t">Träningsframsteg mot '+threshold+' prover</span></div>' +
-            '<div style="background:var(--sf);border-radius:8px;padding:12px;margin-bottom:12px">' +
-              '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span style="font-size:12px;font-weight:500">Insamlade observationer</span><span style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">'+sampleCount+' <span style="font-size:13px;color:var(--t3);font-weight:400">/ '+threshold+'</span></span></div>' +
-              '<div class="prog-track"><div class="prog-fill wa" style="width:'+progress+'%"></div></div>' +
-              '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3)"><span>'+(data.samples_per_day!=null?data.samples_per_day+' obs/dag':'—')+'</span><span>Aktiveras automatiskt vid '+threshold+'</span></div>' +
-            '</div>' +
-            '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:7px">Vad händer vid varje milstolpe</div>' +
-            milestones.map(m => {
-              var cls = m.state==='done' ? 'ms-done' : m.state==='next' ? 'ms-next' : 'ms-future';
-              var num = m.state==='done' ? '✓' : m.n>=1000 ? '1k' : m.n;
-              return '<div class="ms-row"><div class="ms-num '+cls+'">'+num+'</div><div class="ms-body"><div class="ms-lbl">'+esc(m.label)+'</div><div class="ms-desc">'+esc(m.desc)+'</div></div><div class="ms-st" style="color:'+m.stc+'">'+esc(m.st)+'</div></div>';
-            }).join('') +
-            '<div style="margin-top:12px">' +
-              '<button style="padding:7px 14px;background:var(--sf);color:var(--t4);border:0.5px solid var(--b2);border-radius:7px;font-size:12px;cursor:not-allowed;font-family:inherit" '+(sampleCount<threshold?'disabled':'')+'>'+
-                (sampleCount<threshold?'Träna modell — väntar på '+threshold+' observationer':'Träna om modell')+
-              '</button>' +
-            '</div>' +
-          '</div>';
-
-        // Details
-        var dtEl = document.getElementById('valor-details');
-        var observations = data.observations || {};
-        var estimates = data.estimates || [];
-        var obsHtml = '';
-        if (observations.total != null) {
-          var bySrc = (observations.by_source||[]).map(s =>
-            '<div class="stat-row"><span class="stat-label">'+abstractSource(s.source)+'</span><span class="stat-value">'+formatNum(s.count)+'</span></div>'
-          ).join('');
-          obsHtml = '<div class="card"><div class="card-h"><span class="card-t">Observationer</span></div>' +
-            '<div class="stat-row"><span class="stat-label">Totalt</span><span class="stat-value">'+formatNum(observations.total)+'</span></div>' +
-            '<div class="stat-row"><span class="stat-label">Senaste 7d</span><span class="stat-value">'+formatNum(observations.last_7d)+'</span></div>' +
-            bySrc + '</div>';
-        }
-        var estHtml = '';
-        if (estimates.length > 0) {
-          estHtml = '<div class="card"><div class="card-h"><span class="card-t">Senaste estimat</span></div>' +
-            '<table class="data-table"><thead><tr><th>Produkt</th><th>Estimat</th><th>Konfidensband</th></tr></thead><tbody>' +
-            estimates.slice(0,5).map(e => {
-              var band = e.confidence_low!=null ? formatSEK(e.confidence_low)+' – '+formatSEK(e.confidence_high) : '—';
-              return '<tr><td>'+esc(e.product_key||'—')+'</td><td>'+formatSEK(e.estimated_value_sek)+'</td><td style="color:var(--t3)">'+band+'</td></tr>';
-            }).join('') + '</tbody></table></div>';
-        }
-        dtEl.innerHTML = obsHtml + estHtml;
-
-      } catch (err) {
-        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Kunde inte hämta Valor-data'));
-      }
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  TAB: Hälsokoll                                  */
-    /* ════════════════════════════════════════════════ */
-
-    async function loadHealth() {
-      var sections = ['hc-health', 'hc-index', 'hc-slow', 'hc-db'];
-      sections.forEach(s => renderSectionState(s, 'loading'));
-
-      try {
-        var [health, indexHealth, slowQueries, overview] = await Promise.all([
-          apiFetch('/health').catch(() => null),
-          apiFetch('/admin/index-health').catch(() => null),
-          apiFetch('/admin/slow-queries').catch(() => null),
-          apiFetch('/admin/overview').catch(() => null),
-        ]);
-
-        // Health banner + beroenden
-        var hhEl = document.getElementById('hc-health');
-        if (health) {
-          var isOk = health.status === 'ok';
-          var deps = health.dependencies || {};
-          var depsHtml = Object.entries(deps).map(([name, cfg]) => {
-            var configured = typeof cfg === 'boolean' ? cfg : (cfg && cfg.configured);
-            return '<div class="stat-row">' +
-              '<span class="stat-label">'+abstractDependency(name)+'</span>' +
-              '<span class="badge '+(configured?'badge-ok':'badge-muted')+'">'+(configured?'OK':'Ej konfigurerad')+'</span>' +
-            '</div>';
-          }).join('');
-          hhEl.innerHTML =
-            '<div class="hc-banner '+(isOk?'ok':'wa')+'">' +
-              '<div class="hc-dot '+(isOk?'ok':'wa')+'"></div>' +
-              '<span>'+(isOk?'System OK':'Varning')+'</span>' +
-              '<span style="margin-left:auto;font-size:10px;opacity:0.7">v'+esc(health.version||'—')+'</span>' +
-            '</div>' +
-            '<div class="card"><div class="card-h"><span class="card-t">Beroenden</span></div>'+depsHtml+'</div>';
-        } else {
-          hhEl.innerHTML = '<div class="hc-banner wa"><div class="hc-dot wa"></div><span>Kunde inte nå health-endpoint</span></div>';
-        }
-
-        // Index
-        var ixEl = document.getElementById('hc-index');
-        if (indexHealth && indexHealth.length > 0) {
-          ixEl.innerHTML = '<table class="data-table"><thead><tr><th>Tabell</th><th>Seq scans</th><th>Idx scans</th><th>Seq %</th><th>Rader</th></tr></thead><tbody>' +
-            indexHealth.map(r => {
-              var pct = Number(r.seq_scan_pct||0);
-              var style = pct>80 ? 'color:var(--er)' : pct>50 ? 'color:var(--wa)' : '';
-              return '<tr><td>'+esc(r.table_name)+'</td><td>'+formatNum(r.seq_scan)+'</td><td>'+formatNum(r.idx_scan)+'</td><td style="font-weight:500;'+style+'">'+formatPct(pct)+'</td><td>'+formatNum(r.live_rows)+'</td></tr>';
-            }).join('') + '</tbody></table>';
-        } else { ixEl.innerHTML = '<div class="empty-state">Ingen indexdata tillgänglig</div>'; }
-
-        // Slow queries
-        var sqEl = document.getElementById('hc-slow');
-        if (slowQueries && slowQueries.length > 0) {
-          sqEl.innerHTML = slowQueries.map(q =>
-            '<div class="query-row">' +
-              '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
-                '<span class="query-dur">'+(q.duration_s!=null?q.duration_s.toFixed(1)+'s':'—')+'</span>' +
-                '<span class="badge badge-muted">'+esc(q.state)+'</span>' +
-              '</div>' +
-              '<div class="query-text">'+esc(q.query)+'</div>' +
-            '</div>'
-          ).join('');
-        } else { sqEl.innerHTML = '<div class="empty-state">Inga långsamma queries just nu</div>'; }
-
-        // DB overview
-        var dbEl = document.getElementById('hc-db');
-        if (overview) {
-          var tablesHtml = '';
-          if (overview.tables && overview.tables.length > 0) {
-            tablesHtml = '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin:10px 0 6px">Tabeller</div>' +
-              overview.tables.map(t =>
-                '<div class="db-table-item"><span style="font-weight:500">'+esc(t.name)+'</span><span style="color:var(--t3);font-size:11px">'+formatNum(t.rows)+' rader</span><span style="color:var(--t4);font-size:11px">'+esc(t.size)+'</span></div>'
-              ).join('');
-          }
-          dbEl.innerHTML =
-            '<div class="kpi-row">' +
-              '<div class="kpi"><div class="kl">Storlek</div><div class="kv">'+esc(String(overview.db_size_mb))+' MB</div></div>' +
-              '<div class="kpi"><div class="kl">Uptime</div><div class="kv">'+(overview.uptime_hours!=null?Math.round(overview.uptime_hours)+'h':'—')+'</div></div>' +
-              '<div class="kpi"><div class="kl">Anslutningar</div><div class="kv">'+formatNum(overview.active_connections)+'/'+formatNum(overview.total_connections)+'</div></div>' +
-            '</div>' +
-            '<div class="stat-row"><span class="stat-label">Databas</span><span class="stat-value">'+esc(overview.db_name)+'</span></div>' +
-            '<div class="stat-row"><span class="stat-label">PostgreSQL</span><span class="stat-value">'+esc(overview.pg_version)+'</span></div>' +
-            tablesHtml;
-        } else { dbEl.innerHTML = '<div class="empty-state">Kunde inte hämta databas-översikt</div>'; }
-
-      } catch (err) {
-        sections.forEach(s => renderSectionState(s, 'error', null, err.detail || 'Hälsokoll misslyckades'));
-      }
-    }
-
-    /* ════════════════════════════════════════════════ */
-    /*  Init                                            */
-    /* ════════════════════════════════════════════════ */
-
-    showLogin();
-  </script>
+        <div class="stat-row"><span class="stat-label">Databas</span><span class="stat-value">${esc(ov.db_name)}</span></div>
+        <div class="stat-row"><span class="stat-label">PostgreSQL</span><span class="stat-value">${esc(ov.pg_version)}</span></div>
+        ${tables?`<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin:10px 0 6px">Tabeller</div>${tables}`:''}`;
+    }else{dbEl.innerHTML='<div class="empty-state">Kunde inte hämta databas-översikt</div>'}
+
+  }catch(err){['hc-health','hc-db'].forEach(id=>renderError(ge(id),err.detail||'Hälsokoll misslyckades'))}
+}
+
+showLogin();
+</script>
 </body>
 </html>
