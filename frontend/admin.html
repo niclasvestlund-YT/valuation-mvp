@@ -183,28 +183,41 @@
     .kpi-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 16px;
     }
-    .kpi-card {
+    .kpi-card, .kpi {
       background: var(--w);
-      border: 1px solid var(--bd);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      text-align: center;
+      border: 0.5px solid var(--bd);
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-width: 0;
     }
     .kpi-value {
-      font-size: 1.5rem;
-      font-weight: 700;
+      font-size: 21px;
+      font-weight: 500;
       color: var(--t1);
-      line-height: 1.2;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--t3);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .kpi-label, .kl {
-      font-size: 0.6875rem;
-      color: var(--t3);
+      font-size: 9px;
+      color: var(--t4);
       text-transform: uppercase;
-      letter-spacing: 0.3px;
-      margin-top: 2px;
+      letter-spacing: 1.5px;
+      font-weight: 500;
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       max-width: 20ch;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -582,12 +595,18 @@
       color: var(--wa);
     }
 
+    /* ── Overview grid ── */
+    .overview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .main-content { flex: 1; overflow-y: auto; background: var(--bg); }
+    .tab-content { padding: 18px 20px; max-width: 760px; }
+
     /* ── Responsive ── */
     @media (max-width: 640px) {
       .sidebar { display: none; }
       .main-content { margin-left: 0; padding: 16px; padding-bottom: 80px; }
       .mobile-tab-bar { display: block; }
       .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .overview-grid { grid-template-columns: 1fr; }
       .content-area { max-width: 100%; }
       .data-table { font-size: 0.75rem; }
       .data-table th, .data-table td { padding: 6px 8px; }
@@ -1104,11 +1123,24 @@
         var hEl = document.getElementById('ov-health-banner');
         if (health) {
           var isOk = health.status === 'ok';
-          var cls = isOk ? 'ok' : 'warn';
-          hEl.innerHTML = '<div class="health-banner ' + cls + '">' +
-            '<div class="health-dot ' + cls + '"></div>' +
-            '<span>' + (isOk ? 'Alla system operativa' : 'Systemvarning aktiv') + '</span>' +
-            '<span style="margin-left:auto;font-size:0.6875rem;opacity:0.7">v' + esc(health.version || '-') + '</span>' +
+          var bannerBg = isOk ? '#e8f5ee' : 'rgba(212,160,23,0.08)';
+          var bannerBorder = isOk ? 'rgba(52,168,115,0.25)' : 'rgba(212,160,23,0.25)';
+          var dotColor = isOk ? '#34a873' : 'var(--wa)';
+          var textColor = isOk ? '#1a5c37' : '#7d5a00';
+          var badgeBg = isOk ? 'rgba(52,168,115,0.12)' : 'rgba(212,160,23,0.12)';
+          var label = isOk ? 'Systemet fungerar' : 'Systemvarning aktiv';
+          var deps = health.dependencies || {};
+          var badges = '';
+          if (deps.vision && deps.vision !== 'missing_key') badges += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + textColor + '">Vision aktiv</span>';
+          if (deps.database === 'configured') badges += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + textColor + '">Databas OK</span>';
+          if (deps.crawler === 'enabled') badges += '<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + textColor + '">Crawler kör</span>';
+          hEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:' + bannerBg + ';border:0.5px solid ' + bannerBorder + ';border-radius:8px;margin-bottom:14px">' +
+            '<div style="width:20px;height:20px;border-radius:50%;background:' + dotColor + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
+            '</div>' +
+            '<span style="font-size:12px;font-weight:500;color:' + textColor + ';flex:1">' + label + '</span>' +
+            badges +
+            '<span style="font-size:10px;color:var(--t4);cursor:pointer" onclick="switchTab(\'hc\')">Hälsokoll →</span>' +
             '</div>';
         } else {
           hEl.innerHTML = '<div class="health-banner err">' +
@@ -1121,24 +1153,34 @@
         var okCount = (metrics.status_breakdown_dict || {}).ok || 0;
         var totalV = metrics.total_valuations || 0;
         var okRate = totalV > 0 ? (okCount / totalV * 100).toFixed(1) : '-';
+        var sd = metrics.status_breakdown_dict || {};
+        var okN = sd.ok || 0; var deN = sd.degraded || 0; var ieN = sd.insufficient_evidence || 0; var erN = sd.error || 0;
+        var barTotal = okN + deN + ieN + erN || 1;
         document.getElementById('ov-kpis').innerHTML =
           '<div class="kpi-row">' +
-            '<div class="kpi-card">' +
+            '<div class="kpi">' +
+              '<div class="kl">Värderingar</div>' +
               '<div class="kpi-value">' + formatNum(metrics.total_valuations) + '</div>' +
-              '<div class="kl">Totalt varderingar</div>' +
+              '<div class="kpi-sub">totalt</div>' +
             '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + formatNum(metrics.last_24h) + '</div>' +
+            '<div class="kpi">' +
               '<div class="kl">Senaste 24h</div>' +
+              '<div class="kpi-value">' + formatNum(metrics.last_24h) + '</div>' +
             '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + (metrics.avg_confidence != null ? (metrics.avg_confidence * 100).toFixed(0) + '%' : '-') + '</div>' +
-              '<div class="kl">Snitt konfidens</div>' +
+            '<div class="kpi">' +
+              '<div class="kl">Konfidens</div>' +
+              '<div class="kpi-value">' + (metrics.avg_confidence != null ? (metrics.avg_confidence * 100).toFixed(0) + '%' : '—') + '</div>' +
             '</div>' +
-            '<div class="kpi-card">' +
-              '<div class="kpi-value">' + okRate + (okRate !== '-' ? '%' : '') + '</div>' +
+            '<div class="kpi">' +
               '<div class="kl">OK-rate</div>' +
+              '<div class="kpi-value">' + okRate + (okRate !== '—' ? '%' : '') + '</div>' +
             '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:2px;height:4px;margin-top:6px;margin-bottom:16px">' +
+            '<div style="flex:' + okN + ';background:#34a873;border-radius:1px"></div>' +
+            '<div style="flex:' + ieN + ';background:#d4a017"></div>' +
+            '<div style="flex:' + deN + ';background:#B0AA9E"></div>' +
+            '<div style="flex:' + erN + ';background:#c4432a;border-radius:1px"></div>' +
           '</div>';
 
         // Status chart
@@ -1160,23 +1202,22 @@
         // Recent valuations
         var recEl = document.getElementById('ov-recent');
         if (metrics.recent_valuations && metrics.recent_valuations.length > 0) {
-          recEl.innerHTML = '<table class="data-table">' +
-            '<thead><tr>' +
-              '<th>Produkt</th><th>Status</th><th>Varde</th><th>Tid</th>' +
-            '</tr></thead>' +
-            '<tbody>' + metrics.recent_valuations.map(function(v) {
-              return '<tr>' +
-                '<td>' +
-                  '<div class="list-item-title">' + esc(v.product_name) + '</div>' +
-                  '<div class="list-item-meta">' + esc(v.category) + '</div>' +
-                '</td>' +
-                '<td>' + statusBadge(v.status) + '</td>' +
-                '<td>' + (v.estimated_value_sek != null ? formatSEK(v.estimated_value_sek) : '-') + '</td>' +
-                '<td style="font-size:0.75rem;color:var(--t3)">' + timeAgo(v.created_at) + '</td>' +
-              '</tr>';
-            }).join('') + '</tbody></table>';
+          recEl.innerHTML = metrics.recent_valuations.map(function(v) {
+            var barColor = v.status === 'ok' ? '#34a873' : v.status === 'degraded' ? '#d4a017' : v.status === 'error' ? '#c4432a' : '#B0AA9E';
+            var priceText = v.estimated_value_sek != null ? formatSEK(v.estimated_value_sek) : '—';
+            return '<div style="display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--sf);border-radius:7px;margin-bottom:5px">' +
+              '<div style="width:3px;height:28px;border-radius:2px;background:' + barColor + ';flex-shrink:0"></div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(v.product_name) + '</div>' +
+                '<div style="font-size:10px;color:var(--t3)">' + esc(v.category) + ' · ' + timeAgo(v.created_at) + '</div>' +
+              '</div>' +
+              '<div style="text-align:right;flex-shrink:0">' +
+                '<div style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums">' + priceText + '</div>' +
+              '</div>' +
+            '</div>';
+          }).join('');
         } else {
-          recEl.innerHTML = '<div class="empty-state">Inga varderingar annu</div>';
+          recEl.innerHTML = '<div class="empty-state">Inga värderingar ännu</div>';
         }
 
         // Source stats
