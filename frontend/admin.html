@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="build-version" content="v12.4">
+  <meta name="build-version" content="v12.5">
   <title>Admin v12 — Vardagsvärde</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -635,7 +635,7 @@
       <div class="sidebar-brand">
         <h1>Vardagsvärde</h1>
         <span>Admin</span>
-        <div style="font-size:9px;color:var(--t4);margin-top:2px" id="build-info">v12.4 · 2026-03-28</div>
+        <div style="font-size:9px;color:var(--t4);margin-top:2px" id="build-info">v12.5 · 2026-03-28</div>
       </div>
       <div class="nav-item active" data-tab="tab-ov">
         <span class="nav-label">Översikt</span>
@@ -1105,6 +1105,23 @@
       return 'Källa';
     }
 
+    function abstractDependency(key) {
+      var map = {
+        'vision': 'Vision API',
+        'tradera': 'Källa A',
+        'blocket': 'Källa B',
+        'serper': 'Prisjämförelse-källa',
+        'serpapi': 'Prisjämförelse-fallback',
+        'database': 'Databas',
+        'google_vision_ocr': 'Google Cloud Vision OCR',
+        'easyocr': 'EasyOCR (lokal)',
+        'embeddings': 'Embeddings',
+        'crawler': 'Crawler',
+        'valor': 'Valor ML'
+      };
+      return map[key] || key;
+    }
+
     async function loadOverview() {
       var sections = ['ov-health-banner', 'ov-kpis', 'ov-recent', 'ov-assistant', 'ov-sources'];
       sections.forEach(function(s) { renderSectionState(s, 'loading'); });
@@ -1293,7 +1310,7 @@
             '<div class="card-header"><span class="card-title">Per kalla</span></div>' +
             crawl.by_source.map(function(s) {
               return '<div class="stat-row">' +
-                '<span class="stat-label">' + esc(s.source) + '</span>' +
+                '<span class="stat-label">' + abstractSource(s.source) + '</span>' +
                 '<span class="stat-value">' + formatNum(s.count) + ' st, snitt ' + formatSEK(s.avg_price_sek) + ', rel ' + (s.avg_relevance != null ? s.avg_relevance : '-') + '</span>' +
               '</div>';
             }).join('') +
@@ -1332,7 +1349,7 @@
                   '<div class="list-item-meta">' + esc(r.condition || '-') + '</div>' +
                 '</td>' +
                 '<td>' + formatSEK(r.price_sek) + '</td>' +
-                '<td style="font-size:0.75rem;color:var(--t3)">' + esc(r.source) + '</td>' +
+                '<td style="font-size:0.75rem;color:var(--t3)">' + abstractSource(r.source) + '</td>' +
                 '<td style="font-size:0.75rem;color:var(--t3)">' + timeAgo(r.last_seen) + '</td>' +
               '</tr>';
             }).join('') + '</tbody></table>';
@@ -1453,18 +1470,35 @@
       var sections = ['eko-subscriptions', 'eko-api-usage', 'eko-revenue'];
       sections.forEach(function(s) { renderSectionState(s, 'loading'); });
 
-      // Subscriptions (static for now)
+      // Subscriptions
+      var services = [
+        { ic: 'CC', color: '#2C2A25', textColor: '#EDEAE3', name: 'Claude Code', plan: 'Max 5x · $90/mån', sek: '936 kr', per4d: '125 kr' },
+        { ic: 'GP', color: '#10a37f', textColor: '#fff', name: 'ChatGPT', plan: 'Plus · 23\u20ac/mån inkl. moms', sek: '250 kr', per4d: '33 kr' },
+        { ic: 'Ge', color: '#1a73e8', textColor: '#fff', name: 'Gemini AI Pro', plan: 'Google AI Pro · ~23\u20ac/mån', sek: '~250 kr', per4d: '~33 kr' },
+        { ic: 'Ry', color: '#8B5CF6', textColor: '#fff', name: 'Railway', plan: 'Hobby · $5/mån', sek: '52 kr', per4d: '7 kr' },
+      ];
+      var totalSek = 936 + 250 + 250 + 52;
       document.getElementById('eko-subscriptions').innerHTML =
-        '<div class="card">' +
-          '<div class="card-header"><span class="card-title">Aktiva tjanster</span></div>' +
-          '<div class="stat-row"><span class="stat-label">OpenAI API</span><span class="stat-value">Pay-as-you-go</span></div>' +
-          '<div class="stat-row"><span class="stat-label">Railway</span><span class="stat-value">Hobby plan</span></div>' +
-          '<div class="stat-row"><span class="stat-label">PostgreSQL</span><span class="stat-value">Railway addon</span></div>' +
+        services.map(function(s) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 9px;background:var(--sf);border-radius:7px;margin-bottom:4px">' +
+            '<div style="width:28px;height:28px;border-radius:7px;background:' + s.color + ';color:' + s.textColor + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0">' + s.ic + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-size:12px;font-weight:500">' + esc(s.name) + '</div>' +
+              '<div style="font-size:10px;color:var(--t3)">' + esc(s.plan) + '</div>' +
+            '</div>' +
+            '<div style="text-align:right;flex-shrink:0">' +
+              '<div style="font-size:13px;font-weight:500;font-variant-numeric:tabular-nums">' + s.sek + '</div>' +
+              '<div style="font-size:9px;color:var(--t3)">' + s.per4d + '/4d</div>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+        '<div style="display:flex;justify-content:space-between;padding:6px 9px;margin-top:4px;font-size:11px;font-weight:500">' +
+          '<span>Totalt/mån</span><span style="font-variant-numeric:tabular-nums">' + formatNum(totalSek) + ' kr</span>' +
         '</div>';
 
       // Revenue (placeholder)
       document.getElementById('eko-revenue').innerHTML =
-        '<div class="empty-state">Intaktsdata visas nar betalfunktioner ar aktiva</div>';
+        '<div class="empty-state">Intäktsdata visas när betalfunktioner är aktiva</div>';
 
       // API usage
       try {
@@ -1629,7 +1663,7 @@
           var obsBySource = '';
           if (observations.by_source) {
             obsBySource = observations.by_source.map(function(s) {
-              return '<div class="stat-row"><span class="stat-label">' + esc(s.source) + '</span><span class="stat-value">' + formatNum(s.count) + '</span></div>';
+              return '<div class="stat-row"><span class="stat-label">' + abstractSource(s.source) + '</span><span class="stat-value">' + formatNum(s.count) + '</span></div>';
             }).join('');
           }
           obsHtml =
@@ -1695,7 +1729,7 @@
             var cfg = entry[1];
             var configured = typeof cfg === 'boolean' ? cfg : (cfg && cfg.configured);
             return '<div class="stat-row">' +
-              '<span class="stat-label">' + esc(name) + '</span>' +
+              '<span class="stat-label">' + abstractDependency(name) + '</span>' +
               '<span class="badge ' + (configured ? 'badge-ok' : 'badge-muted') + '">' + (configured ? 'OK' : 'Ej konfigurerad') + '</span>' +
             '</div>';
           }).join('');
