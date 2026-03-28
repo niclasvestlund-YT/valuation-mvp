@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
@@ -179,7 +179,7 @@ async def db_overview():
 async def valuation_metrics():
     """Business metrics from the valuations table."""
     try:
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         day_ago = now - timedelta(hours=24)
         week_ago = now - timedelta(days=7)
 
