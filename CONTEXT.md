@@ -168,6 +168,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-28 — test: TDZ regression guard for VALOR admin UI — 2 tests in test_admin_ui_data.py assert declaration order + explanatory copy
+2026-03-28 — fix: admin VALOR UI temporal-dead-zone bug — moved `const t` before first use, updated no-model copy to explain market_comparable vs training_sample distinction
 2026-03-28 — deploy: Railway pre-prod live — valor-models volume, first VALOR training (3 samples, MAE 1189 kr, MAPE 28.7%), model persists across restarts, threshold set to 50
 2026-03-28 — security: admin phase 2 — esc() XSS helper on all API data in innerHTML, renderSectionState() for consistent loader states, str(exc) removed from all HTTP error responses, table browser hardened via ALLOWED_TABLES allowlist, 10 new tests
 2026-03-28 — fix: admin phase 1 security — admin key memory-only (no localStorage), auth gate before fetches, 401/403 re-auth, demo fallback removed, status_breakdown metrics bug fixed, local valuation_history removed from admin, 7 new tests
@@ -185,7 +187,9 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-26 — feat: Phase 5 learning loop — SigLIP embedding service, pgvector similarity search, feedback-driven verification, 118 tests
 
 ## Next Up
-[Empty — add manually]
+- Backfill price observations from existing comparables to bootstrap VALOR training data toward 50-sample threshold
+- Replace f-string SQL in admin table browser with parameterized queries
+- Wire up scheduled agent jobs to continuously feed price observations into ingest pipeline
 
 ---
 How to use: copy this file and attach it when starting a new AI conversation about this project.
