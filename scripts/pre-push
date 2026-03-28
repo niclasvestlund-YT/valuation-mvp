@@ -4,19 +4,12 @@
 # Or: bash scripts/install_hook.sh
 
 echo "Running tests before push..."
-# Use venv python if available, else system python
 REPO_DIR="$(git rev-parse --show-toplevel)"
-if [ -f "$REPO_DIR/.venv/bin/python" ]; then
-  PY="$REPO_DIR/.venv/bin/python"
-else
-  PY="python"
-fi
-"$PY" -m pytest tests/ -k "not ocr and not integration and not dry_run" --timeout=30 -q --tb=short
-if [ $? -ne 0 ]; then
+if ! sh "$REPO_DIR/scripts/stage_ready_check.sh"; then
     echo ""
     echo "Tests failed — push aborted."
     echo "Fix the failing tests and try again."
     exit 1
 fi
 
-echo "Tests passed — pushing."
+echo "Stage-ready checks passed — pushing."

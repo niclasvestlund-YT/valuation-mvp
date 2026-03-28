@@ -20,7 +20,7 @@ from backend.app.api.agent import router as agent_router
 from backend.app.api.value import router as value_router
 from backend.app.routers.ingest import ingest_router
 from backend.app.core.config import settings
-from backend.app.core.version import VERSION
+from backend.app.core.version import BUILD_SHA, VERSION
 from backend.app.db.database import dispose_engine, init_db
 from backend.app.middleware.request_id import RequestIdMiddleware
 from backend.app.routers.admin import admin_router
@@ -111,9 +111,12 @@ FRONTEND_INDEX = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
 FRONTEND_ADMIN = Path(__file__).resolve().parents[2] / "frontend" / "admin.html"
 
 
+_HTML_CACHE_HEADERS = {"Cache-Control": "no-cache"}
+
+
 @app.get("/", response_class=FileResponse)
 def read_root():
-    return FileResponse(FRONTEND_INDEX)
+    return FileResponse(FRONTEND_INDEX, headers=_HTML_CACHE_HEADERS)
 
 
 @app.get("/health")
@@ -121,6 +124,7 @@ def health_check():
     return {
         "status": "ok",
         "version": VERSION,
+        "build_sha": BUILD_SHA,
         "environment": _environment,
         "dependencies": {
             "vision": "mock" if settings.is_mock_mode else ("configured" if settings.openai_api_key else "missing_key"),
@@ -139,7 +143,7 @@ def health_check():
 
 @app.get("/admin", response_class=FileResponse)
 def admin_ui():
-    return FileResponse(FRONTEND_ADMIN)
+    return FileResponse(FRONTEND_ADMIN, headers=_HTML_CACHE_HEADERS)
 
 
 app.include_router(value_router)

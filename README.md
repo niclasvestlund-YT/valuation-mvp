@@ -34,6 +34,17 @@ Open:
 
 - API / app: `http://127.0.0.1:8000/`
 
+## Stage-ready check
+
+Before pushing or merging `develop` into `staging`, run:
+
+```bash
+make stage-ready
+```
+
+That focused gate keeps the admin contracts, golden valuation cases, and deploy-critical config behavior in view. The living staging checklist is in `docs/STAGE_READY.md`.
+It skips tests marked `integration`, which are covered by actual staging smoke tests instead.
+
 ## MVP principles
 
 - prefer honesty over always showing a number

@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="build-version" content="v16.0">
-  <title>Admin v16 — Vardagsvärde</title>
+  <title>Admin — Vardagsvärde</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -323,7 +322,7 @@
     <div class="sb-top">
       <div class="sb-name">Vardagsvärde</div>
       <div class="sb-sub">Admin</div>
-      <div class="sb-ver" id="build-info">v16.0 · 2026-03-28</div>
+      <div class="sb-ver" id="build-info">…</div>
     </div>
     <div class="sb-sec">
       <div class="sb-lbl">Drift</div>
@@ -502,7 +501,9 @@ async function attemptLogin(){
   const inp=ge('adminKeyInput');const err=ge('loginError');const key=inp.value.trim();
   if(!key){err.style.display='block';err.textContent='Ange en nyckel';return}
   adminKey=key;
-  try{const d=await apiFetch('/health');if(d===null){err.style.display='block';err.textContent='Ogiltig nyckel';adminKey='';return}showAdmin()}
+  try{const d=await apiFetch('/health');if(d===null){err.style.display='block';err.textContent='Ogiltig nyckel';adminKey='';return}
+    const bi=ge('build-info');if(bi&&d){const sha=d.build_sha&&d.build_sha!=='local'?d.build_sha.slice(0,7):'local';bi.textContent='v'+(d.version||'?')+' · '+sha+' · '+(d.environment||'?')}
+    showAdmin()}
   catch(e){err.style.display='block';err.textContent='Kunde inte ansluta';adminKey=''}
 }
 ge('loginBtn').addEventListener('click',attemptLogin);

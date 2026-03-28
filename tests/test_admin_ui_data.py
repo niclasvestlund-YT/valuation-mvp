@@ -420,3 +420,65 @@ class TestValorTrainingDeclarationOrder:
         body = self._read_valor_function()
         assert "model_available" in body or "model" in body, \
             "Missing model availability check in VALOR function"
+
+
+# ─── Test group 11: /health versioning fields ───
+
+
+class TestHealthVersioning:
+    """Verify /health exposes version and build_sha for deploy traceability."""
+
+    def test_health_returns_version(self, client):
+        r = client.get("/health")
+        assert r.status_code == 200
+        d = r.json()
+        assert "version" in d
+        assert isinstance(d["version"], str)
+        assert d["version"]  # non-empty
+
+    def test_health_returns_build_sha(self, client):
+        r = client.get("/health")
+        d = r.json()
+        assert "build_sha" in d
+        assert isinstance(d["build_sha"], str)
+        assert d["build_sha"]  # non-empty
+
+    def test_health_build_sha_defaults_to_local(self, client):
+        """Without RAILWAY_GIT_COMMIT_SHA or GIT_COMMIT_SHA, build_sha should be 'local'."""
+        r = client.get("/health")
+        d = r.json()
+        # In test env neither env var is set, so expect 'local'
+        assert d["build_sha"] == "local"
+
+    def test_health_preserves_existing_fields(self, client):
+        """Additive change must not break existing fields."""
+        r = client.get("/health")
+        d = r.json()
+        assert d["status"] == "ok"
+        assert "environment" in d
+        assert "dependencies" in d
+
+
+# ─── Test group 12: HTML entrypoint Cache-Control ───
+
+
+class TestHtmlCacheHeaders:
+    """HTML entrypoints must send Cache-Control: no-cache to prevent stale pages after deploy."""
+
+    def test_index_has_no_cache(self, client):
+        r = client.get("/")
+        assert r.headers.get("cache-control") == "no-cache"
+
+    def test_admin_has_no_cache(self, client):
+        r = client.get("/admin")
+        assert r.headers.get("cache-control") == "no-cache"
+
+    def test_index_still_has_etag(self, client):
+        """no-cache + ETag enables cheap 304 revalidation."""
+        r = client.get("/")
+        assert r.headers.get("etag"), "ETag header missing — 304 revalidation won't work"
+
+    def test_health_has_no_cache_control(self, client):
+        """API endpoints should not get the HTML cache header."""
+        r = client.get("/health")
+        assert "no-cache" not in (r.headers.get("cache-control") or "")

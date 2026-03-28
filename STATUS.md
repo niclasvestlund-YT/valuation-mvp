@@ -1,19 +1,18 @@
 # STATUS — 2026-03-28
 
 ## Last task
-Admin v16 dark mode
+HTML cache headers v2 — Cache-Control: no-cache on HTML entrypoints
 
 ## What changed
-- frontend/admin.html: v15->v16, dark mode CSS tokens + @media prefers-color-scheme, html/body transitions, sidebar/card/kpi/hb/sf-row/login-overlay transitions, dm-toggle widget (HTML+CSS+JS), icon colors softened to #4a4845, third stack column renamed to "AI-verktyg"
-- tests/test_admin_html.py: localStorage test updated to allow dark mode (dm key only)
-- CONTEXT.md: file map + recent changes updated
+- backend/app/main.py: added `headers={"Cache-Control": "no-cache"}` to FileResponse for / and /admin
+- tests/test_admin_ui_data.py: +4 tests (TestHtmlCacheHeaders: index no-cache, admin no-cache, ETag preserved, health unaffected)
+- CONTEXT.md: updated
 
 ## Verification
-- prefers-color-scheme: dark = 3 matches
-- DM_DARK = 2, dmApply = 6, vc-slide = 18
-- HTML parses OK, all 6 tabs present
-- health-banner class confirmed on ov-banner div
+- make stage-ready: 75 passed, 22 skipped
+- test_admin_ui_data: 26 passed, 19 skipped, 0 failures
 
-## Next up
-- Run full pytest to confirm no regressions
-- Commit changes
+## Decision rationale
+- no-cache forces revalidation on every request but allows 304 via existing ETag/Last-Modified
+- no-store rejected: loses 304 support, wastes bandwidth
+- Scoped to HTML only — API endpoints unaffected

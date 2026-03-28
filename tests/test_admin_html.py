@@ -85,6 +85,19 @@ class TestStructure:
         assert "renderError" in js_code, \
             "Saknar renderError-funktion"
 
+    def test_no_hardcoded_version_in_html(self, soup):
+        """Version must come from backend /health, not hardcoded in HTML."""
+        title = soup.find("title").get_text()
+        assert "v16" not in title and "v17" not in title, \
+            "Title still has hardcoded version — should be 'Admin — Vardagsvärde'"
+        meta = soup.find("meta", {"name": "build-version"})
+        assert meta is None, "Hardcoded build-version meta tag should be removed"
+
+    def test_build_info_populated_from_health(self, js_code):
+        """build-info element should be populated from /health response data."""
+        assert "build_sha" in js_code, \
+            "Admin JS must read build_sha from /health to populate sidebar"
+
     def test_no_hardcoded_api_key(self, js_code):
         assert "sk-" not in js_code
         assert "Bearer " not in js_code

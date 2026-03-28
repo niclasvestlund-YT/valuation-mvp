@@ -23,7 +23,7 @@ scripts/promote_reference_data.py — idempotent reference data promotion: expor
 scripts/export_stage_seed.sql — (legacy) one-time CSV seed export; superseded by promote_reference_data.py
 scripts/import_stage_seed.sh — (legacy) one-time CSV import; superseded by promote_reference_data.py
 scripts/verify_stage_seed.sql — (legacy) post-import SQL verification; superseded by promote_reference_data.py verify
-backend/app/main.py — FastAPI app, CORS, serves frontend/index.html + frontend/admin.html, /health endpoint, DB init on startup
+backend/app/main.py — FastAPI app, CORS, serves frontend/index.html + frontend/admin.html (Cache-Control: no-cache), /health endpoint, DB init on startup
 backend/app/routers/admin.py — read-only admin API: DB overview, valuation metrics, table browser, index health, slow queries, agent-stats, valor-stats
 backend/app/routers/ingest.py — POST /api/ingest + /agent/job/start + /agent/job/complete + /valor/train + /valor/rollback
 backend/app/api/value.py — POST /value + POST /feedback endpoints; saves every valuation to DB via BackgroundTasks
@@ -46,7 +46,7 @@ backend/app/schemas/ocr_result.py — OCR result dataclass with detected text, l
 backend/alembic/ — Alembic migrations directory
 backend/alembic.ini — Alembic config (sync psycopg2 URL for migrations)
 backend/app/core/config.py — all env var definitions and defaults
-backend/app/core/version.py — single source of truth for VERSION string
+backend/app/core/version.py — single source of truth for VERSION + BUILD_SHA (env-var based)
 backend/app/core/thresholds.py — all 40+ pipeline thresholds in one file (confidence caps, scoring weights, gates)
 backend/app/data/product_knowledge.json — 7 product families + 8 category angle sets for vision prompt
 backend/app/core/value_engine.py — main orchestration: vision → market → score → price → envelope
@@ -80,7 +80,7 @@ backend/app/middleware/__init__.py — empty
 backend/app/middleware/request_id.py — RequestIdMiddleware: injects UUID per request, sets request_id_var, adds X-Request-ID header
 tests/test_logger.py — 10 tests: JSON fields, request_id propagation, log levels, exc_info
 frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
-frontend/admin.html — admin UI v16: 6 tabs, dark mode toggle (CSS + JS), Scandinavian design, responsive, skeleton loaders, structured errors
+frontend/admin.html — admin UI: 6 tabs, dark mode, version from /health, responsive, skeleton loaders, structured errors
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
@@ -105,8 +105,8 @@ tests/test_training_pipeline.py — 10 tests for VALOR training ETL (quality sco
 tests/test_promote_reference_data.py — 21 tests for promotion safety (URL guards, localhost rejection, manifest, dry-run, env var mapping)
 tests/test_assistant_context.py — 33 tests for Prisassistent (confirmation normalization, phase derivation, quick replies, guardrails)
 tests/test_valor_pipeline.py — 29 tests for VALOR pipeline (quality scores, ETL null guard, feature consistency, dry-run, response fields)
-tests/test_admin_ui_data.py — 26 tests for admin endpoint shapes, auth behavior, metrics normalization, no-local-history
-tests/test_admin_html.py — 26 structure tests + 2 integration tests for admin.html (tabs, responsive, security, XSS)
+tests/test_admin_ui_data.py — 34 tests for admin endpoint shapes, auth, metrics normalization, /health versioning, HTML cache headers
+tests/test_admin_html.py — 28 structure tests + 2 integration tests for admin.html (tabs, responsive, security, XSS, no hardcoded version)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -138,7 +138,7 @@ GET /admin/agent-stats — agent observations, jobs, coverage, stale products, s
 POST /api/ingest — accepts list of price observations from agents (X-Admin-Key auth); validates, flags suspicious, returns accept/reject counts
 POST /api/agent/job/start — create agent job record, returns job_id (X-Admin-Key auth)
 POST /api/agent/job/complete — finalize agent job with results (X-Admin-Key auth)
-GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": {...}} with per-service config state
+GET /health — returns JSON {"status": "ok", "version": "...", "build_sha": "...", "dependencies": {...}} with per-service config state
 
 ## Env Vars
 - OPENAI_API_KEY — OpenAI Vision API (platform.openai.com)
@@ -180,6 +180,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-28 — feat: HTML cache headers v2 — Cache-Control: no-cache on / and /admin FileResponses, preserves ETag/Last-Modified for 304, 4 new tests
+2026-03-28 — feat: versioning v1 — BUILD_SHA from env var in version.py, /health exposes build_sha, admin sidebar reads version from backend, removed hardcoded v16 strings, 6 new tests
 2026-03-28 — feat: admin v16 dark mode — CSS custom properties for light/dark, prefers-color-scheme media query, JS toggle with localStorage persistence (dm key only), smooth transitions on all surfaces, updated icon colors for contrast
 2026-03-28 — feat: admin.html full rewrite — 6 tabs (Oversikt/Crawler/Vibe/Ekonomi/Valor/Halsokoll), Scandinavian design system, XSS-safe esc(), memory-only auth, skeleton loaders, Chart.js, responsive mobile tab bar, assistant-stats fallback
 2026-03-28 — review: test + deploy audit — outlier_filter tests (21), config tests (17), Makefile fixed (develop→staging→main, test gate), pytest in requirements.txt, golden cases verified

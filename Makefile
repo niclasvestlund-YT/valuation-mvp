@@ -1,4 +1,4 @@
-.PHONY: setup dev stage deploy context db db-stop
+.PHONY: setup dev stage-ready stage deploy context db db-stop
 
 setup:
 	python3 -m venv .venv
@@ -7,6 +7,9 @@ setup:
 
 dev:
 	.venv/bin/uvicorn backend.app.main:app --reload
+
+stage-ready:
+	@sh scripts/stage_ready_check.sh
 
 stage:
 	@if [ -n "$$(git status --porcelain)" ]; then echo "ERROR: worktree is dirty — commit or stash first" && exit 1; fi
@@ -17,8 +20,8 @@ stage:
 	@echo ""
 	@git diff --stat staging..develop
 	@echo ""
-	@echo "Running tests first..."
-	@.venv/bin/python -m pytest tests/ -q --tb=short || (echo "Tests failed — aborting stage deploy" && exit 1)
+	@echo "Running stage-ready checks first..."
+	@$(MAKE) stage-ready || (echo "Stage-ready checks failed — aborting stage deploy" && exit 1)
 	@echo ""
 	@ORIG_BRANCH=$$(git symbolic-ref --short HEAD) && \
 		read -p "Deploy to staging? (y/n) " confirm && [ "$$confirm" = "y" ] \
