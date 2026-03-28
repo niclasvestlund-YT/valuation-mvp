@@ -244,6 +244,107 @@
     .dm-knob{width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
     .dm-track.on .dm-knob{transform:translateX(14px)}
 
+    /* ══════════════════════════════════
+       CRAWLER REDESIGN
+    ══════════════════════════════════ */
+    .source-card{background:var(--w);border:0.5px solid var(--b1);border-radius:12px;padding:14px;position:relative;overflow:hidden;transition:background 0.2s,border-color 0.2s}
+    .source-card-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+    .source-card-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+    .source-stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0.5px solid var(--sf);font-size:12px}
+    .source-stat-row:last-child{border-bottom:none;padding-bottom:0}
+    .source-progress{height:4px;background:var(--sf);border-radius:2px;overflow:hidden;margin-top:10px;transition:background 0.2s}
+    .source-progress-fill{height:100%;border-radius:2px}
+    .listing-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sf)}
+    .listing-item:last-child{border-bottom:none}
+    .listing-ic{width:26px;height:26px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+    .listing-body{flex:1;min-width:0}
+    .listing-title{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .listing-meta{font-size:10px;color:var(--t3);margin-top:1px}
+    .listing-price{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+    .listing-time{font-size:10px;color:var(--t4);margin-top:1px;text-align:right}
+    .cov-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sf)}
+    .cov-item:last-child{border-bottom:none}
+    .cov-name{font-size:11px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cov-bar-wrap{width:90px;height:5px;background:var(--sf);border-radius:3px;overflow:hidden;flex-shrink:0;transition:background 0.2s}
+    .cov-bar{height:100%;border-radius:3px;background:var(--t1);opacity:0.25}
+    .cov-count{font-size:11px;font-weight:500;width:32px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+    .cov-price{font-size:10px;color:var(--t3);width:60px;text-align:right;flex-shrink:0}
+    .sched-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;margin-bottom:7px}
+    .sched-item:last-of-type{margin-bottom:0}
+    .sched-item.p1{background:var(--okbg);border:0.5px solid rgba(52,168,115,0.2)}
+    .sched-item.p2{background:var(--wabg);border:0.5px solid rgba(212,160,23,0.2)}
+    .sched-item.p3{background:var(--sf);border:0.5px solid var(--b1);opacity:0.6}
+    .sched-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;flex-shrink:0}
+    .sched-badge.p1{background:rgba(52,168,115,0.2);color:var(--oktx)}
+    .sched-badge.p2{background:rgba(212,160,23,0.2);color:var(--watx)}
+    .sched-badge.p3{background:var(--b1);color:var(--t4)}
+    .sched-name{font-size:12px;font-weight:500}
+    .sched-sub{font-size:10px;color:var(--t3);margin-top:1px}
+    .sched-time.p1{font-size:11px;font-weight:500;color:var(--oktx);flex-shrink:0}
+    .sched-time.p2{font-size:11px;font-weight:500;color:var(--watx);flex-shrink:0}
+    .sched-time.p3{font-size:11px;font-weight:500;color:var(--t4);flex-shrink:0}
+
+    /* ══════════════════════════════════
+       DND + SVEP + DÖLJA
+    ══════════════════════════════════ */
+    .dnd-section{position:relative;overflow:hidden;margin-bottom:8px}
+    .dnd-section.dragging{opacity:0.5;transform:scale(0.98)}
+    .dnd-placeholder{border-radius:10px;background:var(--sf);border:1.5px dashed var(--b2);transition:background 0.2s}
+    .dnd-handle{position:absolute;left:-20px;top:50%;transform:translateY(-50%);width:14px;height:28px;display:flex;align-items:center;justify-content:center;opacity:0;color:var(--t4);cursor:grab;transition:opacity 0.15s}
+    .dnd-section:hover .dnd-handle{opacity:1}
+    .sec-menu-wrap{position:absolute;top:10px;right:10px;z-index:20}
+    .sec-menu-btn{width:24px;height:24px;border-radius:6px;border:none;background:transparent;cursor:pointer;opacity:0;color:var(--t4);font-size:16px;letter-spacing:1px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s,background 0.15s;-webkit-tap-highlight-color:transparent}
+    .dnd-section:hover .sec-menu-btn{opacity:1}
+    .sec-menu-btn:hover,.sec-menu-btn.open{opacity:1;background:var(--sf);color:var(--t2)}
+    .sec-ctx-menu{position:absolute;top:28px;right:0;background:var(--w);border:0.5px solid var(--b1);border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:200;min-width:160px;overflow:hidden;display:none;transition:background 0.2s,border-color 0.2s}
+    .sec-ctx-menu.open{display:block}
+    .sec-ctx-item{display:flex;align-items:center;gap:9px;padding:9px 13px;font-size:12px;color:var(--t2);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit;transition:background 0.1s;white-space:nowrap}
+    .sec-ctx-item:hover{background:var(--sf)}
+    .sec-ctx-item.danger{color:var(--er)}
+    .sec-ctx-item.danger:hover{background:var(--erbg)}
+    .sec-ctx-sep{height:0.5px;background:var(--b1);margin:3px 0}
+    .swipe-reveal{position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--er);display:flex;align-items:center;justify-content:center;border-radius:0 10px 10px 0;z-index:1;opacity:0;pointer-events:none}
+    .swipe-reveal-inner{display:flex;flex-direction:column;align-items:center;gap:3px;color:#fff}
+    .swipe-reveal-inner span{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+    .swipe-content{position:relative;z-index:2;transition:transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94);will-change:transform}
+    .hidden-bar{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:11px 13px;margin-bottom:8px;transition:background 0.2s,border-color 0.2s}
+    .hidden-bar-lbl{font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:8px}
+    .hidden-pills{display:flex;flex-wrap:wrap;gap:6px}
+    .hidden-pill{display:flex;align-items:center;gap:5px;background:var(--sf);border:0.5px solid var(--b1);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--t2);cursor:pointer;transition:background 0.15s}
+    .hidden-pill:hover{background:var(--b1)}
+    .drag-hint{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 11px;background:var(--sf);border-radius:8px;margin-bottom:12px;font-size:11px;color:var(--t3);transition:background 0.2s,opacity 0.3s}
+    .drag-hint-left{display:flex;align-items:center;gap:7px}
+    .drag-hint-dismiss{font-size:10px;color:var(--t4);cursor:pointer;white-space:nowrap;border:none;background:none;font-family:inherit;padding:0;-webkit-tap-highlight-color:transparent}
+    .drag-hint-dismiss:hover{color:var(--t2)}
+
+    /* Översikt hero */
+    .ov-hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:9px}
+    .ov-hero-card{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:14px;transition:background 0.2s,border-color 0.2s}
+    .ov-hero-lbl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+    .ov-hero-lbl svg{flex-shrink:0}
+    .ov-hero-val{font-size:26px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:5px}
+    .ov-hero-sub{font-size:10px;color:var(--t3)}
+    .ov-hero-bar{height:2px;background:var(--sf);border-radius:1px;overflow:hidden;margin-top:10px;transition:background 0.2s}
+    .ov-hero-bar-fill{height:100%;border-radius:1px}
+    .ov-hero-bar-lbl{font-size:9px;color:var(--t4);margin-top:3px}
+
+    /* Milstolpar */
+    .ms-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--sf)}
+    .ms-item:last-child{border-bottom:none}
+    .ms-item.next-up{background:var(--wabg);margin:0 -13px;padding:9px 13px;transition:background 0.2s}
+    .ms-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center}
+    .ms-dot.done{background:var(--ok)}
+    .ms-dot.next{background:var(--t1)}
+    .ms-dot.future{border:1.5px solid var(--b2)}
+    .ms-body{flex:1;min-width:0}
+    .ms-name{font-size:12px;font-weight:500}
+    .ms-desc{font-size:10px;color:var(--t3);margin-top:1px}
+    .ms-tag{font-size:10px;font-weight:500;flex-shrink:0}
+    .ms-tag.done{color:var(--ok)}
+    .ms-tag.next{color:var(--watx)}
+    .ms-tag.future{color:var(--t4)}
+    .ms-item.future-item{opacity:0.45}
+
     @media(max-width:640px){
       .sidebar{display:none}
       .main-content{margin-left:0;padding-bottom:80px}
@@ -253,6 +354,13 @@
       .tab-panel{padding:14px 16px}
       .vc-hero-stats{grid-template-columns:repeat(2,1fr)}
       .vc-stack{grid-template-columns:1fr}
+      .ov-hero-grid{grid-template-columns:1fr 1fr}
+      .swipe-reveal{display:flex}
+      .sec-menu-btn{display:none}
+    }
+    @media(min-width:641px){
+      .swipe-reveal{display:none!important}
+      .swipe-content{transform:none!important;transition:none!important}
     }
     /* ── Vibe Check ── */
     .vc-kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:10px}
@@ -363,34 +471,108 @@
     <div class="tab-panel active" id="tab-ov">
       <div class="pg-h">Översikt</div>
       <div class="pg-s">Systemstatus och nyckeltal</div>
-      <div id="ov-banner" class="health-banner"></div>
-      <div id="ov-kpis"></div>
-      <div style="background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:12px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
-          <span style="font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500">Värderingar per dag</span>
-          <span id="spk-today" style="font-size:11px;color:var(--t2)">Idag: <strong>—</strong></span>
+
+      <div class="drag-hint" id="hint-ov">
+        <div class="drag-hint-left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+          Håll och dra · svep vänster för att dölja
         </div>
-        <svg id="spk-svg" width="100%" height="40" viewBox="0 0 520 40" preserveAspectRatio="none" style="display:block">
-          <path d="M0,36 L520,36" fill="none" stroke="var(--sf)" stroke-width="1.5"/>
-        </svg>
-        <div id="spk-labels" style="display:flex;justify-content:space-between;margin-top:4px"></div>
+        <button class="drag-hint-dismiss" onclick="dismissHint('ov')">Förstått ×</button>
       </div>
-      <div class="ov-grid">
-        <div class="card"><div class="card-h"><span class="card-t">Senaste värderingar</span></div><div id="ov-recent"></div></div>
-        <div class="card"><div class="card-h"><span class="card-t">Datakällor</span><button class="card-link" onclick="switchTab('tab-hc')">Hälsokoll →</button></div><div id="ov-sources"></div></div>
-        <div class="card"><div class="card-h"><span class="card-t">Prisassistent</span><span style="font-size:10px;color:var(--t3)">Chattbot</span></div><div id="ov-assistant"></div></div>
+
+      <div id="ov-sections">
+        <div class="dnd-section" data-id="ov-hero" data-label="Nyckeltal &amp; värderingar">
+          <div class="sec-menu-wrap">
+            <button class="sec-menu-btn" onclick="toggleSecMenu('ov-hero')" id="menubtn-ov-hero">&#8943;</button>
+            <div class="sec-ctx-menu" id="menu-ov-hero">
+              <button class="sec-ctx-item" onclick="secAction('ov-hero','up')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Flytta upp</button>
+              <button class="sec-ctx-item" onclick="secAction('ov-hero','down')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Flytta ned</button>
+              <div class="sec-ctx-sep"></div>
+              <button class="sec-ctx-item danger" onclick="secAction('ov-hero','hide')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Dölj sektion</button>
+            </div>
+          </div>
+          <div class="swipe-reveal"><div class="swipe-reveal-inner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg><span>Dölj</span></div></div>
+          <div class="swipe-content">
+            <div id="ov-hero-kpis"></div>
+            <div class="card"><div class="card-h"><span class="card-t">Senaste värderingar</span><span style="font-size:10px;color:var(--t3)">Alla →</span></div><div id="ov-recent"></div></div>
+          </div>
+        </div>
+
+        <div class="dnd-section" data-id="ov-grid" data-label="Datakällor &amp; assistent">
+          <div class="sec-menu-wrap">
+            <button class="sec-menu-btn" onclick="toggleSecMenu('ov-grid')" id="menubtn-ov-grid">&#8943;</button>
+            <div class="sec-ctx-menu" id="menu-ov-grid">
+              <button class="sec-ctx-item" onclick="secAction('ov-grid','up')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Flytta upp</button>
+              <button class="sec-ctx-item" onclick="secAction('ov-grid','down')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Flytta ned</button>
+              <div class="sec-ctx-sep"></div>
+              <button class="sec-ctx-item danger" onclick="secAction('ov-grid','hide')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Dölj sektion</button>
+            </div>
+          </div>
+          <div class="swipe-reveal"><div class="swipe-reveal-inner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg><span>Dölj</span></div></div>
+          <div class="swipe-content">
+            <div class="ov-grid">
+              <div class="card"><div class="card-h"><span class="card-t">Datakällor</span><button class="card-link" onclick="switchTab('tab-hc')">Hälsokoll →</button></div><div id="ov-sources"></div></div>
+              <div class="card"><div class="card-h"><span class="card-t">Nyprisskällor</span></div><div id="ov-newprice"></div></div>
+              <div class="card"><div class="card-h"><span class="card-t">Prisassistent</span></div><div id="ov-assistant"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dnd-section" data-id="ov-cost" data-label="Projektkostnad">
+          <div class="sec-menu-wrap">
+            <button class="sec-menu-btn" onclick="toggleSecMenu('ov-cost')" id="menubtn-ov-cost">&#8943;</button>
+            <div class="sec-ctx-menu" id="menu-ov-cost">
+              <button class="sec-ctx-item" onclick="secAction('ov-cost','up')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Flytta upp</button>
+              <button class="sec-ctx-item" onclick="secAction('ov-cost','down')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Flytta ned</button>
+              <div class="sec-ctx-sep"></div>
+              <button class="sec-ctx-item danger" onclick="secAction('ov-cost','hide')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Dölj sektion</button>
+            </div>
+          </div>
+          <div class="swipe-reveal"><div class="swipe-reveal-inner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg><span>Dölj</span></div></div>
+          <div class="swipe-content"><div id="ov-cost-card"></div></div>
+        </div>
+
+        <div class="dnd-section" data-id="ov-milestones" data-label="Väg till lansering">
+          <div class="sec-menu-wrap">
+            <button class="sec-menu-btn" onclick="toggleSecMenu('ov-milestones')" id="menubtn-ov-milestones">&#8943;</button>
+            <div class="sec-ctx-menu" id="menu-ov-milestones">
+              <button class="sec-ctx-item" onclick="secAction('ov-milestones','up')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Flytta upp</button>
+              <button class="sec-ctx-item" onclick="secAction('ov-milestones','down')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>Flytta ned</button>
+              <div class="sec-ctx-sep"></div>
+              <button class="sec-ctx-item danger" onclick="secAction('ov-milestones','hide')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>Dölj sektion</button>
+            </div>
+          </div>
+          <div class="swipe-reveal"><div class="swipe-reveal-inner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg><span>Dölj</span></div></div>
+          <div class="swipe-content"><div id="ov-milestones-card"></div></div>
+        </div>
+      </div>
+
+      <div id="ov-hidden-bar" style="display:none" class="hidden-bar">
+        <div class="hidden-bar-lbl">Dolda sektioner</div>
+        <div class="hidden-pills" id="ov-hidden-pills"></div>
       </div>
     </div>
 
     <!-- CRAWLER -->
     <div class="tab-panel" id="tab-cr">
       <div class="pg-h">Crawler</div>
-      <div class="pg-s">Marknadsdata och prisbevakning</div>
-      <div id="cr-kpis"></div>
-      <div id="cr-sources"></div>
-      <div class="card"><div class="card-h"><span class="card-t">Senaste jämförelser</span></div><div id="cr-latest"></div></div>
-      <div class="card"><div class="card-h"><span class="card-t">Produkttäckning</span></div><div id="cr-coverage"></div></div>
-      <div class="card"><div class="card-h"><span class="card-t">Schema</span><button class="card-link" id="crSchemaBtn">Ändra →</button></div><div id="cr-schedule"></div></div>
+      <div class="pg-s">Marknadsdata och prisbevakning · uppdateras löpande</div>
+
+      <div class="drag-hint" id="hint-cr">
+        <div class="drag-hint-left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+          Håll och dra sektioner för att ändra ordning
+        </div>
+        <button class="drag-hint-dismiss" onclick="dismissHint('cr')">Förstått ×</button>
+      </div>
+
+      <div id="cr-sections">
+        <div class="dnd-section" data-id="cr-kpi"><div id="cr-kpis"></div></div>
+        <div class="dnd-section" data-id="cr-sources"><div id="cr-sources-inner"></div></div>
+        <div class="dnd-section" data-id="cr-listings"><div class="card"><div class="card-h"><span class="card-t">Senaste annonser</span><span style="font-size:10px;color:var(--t3)">Sorterat på inkomna</span></div><div id="cr-latest"></div></div></div>
+        <div class="dnd-section" data-id="cr-coverage"><div class="card"><div class="card-h"><span class="card-t">Produkttäckning</span><span style="font-size:10px;color:var(--t3)">Flest jämförelser</span></div><div id="cr-coverage"></div></div></div>
+        <div class="dnd-section" data-id="cr-schedule"><div class="card"><div class="card-h"><span class="card-t">Schema</span><button class="card-link" id="crSchemaBtn">Ändra →</button></div><div id="cr-schedule"></div></div></div>
+      </div>
     </div>
 
     <!-- VIBE CHECK -->
@@ -537,106 +719,117 @@ document.querySelectorAll('.etabs .et').forEach(btn=>btn.addEventListener('click
    ÖVERSIKT  /admin/metrics + /health
 ══════════════════════════════════════════════════ */
 async function loadOv(){
-  ['ov-banner','ov-kpis','ov-recent','ov-sources','ov-assistant'].forEach(id=>skel(ge(id)));
+  ['ov-hero-kpis','ov-recent','ov-sources','ov-newprice','ov-assistant','ov-cost-card','ov-milestones-card'].forEach(id=>{const e=ge(id);if(e)skel(e)});
   try{
-    const [met,hlt]=await Promise.all([apiFetch('/admin/metrics'),apiFetch('/health')]);
+    const [met,hlt,dev]=await Promise.all([
+      apiFetch('/admin/metrics'),
+      apiFetch('/health').catch(()=>null),
+      apiFetch('/admin/dev-stats').catch(()=>null),
+    ]);
     if(!met)return;
 
-    // Banner
-    const hEl=ge('ov-banner');
-    if(hlt){
-      const ok=hlt.status==='ok';
-      const deps=hlt.dependencies||{};
-      let chips='';
-      if(deps.vision&&deps.vision!=='missing_key')chips+=`<span class="hb-chip ok">API:er aktiva</span>`;
-      if(deps.database==='configured')chips+=`<span class="hb-chip ok">Databas OK</span>`;
-      if(deps.crawler==='enabled')chips+=`<span class="hb-chip ok">Crawler kör</span>`;
-      if(!ok)chips+=`<span class="hb-chip wa">Systemvarning</span>`;
-      hEl.innerHTML=`<div class="hb ${ok?'ok':'wa'}">
-        <div class="hb-icon ${ok?'ok':'wa'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
-        <span style="font-size:12px;font-weight:500;color:${ok?'var(--oktx)':'var(--watx)'};flex:1">${ok?'Systemet fungerar':'Systemvarning aktiv'}</span>
-        ${chips}
-        <span style="font-size:10px;color:var(--t4);cursor:pointer" onclick="switchTab('tab-hc')">Hälsokoll →</span>
-      </div>`;
-    }else{
-      hEl.innerHTML=`<div class="hb er"><div class="hb-icon er"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><span style="font-size:12px;font-weight:500;color:var(--ertx)">Kunde inte hämta systemstatus</span></div>`;
-    }
-
-    // KPIs — status_breakdown_dict from backend
-    const sd=met.status_breakdown_dict||{};
-    const okN=sd.ok||0,deN=sd.degraded||0,ieN=(sd.insufficient_evidence||0)+(sd.ambiguous_model||0),erN=sd.error||0;
+    // ── Hero KPI trio ──
     const totalV=met.total_valuations||0;
-    const okRate=totalV>0?((okN/totalV)*100).toFixed(1):'—';
-    const vs=met.valor_stats||{};
-    const vSamp=vs.sample_count||0,vThresh=vs.threshold||50;
-    ge('ov-kpis').innerHTML=`
-      <div class="kpi-row">
-        <div class="kpi"><div class="kl">Värderingar</div><div class="kv">${fmtN(totalV)}</div><div class="kd" style="color:var(--ok)">${fmtN(met.last_24h)} idag</div></div>
-        <div class="kpi"><div class="kl">Konfidens snitt</div><div class="kv">${met.avg_confidence!=null?(met.avg_confidence*100).toFixed(0)+'%':'—'}</div><div class="kd">${fmtN(met.last_7d)} / 7 dagar</div></div>
-        <div class="kpi"><div class="kl">Resultat ok</div><div class="kv" style="color:var(--ok)">${okRate}${okRate!=='—'?'%':''}</div>
-          <div style="display:flex;gap:2px;height:3px;margin-top:5px"><div style="flex:${okN};background:var(--ok);border-radius:1px"></div><div style="flex:${deN};background:var(--wa)"></div><div style="flex:${ieN};background:var(--t4)"></div><div style="flex:${erN};background:var(--er);border-radius:1px"></div></div>
-          <div class="kd" style="margin-top:3px">${okN} ok · ${deN} deg · ${ieN} övr</div>
-        </div>
-        <div class="kpi" style="cursor:pointer" onclick="switchTab('tab-valor')">
-          <div class="kl">Valor ML</div>
-          <div class="kv" style="color:var(--wa)">${vSamp}/${vThresh}</div>
-          <div style="height:3px;background:var(--sf);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${Math.min(100,vSamp/vThresh*100)}%;background:var(--wa)"></div></div>
-          <div class="kd" style="color:var(--watx);margin-top:3px">Aktiveras vid ${vThresh} →</div>
-        </div>
-      </div>`;
+    const startDate=new Date('2026-03-24');
+    const daysSince=Math.max(1,Math.floor((new Date()-startDate)/(1000*60*60*24)));
+    const totalCost=Math.round((1488/30.44)*daysSince);
+    const estHours=dev?(dev.estimated_hours||'—'):'—';
+    const todayCommits=dev&&dev.history&&dev.history.length>0?dev.history[0].commit_count:0;
+    ge('ov-hero-kpis').innerHTML=
+      '<div class="ov-hero-grid">'+
+        '<div class="ov-hero-card">'+
+          '<div class="ov-hero-lbl"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Totalkostnad</div>'+
+          '<div class="ov-hero-val">~'+fmtN(totalCost)+' kr</div>'+
+          '<div class="ov-hero-sub">'+daysSince+' dagar · sedan 24 mars</div>'+
+          '<div class="ov-hero-bar"><div class="ov-hero-bar-fill" style="width:'+Math.min(100,(totalCost/17856*100).toFixed(1))+'%;background:var(--t1);opacity:0.3"></div></div>'+
+          '<div class="ov-hero-bar-lbl">av 17 856 kr/år</div>'+
+        '</div>'+
+        '<div class="ov-hero-card">'+
+          '<div class="ov-hero-lbl"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timmar</div>'+
+          '<div class="ov-hero-val">'+estHours+'h</div>'+
+          '<div class="ov-hero-sub">'+(dev?fmtN(dev.total_commits):0)+' commits · idag: '+todayCommits+'</div>'+
+          '<div class="ov-hero-bar"><div class="ov-hero-bar-fill" style="width:65%;background:var(--ok)"></div></div>'+
+          '<div class="ov-hero-bar-lbl">~10h/dag i snitt</div>'+
+        '</div>'+
+        '<div class="ov-hero-card">'+
+          '<div class="ov-hero-lbl"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 013 3v1h3a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h3V5a3 3 0 013-3z"/></svg>Värderingar</div>'+
+          '<div class="ov-hero-val">'+fmtN(totalV)+'</div>'+
+          '<div class="ov-hero-sub">↑ '+fmtN(met.last_24h)+' idag · 100% ok</div>'+
+          '<div class="ov-hero-bar"><div class="ov-hero-bar-fill" style="width:100%;background:var(--ok)"></div></div>'+
+          '<div class="ov-hero-bar-lbl">~'+Math.max(1,Math.round(totalV/daysSince))+'/dag i snitt</div>'+
+        '</div>'+
+      '</div>';
 
-    // Sparkline
-    if (met.daily_volume && met.daily_volume.length > 0) {
-      const dv = met.daily_volume.slice(-7);
-      const maxC = Math.max(...dv.map(d => d.count), 1);
-      const W = 520, H = 40, pad = 4;
-      const pts = dv.map((d, i) => {
-        const x = dv.length > 1 ? (i / (dv.length - 1)) * W : W / 2;
-        const y = H - pad - (d.count / maxC) * (H - pad * 2);
-        return x + ',' + y;
-      });
-      const pathD = 'M' + pts.join(' L');
-      const lastPt = pts[pts.length - 1].split(',');
-      const firstX = pts[0].split(',')[0];
-      ge('spk-svg').innerHTML =
-        '<path d="' + pathD + '" fill="none" stroke="var(--t1)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>' +
-        '<path d="' + pathD + ' L' + lastPt[0] + ',' + H + ' L' + firstX + ',' + H + 'Z" fill="var(--sf)"/>' +
-        '<circle cx="' + lastPt[0] + '" cy="' + lastPt[1] + '" r="3" fill="var(--t1)"/>';
-      const last = dv[dv.length - 1];
-      ge('spk-today').innerHTML = 'Idag: <strong>' + last.count + '</strong>';
-      ge('spk-labels').innerHTML = dv.map(d => {
-        const dt = new Date(d.day);
-        return '<span style="font-size:9px;color:var(--t4)">' + dt.getDate() + '/' + (dt.getMonth() + 1) + '</span>';
-      }).join('');
-    }
-
-    // Recent valuations
+    // ── Senaste värderingar ──
     const recEl=ge('ov-recent');
     if(met.recent_valuations&&met.recent_valuations.length>0){
-      recEl.innerHTML=met.recent_valuations.map(v=>{
+      recEl.innerHTML=met.recent_valuations.slice(0,5).map(v=>{
         const acc=v.status==='ok'?'a-ok':v.status==='degraded'?'a-wa':v.status==='error'?'a-er':'a-in';
-        const price=v.estimated_value_sek!=null?fmtK(v.estimated_value_sek):(v.comparable_count?v.comparable_count+' obj':'—');
-        const pc=v.status==='ok'?'var(--t1)':v.status==='degraded'?'var(--watx)':'var(--t4)';
-        return`<div class="sf-row"><div class="val-acc ${acc}"></div><div class="sf-body"><div class="sf-name">${esc(v.product_name)}</div><div class="sf-sub">${esc(v.category||'')} · ${ago(v.created_at)}</div></div><div class="sf-right"><div class="sf-val" style="font-size:13px;color:${pc}">${price}</div></div></div>`;
+        const price=v.estimated_value_sek!=null?fmtK(v.estimated_value_sek):'—';
+        return'<div class="sf-row"><div class="val-acc '+acc+'"></div><div class="sf-body"><div class="sf-name">'+esc(v.product_name)+'</div><div class="sf-sub">'+esc(v.category||'')+'&nbsp;·&nbsp;'+ago(v.created_at)+'</div></div><div class="sf-right"><div class="sf-val" style="font-size:13px">'+price+'</div></div></div>';
       }).join('');
     }else{recEl.innerHTML='<div class="empty-state">Inga värderingar ännu</div>'}
 
-    // Sources — use source_stats from /admin/metrics
+    // ── Datakällor ──
     const ss=met.source_stats||{};
-    ge('ov-sources').innerHTML=`
-      <div class="src-gl">Begagnat</div>
-      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa A</div><div class="sf-sub">Officiellt avtal · realtid</div></div><div class="sf-right"><div class="sf-val">${ss.source_a_count!=null?ss.source_a_count:'—'}</div><div class="sf-unit">annonser</div></div></div>
-      <div class="sf-row" style="margin-bottom:8px"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa B</div><div class="sf-sub">1h cache</div></div><div class="sf-right"><div class="sf-val">${ss.source_b_count!=null?ss.source_b_count:'—'}</div><div class="sf-unit">annonser</div></div></div>
-      <div class="src-div"></div>
-      <div class="src-gl">Nypris</div>
-      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Nypris-källa</div><div class="sf-sub">Primär · gratis</div></div><div class="sf-right"><div class="sf-val">${ss.new_price_sek!=null?fmtK(ss.new_price_sek):'—'}</div><div class="sf-unit">senaste</div></div></div>
-      <div class="sf-row faded"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Nypris-fallback</div><div class="sf-sub">Ej behövd</div></div><div class="sf-right"><div class="sf-val" style="color:var(--t4)">—</div><div class="sf-unit">standby</div></div></div>
-      <div class="src-div"></div>
-      <div class="src-gl">Prisjämförelse</div>
-      <div class="sf-row faded"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Google Shopping-källa</div><div class="sf-sub">Ej behövd · renewal 21/4</div></div><div class="sf-right"><div class="sf-val" style="color:var(--t4)">—</div><div class="sf-unit">standby</div></div></div>`;
+    ge('ov-sources').innerHTML=
+      '<div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Begagnat</div>'+
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa A</div><div class="sf-sub">realtid</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa B</div><div class="sf-sub">1h cache</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Källa C</div><div class="sf-sub">pipeline</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>';
 
-  }catch(err){['ov-banner','ov-kpis','ov-recent','ov-sources'].forEach(id=>renderError(ge(id),err.detail||'Okänt fel'))}
+    ge('ov-newprice').innerHTML=
+      '<div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Nypris-källa</div><div class="sf-sub">primär · gratis</div></div><div style="font-size:10px;color:var(--ok)">Aktiv</div></div>'+
+      '<div class="sf-row"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Nypris-fallback</div><div class="sf-sub">ej behövd</div></div><div style="font-size:10px;color:var(--t4)">Standby</div></div>';
 
+    // ── Projektkostnad ──
+    const svcs=[
+      {ic:'CC',col:'#4a4845',tc:'#EDEAE3',name:'Claude Code',kr:Math.round((936/30.44)*daysSince)},
+      {ic:'GP',col:'#10a37f',tc:'#fff',name:'ChatGPT Plus',kr:Math.round((250/30.44)*daysSince)},
+      {ic:'Ge',col:'#1a73e8',tc:'#fff',name:'Gemini AI Pro',kr:Math.round((250/30.44)*daysSince)},
+      {ic:'Ry',col:'#8B5CF6',tc:'#fff',name:'Railway',kr:Math.round((52/30.44)*daysSince)},
+    ];
+    ge('ov-cost-card').innerHTML=
+      '<div class="card">'+
+        '<div class="card-h"><span class="card-t">Projektkostnad</span><span style="font-size:10px;color:var(--t3)">sedan 24 mars 2026</span></div>'+
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'+
+          '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Totalt</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+fmtN(totalCost)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+daysSince+' dagar</div></div>'+
+          '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Per dag</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+Math.round(1488/30.44)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">1 488 kr/mån</div></div>'+
+          '<div style="background:var(--sf);border-radius:9px;padding:11px;text-align:center;transition:background 0.2s"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px">Per värdering</div><div style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums">~'+(totalV>0?Math.round(totalCost/totalV):0)+' kr</div><div style="font-size:10px;color:var(--t3);margin-top:3px">'+fmtN(totalV)+' värderingar</div></div>'+
+        '</div>'+
+        '<div style="border-top:0.5px solid var(--b1);padding-top:8px">'+
+        svcs.map(s=>'<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:0.5px solid var(--sf);font-size:12px">'+
+          '<div style="width:22px;height:22px;border-radius:5px;background:'+s.col+';color:'+s.tc+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0">'+s.ic+'</div>'+
+          '<span style="flex:1;color:var(--t2)">'+esc(s.name)+'</span>'+
+          '<span style="font-weight:500;font-variant-numeric:tabular-nums">~'+fmtN(s.kr)+' kr</span></div>').join('')+
+        '</div>'+
+      '</div>';
+
+    // ── Milstolpar ──
+    const vSamp=(met.valor_stats||{}).sample_count||0;
+    const vThresh=(met.valor_stats||{}).threshold||50;
+    ge('ov-milestones-card').innerHTML=
+      '<div class="card">'+
+        '<div class="card-h"><span class="card-t">Väg till lansering</span><span style="font-size:10px;color:var(--t3)">3 av 7 klara</span></div>'+
+        '<div style="height:5px;background:var(--sf);border-radius:3px;overflow:hidden;margin-bottom:14px;transition:background 0.2s"><div style="height:100%;width:43%;background:var(--ok);border-radius:3px"></div></div>'+
+        [
+          {done:true,name:'Backend + API klart',desc:'FastAPI · PostgreSQL · Railway',tag:'Klart'},
+          {done:true,name:'Datakällor integrerade',desc:'Källa A · Källa B · Källa C',tag:'Klart'},
+          {done:true,name:'Admin UI + dark mode',desc:'Safari · Chrome · iOS · Android',tag:'Klart'},
+          {done:'next',name:'Valor ML — '+vSamp+'/'+vThresh+' observationer',desc:'Aktiveras automatiskt vid '+vThresh,tag:'Nästa',pct:Math.round(vSamp/vThresh*100)},
+          {done:false,name:'Betalning + prenumeration',desc:'Stripe · freemium-modell',tag:'Framtid'},
+          {done:false,name:'Publik landing page',desc:'usevalor.com · SEO · onboarding',tag:'Framtid'},
+          {done:false,name:'Lansering 🚀',desc:'Första betalande kund',tag:'Framtid'},
+        ].map(m=>{
+          const isNext=m.done==='next';
+          const isFuture=!m.done&&!isNext;
+          return'<div class="ms-item'+(isNext?' next-up':isFuture?' future-item':'')+'">'+'<div class="ms-dot '+(m.done===true?'done':isNext?'next':'future')+'">'+(m.done===true?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>':isNext?'<div style="width:6px;height:6px;border-radius:50%;background:var(--w)"></div>':'')+'</div>'+
+          '<div class="ms-body"><div class="ms-name">'+esc(m.name)+'</div><div class="ms-desc">'+esc(m.desc)+'</div>'+(isNext&&m.pct!==undefined?'<div style="height:3px;background:rgba(212,160,23,0.2);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+m.pct+'%;background:var(--wa)"></div></div>':'')+'</div>'+
+          '<div class="ms-tag '+(m.done===true?'done':isNext?'next':'future')+'">'+m.tag+'</div></div>';
+        }).join('')+
+      '</div>';
+
+  }catch(err){['ov-hero-kpis','ov-recent'].forEach(id=>renderError(ge(id),err.detail||'Okänt fel'))}
   loadAssistant();
 }
 
@@ -663,70 +856,91 @@ async function loadAssistant(){
    CRAWLER  /admin/market-data
 ══════════════════════════════════════════════════ */
 async function loadCr(){
-  ['cr-kpis','cr-sources','cr-latest','cr-coverage','cr-schedule'].forEach(id=>{const e=ge(id);if(e)skel(e)});
+  ['cr-kpis','cr-sources-inner','cr-latest','cr-coverage','cr-schedule'].forEach(id=>{const e=ge(id);if(e)skel(e)});
   try{
     const d=await apiFetch('/admin/market-data');
     if(!d)return;
     const cr=d.crawl||{},pr=d.products||{};
+    const total=cr.total_comparables||0;
 
-    // KPIs
-    ge('cr-kpis').innerHTML=`<div class="kpi-row">
-      <div class="kpi"><div class="kl">Totala jämförel.</div><div class="kv">${fmtN(cr.total_comparables)}</div></div>
-      <div class="kpi"><div class="kl">Aktiva</div><div class="kv">${fmtN(cr.active_comparables)}</div></div>
-      <div class="kpi"><div class="kl">Flaggade</div><div class="kv">${fmtN(cr.flagged_count)}</div></div>
-      <div class="kpi"><div class="kl">Produkter</div><div class="kv">${fmtN(pr.total)}</div></div>
-    </div>`;
+    // ── KPIs ──
+    ge('cr-kpis').innerHTML=
+      '<div class="kpi-row">'+
+        '<div class="kpi"><div class="kl">Jämförelser</div><div class="kv">'+fmtN(total)+'</div><div class="kd" style="color:var(--ok)">'+fmtN(cr.active_comparables)+' aktiva</div></div>'+
+        '<div class="kpi"><div class="kl">Flaggade</div><div class="kv" style="color:var(--wa)">'+fmtN(cr.flagged_count)+'</div><div class="kd">'+(total>0?((cr.flagged_count/total)*100).toFixed(1):'0')+'% av totalt</div></div>'+
+        '<div class="kpi"><div class="kl">Produkter</div><div class="kv">'+fmtN(pr.total)+'</div><div class="kd">3 kategorier</div></div>'+
+        '<div class="kpi"><div class="kl">Senaste crawl</div><div class="kv" style="font-size:16px">'+(cr.latest&&cr.latest.length>0?ago(cr.latest[0].last_seen):'—')+'</div><div class="kd" style="color:var(--ok)">Nästa: 06:00</div></div>'+
+      '</div>';
 
-    // Per källa — abstraherat
-    if(cr.by_source&&cr.by_source.length){
-      ge('cr-sources').innerHTML=`<div class="card">
-        <div class="card-h"><span class="card-t">Per källa</span></div>
-        ${cr.by_source.map(s=>`
-          <div class="sf-row">
-            <div class="dot dok"></div>
-            <div class="sf-body"><div class="sf-name">${absSrc(s.source)}</div></div>
-            <div style="font-size:12px;color:var(--t2);text-align:right;flex-shrink:0">${fmtN(s.count)} st · snitt ${fmtK(s.avg_price_sek)}</div>
-          </div>`).join('')}
-      </div>`;
-    }else{ge('cr-sources').innerHTML=''}
+    // ── Källkort 2-kolumns ──
+    function srcCard(ic,col,accent,name,desc,count,avg,pct,full){
+      const countN=fmtN(count);
+      const avgK=avg!=null?fmtK(avg):'—';
+      const pctN=total>0?((count/total)*100).toFixed(1):'0';
+      return'<div style="'+(full?'grid-column:1/-1;':'')+'background:var(--w);border:0.5px solid var(--b1);border-radius:12px;padding:14px;position:relative;overflow:hidden;transition:background 0.2s,border-color 0.2s">'+
+        '<div class="source-card-accent" style="background:'+accent+'"></div>'+
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">'+
+          '<div class="source-card-ic" style="background:'+col+'">'+ic+'</div>'+
+          '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+name+'</div><div style="font-size:10px;color:var(--t3);margin-top:1px">'+desc+'</div></div>'+
+          '<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:var(--ok)"></div><span style="font-size:10px;color:var(--ok);font-weight:500">Aktiv</span></div>'+
+        '</div>'+
+        '<div style="border-top:0.5px solid var(--sf);padding-top:8px">'+
+          '<div class="source-stat-row"><span style="color:var(--t3)">Annonser</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+countN+'</span></div>'+
+          '<div class="source-stat-row"><span style="color:var(--t3)">Snittpris</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+avgK+'</span></div>'+
+          '<div class="source-stat-row"><span style="color:var(--t3)">Andel av totalt</span><span style="font-weight:500;font-variant-numeric:tabular-nums">'+pctN+'%</span></div>'+
+        '</div>'+
+        '<div class="source-progress"><div class="source-progress-fill" style="width:'+Math.min(100,parseFloat(pctN))+'%;background:'+accent+'"></div></div>'+
+      '</div>';
+    }
+    const bySource=cr.by_source||[];
+    const sA=bySource.find(s=>s.source==='tradera')||{count:0,avg_price_sek:null};
+    const sB=bySource.find(s=>s.source==='blocket')||{count:0,avg_price_sek:null};
+    const sC=bySource.find(s=>!['tradera','blocket'].includes(s.source))||{count:0,avg_price_sek:null};
+    ge('cr-sources-inner').innerHTML=
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">'+
+        srcCard('Tr','#34a873','var(--ok)','Källa A','Officiellt avtal · realtid',sA.count,sA.avg_price_sek,null,false)+
+        srcCard('Bl','#d4a017','var(--wa)','Källa B','1h cache · begagnat',sB.count,sB.avg_price_sek,null,false)+
+        srcCard('Kt','#8A8578','var(--t3)','Källa C','Komplement · pipeline',sC.count,sC.avg_price_sek,null,true)+
+      '</div>';
 
-    // Senaste jämförelser
+    // ── Senaste annonser feed ──
     const latEl=ge('cr-latest');
     if(cr.latest&&cr.latest.length){
-      latEl.innerHTML=`<table class="data-table"><thead><tr><th>Titel</th><th>Pris</th><th>Källa</th><th>Sedd</th></tr></thead><tbody>
-        ${cr.latest.map(r=>`<tr>
-          <td><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">${esc(r.title)}</div><div style="font-size:10px;color:var(--t3)">${esc(r.condition||'—')}</div></td>
-          <td>${fmtK(r.price_sek)}</td>
-          <td style="color:var(--t3)">${absSrc(r.source)}</td>
-          <td style="color:var(--t3)">${ago(r.last_seen)}</td>
-        </tr>`).join('')}
-      </tbody></table>`;
-    }else{latEl.innerHTML='<div class="empty-state">Inga jämförelser ännu</div>'}
+      const srcIc={tradera:{ic:'Tr',col:'#34a873'},blocket:{ic:'Bl',col:'#d4a017'}};
+      latEl.innerHTML=cr.latest.slice(0,6).map(r=>{
+        const si=srcIc[r.source]||{ic:'Kt',col:'#8A8578'};
+        return'<div class="listing-item">'+
+          '<div class="listing-ic" style="background:'+si.col+'">'+si.ic+'</div>'+
+          '<div class="listing-body"><div class="listing-title">'+esc(r.title)+'</div><div class="listing-meta">'+absSrc(r.source)+(r.condition?' · '+esc(r.condition):'')+'</div></div>'+
+          '<div style="text-align:right;flex-shrink:0"><div class="listing-price">'+fmtK(r.price_sek)+'</div><div class="listing-time">'+ago(r.last_seen)+'</div></div>'+
+        '</div>';
+      }).join('');
+      if(cr.latest.length>6)latEl.innerHTML+='<div style="text-align:center;padding:8px 0 2px"><span style="font-size:11px;color:var(--t3);text-decoration:underline;cursor:pointer">Visa alla '+fmtN(total)+' annonser →</span></div>';
+    }else{latEl.innerHTML='<div class="empty-state">Inga annonser ännu</div>'}
 
-    // Täckning
+    // ── Produkttäckning ──
     const covEl=ge('cr-coverage');
     if(pr.top_by_comparables&&pr.top_by_comparables.length){
-      covEl.innerHTML=`<table class="data-table"><thead><tr><th>Produkt</th><th>Kategori</th><th>Jämförel.</th><th>Snittpris</th></tr></thead><tbody>
-        ${pr.top_by_comparables.map(p=>`<tr>
-          <td style="font-weight:500">${esc(p.brand)} ${esc(p.model)}</td>
-          <td style="color:var(--t3)">${esc(p.category||'—')}</td>
-          <td>${fmtN(p.comparable_count)}</td>
-          <td>${fmtK(p.avg_price_sek)}</td>
-        </tr>`).join('')}
-      </tbody></table>`;
+      const maxC=pr.top_by_comparables[0].comparable_count||1;
+      covEl.innerHTML=pr.top_by_comparables.slice(0,8).map(p=>
+        '<div class="cov-item">'+
+          '<div class="cov-name">'+esc(p.brand)+' '+esc(p.model)+'</div>'+
+          '<div class="cov-bar-wrap"><div class="cov-bar" style="width:'+((p.comparable_count/maxC)*100).toFixed(0)+'%"></div></div>'+
+          '<div class="cov-count">'+fmtN(p.comparable_count)+'</div>'+
+          '<div class="cov-price">'+fmtK(p.avg_price_sek)+'</div>'+
+        '</div>'
+      ).join('')+
+      (pr.top_by_comparables.length>8?'<div style="text-align:center;padding:8px 0 2px"><span style="font-size:11px;color:var(--t3);text-decoration:underline;cursor:pointer">Visa alla '+fmtN(pr.total)+' produkter →</span></div>':'');
     }else{covEl.innerHTML='<div class="empty-state">Ingen produkttäckning ännu</div>'}
 
-    // Schema
-    ge('cr-schedule').innerHTML=`
-      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Prio 1 · Hörlurar + Smartphones</div><div class="sf-sub">24 produkter · daglig</div></div><div style="font-size:11px;color:var(--t3)">Imorgon 06:00</div></div>
-      <div class="sf-row"><div class="dot dok"></div><div class="sf-body"><div class="sf-name">Prio 2 · Laptops + Kameror</div><div class="sf-sub">30 produkter · 3×/vecka</div></div><div style="font-size:11px;color:var(--t3)">Måndag 06:00</div></div>
-      <div class="sf-row faded"><div class="dot din"></div><div class="sf-body"><div class="sf-name">Prio 3 · Gaming + Övrigt</div><div class="sf-sub">26 produkter · veckovis</div></div><div style="font-size:11px;color:var(--t4)">Söndag 06:00</div></div>
-      <div style="background:var(--sf);border-radius:7px;padding:9px 11px;margin-top:8px;font-size:11px;color:var(--t2);line-height:1.6;display:flex;gap:7px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="var(--t3)" stroke-width="2"/></svg>
-        <div>"Ändra" kräver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div>
-      </div>`;
+    // ── Schema ──
+    ge('cr-schedule').innerHTML=
+      '<div class="sched-item p1"><span class="sched-badge p1">P1</span><div style="flex:1;min-width:0"><div class="sched-name">Hörlurar + Smartphones</div><div class="sched-sub">24 produkter · daglig · Källa A + B + C</div></div><div class="sched-time p1">Imorgon 06:00</div></div>'+
+      '<div class="sched-item p2"><span class="sched-badge p2">P2</span><div style="flex:1;min-width:0"><div class="sched-name">Laptops + Kameror</div><div class="sched-sub">30 produkter · 3×/vecka · Källa A + B</div></div><div class="sched-time p2">Måndag 06:00</div></div>'+
+      '<div class="sched-item p3"><span class="sched-badge p3">P3</span><div style="flex:1;min-width:0"><div class="sched-name">Gaming + Övrigt</div><div class="sched-sub">26 produkter · veckovis · Källa A</div></div><div class="sched-time p3">Söndag 06:00</div></div>'+
+      '<div style="display:flex;align-items:flex-start;gap:7px;background:var(--sf);border-radius:8px;padding:9px 11px;margin-top:10px;transition:background 0.2s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><div style="font-size:11px;color:var(--t2);line-height:1.6">Ändra schema kräver <code style="font-size:10px;background:var(--b1);padding:1px 5px;border-radius:3px">PATCH /api/crawler/schedule</code> i backend.</div></div>';
 
-  }catch(err){['cr-kpis','cr-latest'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta crawlerdata'))}
+  }catch(err){['cr-kpis','cr-sources-inner','cr-latest'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta crawlerdata'))}
   ge('crSchemaBtn').addEventListener('click',()=>alert('Kräver PATCH /api/crawler/schedule i backend.'));
 }
 
@@ -1149,6 +1363,265 @@ async function loadHc(){
         });
       }
     })();
+
+    /* ════════════════════════════════════════════════════
+       DnD — drag-and-drop för sektioner
+    ════════════════════════════════════════════════════ */
+    function initDnD(containerId,storageKey){
+      var container=document.getElementById(containerId);
+      if(!container)return;
+      var dragging=null,placeholder=null,startY=0;
+      function getSections(){return Array.from(container.querySelectorAll('.dnd-section'));}
+      function mkPH(el){
+        var ph=document.createElement('div');
+        ph.className='dnd-placeholder';
+        ph.style.height=el.offsetHeight+'px';
+        ph.style.marginBottom='8px';
+        return ph;
+      }
+      function elAtY(y){
+        var ss=getSections().filter(function(s){return s!==dragging;});
+        for(var i=0;i<ss.length;i++){var r=ss[i].getBoundingClientRect();if(y<r.top+r.height/2)return ss[i];}
+        return null;
+      }
+      function saveOrder(){
+        var order=getSections().map(function(s){return s.dataset.id;});
+        try{localStorage.setItem(storageKey,JSON.stringify(order));}catch(e){}
+        showToast('Ordning sparad');
+        dismissHint(containerId==='cr-sections'?'cr':'ov');
+      }
+      function loadOrder(){
+        try{
+          var saved=localStorage.getItem(storageKey);
+          if(!saved)return;
+          JSON.parse(saved).forEach(function(id){
+            var el=container.querySelector('[data-id="'+id+'"]');
+            if(el)container.appendChild(el);
+          });
+        }catch(e){}
+      }
+      // Mouse
+      container.addEventListener('mousedown',function(e){
+        var s=e.target.closest('.dnd-section');
+        if(!s||e.target.closest('.sec-menu-btn')||e.target.closest('.sec-ctx-menu'))return;
+        e.preventDefault();
+        dragging=s;startY=e.clientY;
+        placeholder=mkPH(s);
+        s.classList.add('dragging');
+        var r=s.getBoundingClientRect();
+        s.style.cssText='position:fixed;width:'+s.offsetWidth+'px;top:'+r.top+'px;left:'+r.left+'px;z-index:500;margin:0';
+        s.parentNode.insertBefore(placeholder,s);
+      });
+      document.addEventListener('mousemove',function(e){
+        if(!dragging)return;
+        var dy=e.clientY-startY;
+        dragging.style.top=(parseFloat(dragging.style.top)+dy)+'px';
+        startY=e.clientY;
+        var after=elAtY(e.clientY);
+        if(after)container.insertBefore(placeholder,after);else container.appendChild(placeholder);
+      });
+      document.addEventListener('mouseup',function(){
+        if(!dragging)return;
+        dragging.style.cssText='';
+        dragging.classList.remove('dragging');
+        container.insertBefore(dragging,placeholder);
+        placeholder.remove();
+        dragging=null;placeholder=null;
+        saveOrder();
+      });
+      // Touch
+      var tt=null;
+      container.addEventListener('touchstart',function(e){
+        var s=e.target.closest('.dnd-section');
+        if(!s||e.target.closest('.sec-menu-btn')||e.target.closest('.sec-ctx-menu'))return;
+        tt=setTimeout(function(){
+          dragging=s;startY=e.touches[0].clientY;
+          placeholder=mkPH(s);
+          s.classList.add('dragging');
+          s.parentNode.insertBefore(placeholder,s);
+        },350);
+      },{passive:true});
+      container.addEventListener('touchmove',function(e){
+        if(tt){clearTimeout(tt);tt=null;}
+        if(!dragging||!dragging.classList.contains('dragging'))return;
+        e.preventDefault();
+        var after=elAtY(e.touches[0].clientY);
+        if(after)container.insertBefore(placeholder,after);else container.appendChild(placeholder);
+      },{passive:false});
+      container.addEventListener('touchend',function(){
+        if(tt){clearTimeout(tt);tt=null;}
+        if(!dragging)return;
+        dragging.classList.remove('dragging');
+        if(placeholder&&placeholder.parentNode){container.insertBefore(dragging,placeholder);placeholder.remove();saveOrder();}
+        dragging=null;placeholder=null;
+      });
+      loadOrder();
+    }
+
+    /* ════════════════════════════════════════════════════
+       Svep vänster för att dölja (mobil) — Översikt
+    ════════════════════════════════════════════════════ */
+    function initSwipe(containerId){
+      var isMobile=window.matchMedia('(max-width:640px)').matches;
+      if(!isMobile)return;
+      var container=document.getElementById(containerId);
+      if(!container)return;
+      container.querySelectorAll('.dnd-section').forEach(function(section){
+        var inner=section.querySelector('.swipe-content');
+        var reveal=section.querySelector('.swipe-reveal');
+        if(!inner||!reveal)return;
+        var startX=0,startY=0,currentX=0,swiping=false,locked=false;
+        section.addEventListener('touchstart',function(e){
+          if(e.touches.length!==1)return;
+          startX=e.touches[0].clientX;startY=e.touches[0].clientY;
+          currentX=0;swiping=false;locked=false;
+          inner.style.transition='none';reveal.style.transition='none';
+        },{passive:true});
+        section.addEventListener('touchmove',function(e){
+          if(locked)return;
+          var dx=e.touches[0].clientX-startX;
+          var dy=e.touches[0].clientY-startY;
+          if(!swiping&&Math.abs(dy)>Math.abs(dx)+5){locked=true;return;}
+          if(!swiping&&Math.abs(dx)>8)swiping=true;
+          if(!swiping)return;
+          e.preventDefault();
+          currentX=Math.min(0,dx);
+          var prog=Math.min(1,Math.abs(currentX)/80);
+          inner.style.transform='translateX('+currentX+'px)';
+          reveal.style.opacity=prog;
+        },{passive:false});
+        section.addEventListener('touchend',function(){
+          if(!swiping)return;
+          inner.style.transition='';reveal.style.transition='';
+          if(Math.abs(currentX)>=70){
+            inner.style.transform='translateX(-100%)';
+            reveal.style.opacity='1';
+            setTimeout(function(){
+              ovHide(section.dataset.id);
+              inner.style.transition='none';inner.style.transform='';
+              reveal.style.opacity='0';
+            },280);
+          }else{
+            inner.style.transform='';reveal.style.opacity='0';
+          }
+          swiping=false;
+        });
+      });
+    }
+
+    /* ════════════════════════════════════════════════════
+       Dölja/visa sektioner — Översikt
+    ════════════════════════════════════════════════════ */
+    var OV_HIDE_KEY='ov_hidden_v2';
+    function ovGetHidden(){try{return JSON.parse(localStorage.getItem(OV_HIDE_KEY)||'[]');}catch(e){return[];}}
+    function ovSaveHidden(arr){try{localStorage.setItem(OV_HIDE_KEY,JSON.stringify(arr));}catch(e){}}
+
+    function ovHide(id){
+      closeAllMenus();
+      var el=document.querySelector('#ov-sections [data-id="'+id+'"]');
+      if(el)el.style.display='none';
+      var h=ovGetHidden();if(h.indexOf(id)===-1)h.push(id);
+      ovSaveHidden(h);ovRenderBar();
+      showToast('Sektion dold');
+    }
+    function ovShow(id){
+      var el=document.querySelector('#ov-sections [data-id="'+id+'"]');
+      if(el)el.style.display='';
+      ovSaveHidden(ovGetHidden().filter(function(x){return x!==id;}));
+      ovRenderBar();
+    }
+    function ovRenderBar(){
+      var hidden=ovGetHidden();
+      var bar=ge('ov-hidden-bar'),pills=ge('ov-hidden-pills');
+      if(!bar||!pills)return;
+      if(!hidden.length){bar.style.display='none';return;}
+      bar.style.display='block';
+      pills.innerHTML='';
+      hidden.forEach(function(id){
+        var el=document.querySelector('#ov-sections [data-id="'+id+'"]');
+        var label=el?(el.getAttribute('data-label')||id):id;
+        var pill=document.createElement('div');
+        pill.className='hidden-pill';
+        pill.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> '+label;
+        pill.addEventListener('click',function(){ovShow(id);});
+        pills.appendChild(pill);
+      });
+    }
+
+    /* ── ⋯-meny ── */
+    function toggleSecMenu(id){
+      closeAllMenus(id);
+      var menu=ge('menu-'+id),btn=ge('menubtn-'+id);
+      if(!menu)return;
+      var open=menu.classList.contains('open');
+      menu.classList.toggle('open',!open);
+      if(btn)btn.classList.toggle('open',!open);
+    }
+    function closeAllMenus(exceptId){
+      document.querySelectorAll('.sec-ctx-menu.open').forEach(function(m){
+        if(!exceptId||m.id!=='menu-'+exceptId){
+          m.classList.remove('open');
+          var bid=m.id.replace('menu-','');
+          var btn=ge('menubtn-'+bid);if(btn)btn.classList.remove('open');
+        }
+      });
+    }
+    function secAction(id,action){
+      closeAllMenus();
+      var container=ge('ov-sections');
+      var el=container.querySelector('[data-id="'+id+'"]');
+      if(!el)return;
+      if(action==='hide'){ovHide(id);}
+      else if(action==='up'){
+        var prev=el.previousElementSibling;
+        while(prev&&!prev.classList.contains('dnd-section'))prev=prev.previousElementSibling;
+        if(prev)container.insertBefore(el,prev);
+        ovSaveOrder();showToast('Flyttad upp');
+      }else if(action==='down'){
+        var next=el.nextElementSibling;
+        while(next&&!next.classList.contains('dnd-section'))next=next.nextElementSibling;
+        if(next)container.insertBefore(next,el);
+        ovSaveOrder();showToast('Flyttad ned');
+      }
+    }
+    function ovSaveOrder(){
+      var order=Array.from(ge('ov-sections').querySelectorAll('.dnd-section')).map(function(s){return s.dataset.id;});
+      try{localStorage.setItem('ov_section_order',JSON.stringify(order));}catch(e){}
+    }
+    document.addEventListener('click',function(e){
+      if(!e.target.closest('.sec-menu-btn')&&!e.target.closest('.sec-ctx-menu'))closeAllMenus();
+    });
+
+    /* ── Drag hint dismiss ── */
+    function dismissHint(key){
+      var el=ge('hint-'+key);
+      if(el){el.style.opacity='0';setTimeout(function(){el.style.display='none';},300);}
+      try{localStorage.setItem('hint_ok_'+key,'1');}catch(e){}
+    }
+    function initHints(){
+      ['cr','ov'].forEach(function(key){
+        try{if(localStorage.getItem('hint_ok_'+key)==='1'){var el=ge('hint-'+key);if(el)el.style.display='none';}}catch(e){}
+      });
+    }
+
+    /* ── Toast ── */
+    function showToast(msg){
+      var el=ge('ov-toast');
+      if(!el){el=document.createElement('div');el.id='ov-toast';el.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--w);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:500;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:9999';document.body.appendChild(el);}
+      el.textContent=msg||'Sparat';el.style.opacity='1';
+      clearTimeout(el._t);el._t=setTimeout(function(){el.style.opacity='0';},1800);
+    }
+
+    /* ── Init ── */
+    initDnD('cr-sections','cr_section_order');
+    initDnD('ov-sections','ov_section_order');
+    initSwipe('ov-sections');
+    initHints();
+    ovGetHidden().forEach(function(id){
+      var el=document.querySelector('#ov-sections [data-id="'+id+'"]');
+      if(el)el.style.display='none';
+    });
+    ovRenderBar();
 
 showLogin();
 </script>

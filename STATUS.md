@@ -1,18 +1,14 @@
-# STATUS — 2026-03-28
+# STATUS — 2026-03-29
 
 ## Last task
-HTML cache headers v2 — Cache-Control: no-cache on HTML entrypoints
+Admin UI v17 — Crawler redesign + Översikt redesign + DnD + Svep
 
 ## What changed
-- backend/app/main.py: added `headers={"Cache-Control": "no-cache"}` to FileResponse for / and /admin
-- tests/test_admin_ui_data.py: +4 tests (TestHtmlCacheHeaders: index no-cache, admin no-cache, ETag preserved, health unaffected)
+- frontend/admin.html: new CSS (source cards, listing feed, coverage bars, milestones, DnD, swipe-reveal, hidden pills), replaced tab-ov HTML (hero KPI trio, projektkostnad, milstolpar, drag-hints, hidden-bar), replaced tab-cr HTML (DnD sections, source cards layout), replaced loadOv() (3-column hero, cost breakdown, milestones), replaced loadCr() (source cards, listing feed, coverage bars, schedule badges), added DnD + swipe + hide/show JS
+- tests/test_admin_html.py: updated localStorage test (allowlist for DnD/hint/hidden keys), replaced health banner test with ov-hero-kpis test
 - CONTEXT.md: updated
 
 ## Verification
-- make stage-ready: 75 passed, 22 skipped
-- test_admin_ui_data: 26 passed, 19 skipped, 0 failures
-
-## Decision rationale
-- no-cache forces revalidation on every request but allows 304 via existing ETag/Last-Modified
-- no-store rejected: loses 304 support, wastes bandwidth
-- Scoped to HTML only — API endpoints unaffected
+- 6 JS functions verified (initDnD, initSwipe, ovHide, secAction, dismissHint, showToast)
+- 52 HTML structure matches (dnd-section, swipe-content, etc.)
+- 51 passed, 24 skipped, 0 failures

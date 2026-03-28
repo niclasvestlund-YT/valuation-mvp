@@ -80,7 +80,7 @@ backend/app/middleware/__init__.py — empty
 backend/app/middleware/request_id.py — RequestIdMiddleware: injects UUID per request, sets request_id_var, adds X-Request-ID header
 tests/test_logger.py — 10 tests: JSON fields, request_id propagation, log levels, exc_info
 frontend/index.html — single-page UI in Swedish, image upload, result display; Admin nav button in header
-frontend/admin.html — admin UI: 6 tabs, dark mode, version from /health, responsive, skeleton loaders, structured errors
+frontend/admin.html — admin UI: 6 tabs, dark mode, DnD sections, swipe-to-hide (mobile), Crawler redesign, Översikt hero KPIs + milestones, structured errors
 tests/test_vision_service.py — vision service tests
 tests/test_market_discovery.py — market discovery tests
 tests/test_new_price_service.py — new price service tests
@@ -106,7 +106,7 @@ tests/test_promote_reference_data.py — 21 tests for promotion safety (URL guar
 tests/test_assistant_context.py — 33 tests for Prisassistent (confirmation normalization, phase derivation, quick replies, guardrails)
 tests/test_valor_pipeline.py — 29 tests for VALOR pipeline (quality scores, ETL null guard, feature consistency, dry-run, response fields)
 tests/test_admin_ui_data.py — 34 tests for admin endpoint shapes, auth, metrics normalization, /health versioning, HTML cache headers
-tests/test_admin_html.py — 28 structure tests + 2 integration tests for admin.html (tabs, responsive, security, XSS, no hardcoded version)
+tests/test_admin_html.py — 28 structure tests + 2 integration tests for admin.html (tabs, responsive, security, XSS, DnD localStorage allowlist)
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -180,6 +180,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "build_sha": "..
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-29 — feat: admin UI v17 — Crawler redesign (source cards, listing feed, coverage bars, priority schedule), Översikt redesign (hero KPI trio, projektkostnad, milstolpar), DnD section reorder, swipe-to-hide (mobile), context menus, hidden-section pills
 2026-03-28 — feat: HTML cache headers v2 — Cache-Control: no-cache on / and /admin FileResponses, preserves ETag/Last-Modified for 304, 4 new tests
 2026-03-28 — feat: versioning v1 — BUILD_SHA from env var in version.py, /health exposes build_sha, admin sidebar reads version from backend, removed hardcoded v16 strings, 6 new tests
 2026-03-28 — feat: admin v16 dark mode — CSS custom properties for light/dark, prefers-color-scheme media query, JS toggle with localStorage persistence (dm key only), smooth transitions on all surfaces, updated icon colors for contrast
@@ -191,10 +192,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "build_sha": "..
 2026-03-28 — deploy: Railway pre-prod live — valor-models volume, first VALOR training (3 samples, MAE 1189 kr, MAPE 28.7%), model persists across restarts, threshold set to 50
 2026-03-28 — security: admin phase 2 — esc() XSS helper on all API data in innerHTML, renderSectionState() for consistent loader states, str(exc) removed from all HTTP error responses, table browser hardened via ALLOWED_TABLES allowlist, 10 new tests
 2026-03-28 — fix: admin phase 1 security — admin key memory-only (no localStorage), auth gate before fetches, 401/403 re-auth, demo fallback removed, status_breakdown metrics bug fixed, local valuation_history removed from admin, 7 new tests
-2026-03-28 — feat: VALOR production activation — Railway volume config, VALOR_MODEL_DIR env var, production threshold gate (50 samples), admin UI threshold display + training state, 405 tests pass
-2026-03-28 — feat: VALOR production readiness — ETL null brand/model guard, ETL summary logging, feature consistency tests, admin VALOR health cell + detail panel estimate + training CTA, 400 tests pass
-2026-03-27 — fix: promotion safety v2 — strict env vars, localhost rejection, 21 promotion tests, weekly runbook
-2026-03-27 — feat: idempotent reference data promotion — promote_reference_data.py, UPSERT-based, ENVIRONMENT_AND_DATA_PROMOTION.md
+2026-03-28 — feat: VALOR production activation + readiness — Railway volume, threshold gate (50 samples), ETL guards, admin VALOR health + training CTA
 
 ## Next Up
 - Backfill price observations from existing comparables to bootstrap VALOR training data toward 50-sample threshold

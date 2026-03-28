@@ -64,12 +64,23 @@ class TestStructure:
                 f"'{name}' syns i UI-text — ska vara abstraherat"
 
     def test_no_localStorage_usage(self, js_code):
-        # localStorage is allowed ONLY for dark mode preference (dm key)
+        # localStorage is allowed for dark mode (dm key) and UI layout preferences
         import re
-        # Remove all dark-mode localStorage calls, then check no other usage remains
-        cleaned = re.sub(r"localStorage\.(set|get)Item\('dm'[^)]*\)", "", js_code)
+        # Remove allowed localStorage calls: dark mode, DnD order, hints, hidden sections
+        allowed_keys = [
+            r"'dm'",
+            r"storageKey",
+            r"'ov_section_order'",
+            r"'cr_section_order'",
+            r"'hint_ok_'\+key",
+            r"'hint_ok_'\s*\+\s*key",
+            r"OV_HIDE_KEY",
+        ]
+        cleaned = js_code
+        for key in allowed_keys:
+            cleaned = re.sub(r"localStorage\.(set|get)Item\(" + key + r"[^)]*\)", "", cleaned)
         assert "localStorage" not in cleaned, \
-            "Får inte använda localStorage utanför dark mode (säkerhetskrav)"
+            "Får inte använda localStorage utanför tillåtna nycklar (dm, layout)"
         assert "sessionStorage" not in js_code, \
             "Får inte använda sessionStorage"
 
@@ -182,11 +193,11 @@ class TestValorML:
 
 
 class TestSystemHealth:
-    def test_health_banner_exists(self, soup):
+    def test_ov_hero_kpis_exists(self, soup):
         ov = soup.find(id="tab-ov")
         assert ov, "Saknar #tab-ov"
-        banner = ov.find(class_=re.compile(r"health.bar|health.banner", re.I))
-        assert banner, "Saknar systemhälsa-banner på översikten"
+        hero = ov.find(id="ov-hero-kpis")
+        assert hero, "Saknar #ov-hero-kpis på översikten"
 
     def test_halsokoll_tab_exists(self, soup):
         assert soup.find(id="tab-hc"), "Saknar #tab-hc (Hälsokoll)"
