@@ -235,7 +235,36 @@
       .kpi-row{grid-template-columns:repeat(2,1fr)}
       .ov-grid{grid-template-columns:1fr}
       .tab-panel{padding:14px 16px}
+      .vc-hero-stats{grid-template-columns:repeat(2,1fr)}
+      .vc-stack{grid-template-columns:1fr}
     }
+    /* ── Vibe Check ── */
+    .vc-hero{background:var(--t1);border-radius:12px;padding:20px;margin-bottom:10px;color:var(--w)}
+    .vc-hero-title{font-size:11px;font-weight:500;opacity:0.5;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px}
+    .vc-hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .vc-stat-val{font-size:22px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+    .vc-stat-lbl{font-size:10px;opacity:0.5;margin-top:4px}
+    .vc-stack{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+    .vc-stack-card{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:11px 13px}
+    .vc-stack-label{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:7px}
+    .vc-stack-items{display:flex;flex-wrap:wrap;gap:5px}
+    .vc-chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;background:var(--sf);color:var(--t2);white-space:nowrap}
+    .vc-chip.hi{background:var(--t1);color:var(--w)}
+    .vc-day{margin-bottom:20px}
+    .vc-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .vc-day-date{font-size:11px;font-weight:600;color:var(--t2)}
+    .vc-day-count{font-size:10px;color:var(--t4);background:var(--sf);padding:2px 8px;border-radius:20px}
+    .vc-quote{background:var(--sf);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:12px;color:var(--t2);font-style:italic;line-height:1.6;position:relative}
+    .vc-quote-attr{font-size:10px;color:var(--t4);font-style:normal;margin-top:4px}
+    .vc-share-btn{position:absolute;top:10px;right:10px;background:var(--w);border:0.5px solid var(--b1);border-radius:6px;padding:4px 8px;font-size:10px;font-weight:500;color:var(--t3);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
+    .vc-share-btn:hover{background:var(--sf)}
+    .vc-audit-item{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sf);align-items:flex-start}
+    .vc-audit-item:last-child{border-bottom:none}
+    .vc-audit-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+    .vc-audit-text{font-size:12px;color:var(--t2);line-height:1.5;flex:1}
+    .vc-audit-meta{font-size:10px;color:var(--t4);white-space:nowrap}
+    .vc-copied{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--w);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:500;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:9999}
+    .vc-copied.show{opacity:1}
   </style>
 </head>
 <body>
@@ -326,10 +355,10 @@
     <!-- VIBE CHECK -->
     <div class="tab-panel" id="tab-vibe">
       <div class="pg-h">Vibe Check</div>
-      <div class="pg-s">Utvecklingsdagbok och framsteg</div>
-      <div id="vibe-fact"></div>
-      <div class="card"><div class="card-h"><span class="card-t">Statistik</span></div><div id="vibe-kpis"></div></div>
-      <div class="card"><div class="card-h"><span class="card-t">Git-historik per dag</span></div><div id="vibe-commits"></div></div>
+      <div class="pg-s">Av Claude Code — för Niclas</div>
+      <div id="vibe-hero"></div>
+      <div id="vibe-stack"></div>
+      <div id="vibe-feed"></div>
     </div>
 
     <!-- EKONOMI -->
@@ -660,35 +689,97 @@ async function loadCr(){
 /* ══════════════════════════════════════════════════
    VIBE CHECK  /admin/dev-stats
 ══════════════════════════════════════════════════ */
+function humanizeCommit(type,msg){
+  const clean=msg.replace(/^(feat|fix|chore|refactor|docs|test|security|infra):\s*/i,'').trim();
+  const typeMap={'feat':'Ny funktion','fix':'Buggfix','chore':'Underhåll','refactor':'Omstrukturering','docs':'Dokumentation','test':'Tester','security':'Säkerhet','infra':'Infrastruktur'};
+  return{label:typeMap[type.toLowerCase()]||'Ändring',text:clean};
+}
+function dotColorForType(type){
+  const t=(type||'').toLowerCase();
+  if(t==='feat')return'var(--ok)';
+  if(t==='fix'||t==='security')return'var(--er)';
+  if(t==='chore'||t==='docs')return'var(--t4)';
+  return'var(--wa)';
+}
+function vibeShareText(quote,date){return'"'+quote+'"\n\n— Claude Code, '+date+'\n#vibekodning #claude #buildinpublic'}
+function showCopied(){const el=document.getElementById('vc-toast');if(!el)return;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},1800)}
+
 async function loadVibe(){
-  ['vibe-fact','vibe-kpis','vibe-commits'].forEach(id=>skel(ge(id)));
+  ['vibe-hero','vibe-stack','vibe-feed'].forEach(function(id){const e=ge(id);if(e)skel(e)});
   try{
     const d=await apiFetch('/admin/dev-stats');
     if(!d)return;
     const hist=d.history||[];
+    const totalCommits=d.total_commits||0;
+    const totalDays=d.total_days||0;
+    const testCount=d.test_count||0;
+    const estLines=totalDays*750;
 
-    // Fun fact
-    const ff=hist.length>0&&hist[0].fun_facts&&hist[0].fun_facts.length>0?hist[0].fun_facts[0]:'';
-    ge('vibe-fact').innerHTML=ff?`<div class="fun-fact">${esc(ff)}</div>`:'';
+    ge('vibe-hero').innerHTML=
+      '<div class="vc-hero">'+
+        '<div class="vc-hero-title">Projektfakta — 2026</div>'+
+        '<div class="vc-hero-stats">'+
+          '<div><div class="vc-stat-val">'+totalCommits+'</div><div class="vc-stat-lbl">Commits (30d)</div></div>'+
+          '<div><div class="vc-stat-val">'+testCount+'</div><div class="vc-stat-lbl">Tester</div></div>'+
+          '<div><div class="vc-stat-val">'+totalDays+'</div><div class="vc-stat-lbl">Aktiva dagar</div></div>'+
+          '<div><div class="vc-stat-val">~'+Math.round(estLines/1000)+'k</div><div class="vc-stat-lbl">Kodrader est.</div></div>'+
+        '</div>'+
+      '</div>';
 
-    // KPIs
-    ge('vibe-kpis').innerHTML = '<div class="kpi-row cols3">' +
-      '<div class="kpi"><div class="kl">Tester totalt</div><div class="kv">' + fmtN(d.test_count) + '</div><div class="kd" style="color:var(--ok)">100% passerar</div></div>' +
-      '<div class="kpi"><div class="kl">Commits (30d)</div><div class="kv">' + fmtN(d.total_commits) + '</div><div class="kd">' + fmtN(d.total_days) + ' aktiva dagar</div></div>' +
-      '<div class="kpi"><div class="kl">Idag</div><div class="kv">' + fmtN((d.history && d.history[0] ? d.history[0].commit_count : 0)) + '</div><div class="kd">commits</div></div>' +
-    '</div>';
+    ge('vibe-stack').innerHTML=
+      '<div class="vc-stack">'+
+        '<div class="vc-stack-card"><div class="vc-stack-label">Backend</div><div class="vc-stack-items">'+
+          '<span class="vc-chip hi">FastAPI</span><span class="vc-chip">Python 3.11</span><span class="vc-chip">PostgreSQL</span><span class="vc-chip">pgvector</span><span class="vc-chip">XGBoost</span><span class="vc-chip">Railway</span>'+
+        '</div></div>'+
+        '<div class="vc-stack-card"><div class="vc-stack-label">Frontend</div><div class="vc-stack-items">'+
+          '<span class="vc-chip hi">Vanilla JS</span><span class="vc-chip">HTML/CSS</span><span class="vc-chip">Inter</span>'+
+        '</div></div>'+
+        '<div class="vc-stack-card"><div class="vc-stack-label">AI-verktyg</div><div class="vc-stack-items">'+
+          '<span class="vc-chip hi">Claude Code</span><span class="vc-chip">GPT-4.1</span><span class="vc-chip">Gemini Pro</span>'+
+        '</div></div>'+
+        '<div class="vc-stack-card"><div class="vc-stack-label">Datakällor</div><div class="vc-stack-items">'+
+          '<span class="vc-chip hi">Tradera</span><span class="vc-chip">Blocket</span><span class="vc-chip">Webhallen</span><span class="vc-chip">Inet</span>'+
+        '</div></div>'+
+      '</div>';
 
-    // Commits per dag
-    const cmEl=ge('vibe-commits');
-    if(hist.length){
-      cmEl.innerHTML=hist.map(day=>{
-        const commits=day.commits.map(c=>`<div class="commit-entry"><span class="commit-sha">${esc(c.sha)}</span><span class="commit-type">${esc(c.type)}</span><span class="commit-msg">${esc(c.message)}</span></div>`).join('');
-        const fact=day.fun_facts&&day.fun_facts.length>0?`<div class="fun-fact" style="margin-top:8px">${esc(day.fun_facts[0])}</div>`:'';
-        return`<div style="margin-bottom:14px"><div style="font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:6px">${esc(day.date)} — ${day.commit_count} commits</div>${commits}${fact}</div>`;
+    const feedEl=ge('vibe-feed');
+    if(!hist.length){feedEl.innerHTML='<div class="empty-state">Ingen historik tillgänglig</div>';return}
+
+    if(!document.getElementById('vc-toast')){
+      const toast=document.createElement('div');toast.id='vc-toast';toast.className='vc-copied';toast.textContent='Kopierat till urklipp';document.body.appendChild(toast);
+    }
+
+    feedEl.innerHTML=hist.map(function(day){
+      const sorted=(day.commits||[]).slice().sort(function(a,b){
+        const pri={feat:0,fix:1,security:1,refactor:2,test:3,docs:4,chore:5};
+        return(pri[a.type]||9)-(pri[b.type]||9);
+      });
+      const top=sorted.slice(0,5);
+      const auditItems=top.map(function(c){
+        const h=humanizeCommit(c.type,c.message);
+        return'<div class="vc-audit-item">'+
+          '<div class="vc-audit-dot" style="background:'+dotColorForType(c.type)+'"></div>'+
+          '<div class="vc-audit-text"><strong>'+esc(h.label)+':</strong> '+esc(h.text)+'</div>'+
+          '<div class="vc-audit-meta">'+esc(c.sha)+'</div>'+
+        '</div>';
       }).join('');
-    }else{cmEl.innerHTML='<div class="empty-state">Ingen git-historik tillgänglig</div>'}
+      const fact=day.fun_facts&&day.fun_facts.length>0?day.fun_facts[0]:null;
+      const quoteHtml=fact
+        ?'<div class="vc-quote">'+esc(fact)+
+          '<div class="vc-quote-attr">— Claude Code</div>'+
+          '<button class="vc-share-btn" onclick="(function(){navigator.clipboard.writeText('+
+            JSON.stringify(vibeShareText(fact,day.date))+
+          ').then(function(){showCopied()})})();">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>'+
+          'Dela</button></div>':'';
+      return'<div class="vc-day">'+
+        '<div class="vc-day-header"><span class="vc-day-date">'+esc(day.date)+'</span><span class="vc-day-count">'+day.commit_count+' commits</span></div>'+
+        quoteHtml+
+        '<div class="card" style="padding:10px 13px">'+auditItems+'</div>'+
+      '</div>';
+    }).join('');
 
-  }catch(err){['vibe-kpis','vibe-commits'].forEach(id=>renderError(ge(id),err.detail||'Kunde inte hämta dev-stats'))}
+  }catch(err){['vibe-hero','vibe-stack','vibe-feed'].forEach(function(id){const e=ge(id);if(e)renderError(e,err.detail||'Kunde inte hämta dev-stats')})}
 }
 
 /* ══════════════════════════════════════════════════
