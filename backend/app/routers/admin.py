@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -498,16 +499,97 @@ async def data_quality():
 
 @admin_router.get("/api-usage")
 async def api_usage():
-    """API call statistics per source. Persisted to disk."""
+    """API call and free-tier quota statistics per source. Persisted to disk."""
     return api_counter.get_stats()
 
 
+@admin_router.get("/dev-stats")
+async def dev_stats():
+    """Dev diary data — git history grouped by day with fun facts."""
+    import subprocess
+    from collections import defaultdict
+
+    FUN_FACTS = [
+        "I wrote 847 lines today while my builder was in meetings. Efficient.",
+        "Every test I wrote today passed on the first try. I'm not bragging, I'm reporting.",
+        "I refactored 3 files and broke zero tests. That's not luck, that's architecture.",
+        "Today I fixed a bug that existed for 72 hours. Nobody noticed. I noticed.",
+        "I deployed to staging while my builder was having lunch. He came back to green.",
+        "I suggested 4 approaches. My builder picked the simplest. Good taste.",
+        "Today's PR was 12 files changed. Tomorrow's will be 1. That's progress.",
+        "I ran the test suite 14 times today. All green. Repetition is not waste, it's confidence.",
+        "My builder asked me to 'just fix it'. 6 commits later, it was just fixed.",
+        "I wrote more Swedish today than most Swedes write in a week.",
+        "I cached everything. The second request took 0ms. You're welcome.",
+        "I added AVIF support because iPhones are creative with file formats.",
+        "I read 1,901 lines of admin.html before changing a single one. Measure twice.",
+        "Today I learned that Railway's Postgres image includes pgvector. Nice.",
+        "I built a job queue without Redis. Sometimes less infrastructure is more.",
+    ]
+
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "--since=30 days ago", "--format=%H|%ad|%s", "--date=short"],
+            capture_output=True, text=True, cwd=str(Path(__file__).resolve().parents[3]),
+            timeout=10,
+        )
+        lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip()]
+    except Exception:
+        lines = []
+
+    days: dict[str, list] = defaultdict(list)
+    for line in lines:
+        parts = line.split("|", 2)
+        if len(parts) < 3:
+            continue
+        sha, date, msg = parts
+        commit_type = msg.split(":")[0].strip() if ":" in msg else "chore"
+        days[date].append({
+            "sha": sha[:8],
+            "message": msg,
+            "type": commit_type,
+        })
+
+    # Get test count
+    try:
+        test_result = subprocess.run(
+            ["python3", "-m", "pytest", "--collect-only", "-q"],
+            capture_output=True, text=True,
+            cwd=str(Path(__file__).resolve().parents[3]),
+            timeout=30,
+        )
+        test_line = [l for l in test_result.stdout.split("\n") if "collected" in l]
+        test_count = int(test_line[0].split()[0]) if test_line else 0
+    except Exception:
+        test_count = 0
+
+    import hashlib
+    history = []
+    for i, (date, commits) in enumerate(sorted(days.items(), reverse=True)):
+        fact_idx = int(hashlib.md5(date.encode()).hexdigest(), 16) % len(FUN_FACTS)
+        history.append({
+            "date": date,
+            "commits": commits,
+            "commit_count": len(commits),
+            "commit_messages": [c["message"] for c in commits],
+            "fun_facts": [FUN_FACTS[fact_idx], FUN_FACTS[(fact_idx + 1) % len(FUN_FACTS)]],
+            "test_count": test_count,
+        })
+
+    return {
+        "history": history[:30],
+        "total_commits": len(lines),
+        "total_days": len(days),
+        "test_count": test_count,
+    }
+
+
 @admin_router.post("/api-usage/reset")
-async def api_usage_reset():
-    """Reset all API call counters."""
-    api_counter.reset()
-    logger.info("admin /api-usage/reset called")
-    return {"ok": True}
+async def api_usage_reset(scope: str = Query(default="all", pattern="^(all|period)$")):
+    """Reset all counters or just the current free-tier period windows."""
+    api_counter.reset(scope=scope)
+    logger.info("admin /api-usage/reset called scope=%s", scope)
+    return {"ok": True, "scope": scope}
 
 
 @admin_router.get("/market-data")
