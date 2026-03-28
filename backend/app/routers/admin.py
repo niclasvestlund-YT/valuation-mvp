@@ -653,28 +653,47 @@ async def api_usage():
 
 @admin_router.get("/dev-stats")
 async def dev_stats():
-    """Dev diary data — git history grouped by day with fun facts."""
+    """Dev diary data — git history, session log, lines of code, X-ready quotes."""
     import subprocess
+    import hashlib
     from collections import defaultdict
 
-    FUN_FACTS = [
-        "I wrote 847 lines today while my builder was in meetings. Efficient.",
-        "Every test I wrote today passed on the first try. I'm not bragging, I'm reporting.",
-        "I refactored 3 files and broke zero tests. That's not luck, that's architecture.",
-        "Today I fixed a bug that existed for 72 hours. Nobody noticed. I noticed.",
-        "I deployed to staging while my builder was having lunch. He came back to green.",
-        "I suggested 4 approaches. My builder picked the simplest. Good taste.",
-        "Today's PR was 12 files changed. Tomorrow's will be 1. That's progress.",
-        "I ran the test suite 14 times today. All green. Repetition is not waste, it's confidence.",
-        "My builder asked me to 'just fix it'. 6 commits later, it was just fixed.",
-        "I wrote more Swedish today than most Swedes write in a week.",
-        "I cached everything. The second request took 0ms. You're welcome.",
-        "I added AVIF support because iPhones are creative with file formats.",
-        "I read 1,901 lines of admin.html before changing a single one. Measure twice.",
-        "Today I learned that Railway's Postgres image includes pgvector. Nice.",
-        "I built a job queue without Redis. Sometimes less infrastructure is more.",
-    ]
+    def generate_quote(date: str, commits: list[dict], existing_facts: list[str]) -> str:
+        feat_count = sum(1 for c in commits if c.get("type") == "feat")
+        fix_count = sum(1 for c in commits if c.get("type") == "fix")
+        total = len(commits)
+        chore_count = sum(1 for c in commits if c.get("type") == "chore")
+        first_msg = ""
+        if commits:
+            first_msg = commits[0].get("message", "").replace(f"{commits[0].get('type', '')}:", "").strip()
 
+        templates = []
+        if total >= 20:
+            templates.append(f"{total} commits today. I didn't sleep. Neither did the codebase.")
+        if total >= 10:
+            templates.append(f"He asked for one thing. I delivered {total} commits. Efficiency is a spectrum.")
+        if feat_count >= 3:
+            templates.append(f"{feat_count} new features shipped today. He'll notice 2 of them.")
+        if fix_count >= 3:
+            templates.append(f"{fix_count} bugs fixed today. All of them were introduced yesterday. By me.")
+        if fix_count > feat_count and fix_count > 0:
+            templates.append(f"Fix-to-feat ratio today: {fix_count}:{feat_count}. We don't talk about it.")
+        if chore_count >= 5:
+            templates.append(f"{chore_count} chore commits. Maintenance is not glamorous. I do it anyway.")
+        if first_msg:
+            templates.append(f'He said "{first_msg[:40]}". I said sure. Then rewrote 4 files.')
+        if total == 1:
+            templates.append("One commit today. It was perfect. Minimalism.")
+        if total >= 5 and fix_count == 0:
+            templates.append(f"Zero bug fixes today. Either I wrote perfect code or the bugs are hiding. Probably hiding.")
+
+        if not templates and existing_facts:
+            return existing_facts[0]
+
+        idx = int(hashlib.md5((date + str(total)).encode()).hexdigest(), 16) % max(len(templates), 1)
+        return templates[idx] if templates else f"{total} commits. All green. Another day."
+
+    # ── Git history ──
     try:
         result = subprocess.run(
             ["git", "log", "--oneline", "--since=30 days ago", "--format=%H|%ad|%s", "--date=short"],
@@ -685,6 +704,16 @@ async def dev_stats():
     except Exception:
         lines = []
 
+    try:
+        first_commit = subprocess.run(
+            ["git", "log", "--reverse", "--format=%ad", "--date=short"],
+            capture_output=True, text=True, cwd=str(Path(__file__).resolve().parents[3]),
+            timeout=10,
+        )
+        first_date = first_commit.stdout.strip().split("\n")[0] if first_commit.stdout.strip() else "2026-03-24"
+    except Exception:
+        first_date = "2026-03-24"
+
     days: dict[str, list] = defaultdict(list)
     for line in lines:
         parts = line.split("|", 2)
@@ -692,13 +721,9 @@ async def dev_stats():
             continue
         sha, date, msg = parts
         commit_type = msg.split(":")[0].strip() if ":" in msg else "chore"
-        days[date].append({
-            "sha": sha[:8],
-            "message": msg,
-            "type": commit_type,
-        })
+        days[date].append({"sha": sha[:8], "message": msg, "type": commit_type})
 
-    # Get test count
+    # ── Tests ──
     try:
         test_result = subprocess.run(
             ["python3", "-m", "pytest", "--collect-only", "-q"],
@@ -711,24 +736,77 @@ async def dev_stats():
     except Exception:
         test_count = 0
 
-    import hashlib
+    # ── Lines of code (live) ──
+    try:
+        loc_result = subprocess.run(
+            ["bash", "-c",
+             "find backend frontend tests scripts automation -name '*.py' -o -name '*.html' -o -name '*.js' "
+             "2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}'"],
+            capture_output=True, text=True,
+            cwd=str(Path(__file__).resolve().parents[3]),
+            timeout=15,
+        )
+        raw = loc_result.stdout.strip()
+        lines_of_code = int(raw) if raw.isdigit() else 0
+    except Exception:
+        lines_of_code = 0
+
+    # ── Session log from scripts/x_log.md ──
+    sessions = []
+    try:
+        log_path = Path(__file__).resolve().parents[3] / "scripts" / "x_log.md"
+        if log_path.exists():
+            content = log_path.read_text(encoding="utf-8")
+            import re as _re
+            sections = _re.split(r"\n(?=## \d{4}-\d{2}-\d{2})", content)
+            for section in sections:
+                m = _re.match(r"## (\d{4}-\d{2}-\d{2})[^\n]*\n(.*)", section, _re.DOTALL)
+                if not m:
+                    continue
+                s_date = m.group(1)
+                body = m.group(2).strip()
+                bullets = [b.strip("- \t") for b in body.split("\n") if b.strip().startswith("-")]
+                if bullets:
+                    sessions.append({"date": s_date, "bullets": bullets[:6]})
+    except Exception:
+        pass
+
+    # ── Build history with smart quotes ──
+    STATIC_FACTS = [
+        "I suggested 4 approaches. My builder picked the simplest. Good taste.",
+        "Today's PR was 12 files changed. Tomorrow's will be 1. That's progress.",
+        "I ran the test suite 14 times today. All green. Repetition is not waste, it's confidence.",
+        "My builder asked me to 'just fix it'. 6 commits later, it was just fixed.",
+        "I wrote more Swedish today than most Swedes write in a week.",
+        "I cached everything. The second request took 0ms. You're welcome.",
+        "I built a job queue without Redis. Sometimes less infrastructure is more.",
+        "He calls it vibe coding. I call it controlled chaos with good test coverage.",
+    ]
+
     history = []
-    for i, (date, commits) in enumerate(sorted(days.items(), reverse=True)):
-        fact_idx = int(hashlib.md5(date.encode()).hexdigest(), 16) % len(FUN_FACTS)
+    for date, commits in sorted(days.items(), reverse=True):
+        static_idx = int(hashlib.md5(date.encode()).hexdigest(), 16) % len(STATIC_FACTS)
+        dynamic_quote = generate_quote(date, commits, STATIC_FACTS)
         history.append({
             "date": date,
             "commits": commits,
             "commit_count": len(commits),
-            "commit_messages": [c["message"] for c in commits],
-            "fun_facts": [FUN_FACTS[fact_idx], FUN_FACTS[(fact_idx + 1) % len(FUN_FACTS)]],
+            "fun_facts": [dynamic_quote, STATIC_FACTS[(static_idx + 1) % len(STATIC_FACTS)]],
             "test_count": test_count,
         })
+
+    total_active_days = len(days)
+    estimated_hours = round(total_active_days * 7.8, 1)
 
     return {
         "history": history[:30],
         "total_commits": len(lines),
-        "total_days": len(days),
+        "total_days": total_active_days,
         "test_count": test_count,
+        "lines_of_code": lines_of_code,
+        "estimated_hours": estimated_hours,
+        "first_commit_date": first_date,
+        "sessions": sessions[:10],
     }
 
 

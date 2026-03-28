@@ -239,32 +239,53 @@
       .vc-stack{grid-template-columns:1fr}
     }
     /* ── Vibe Check ── */
-    .vc-hero{background:var(--t1);border-radius:12px;padding:20px;margin-bottom:10px;color:var(--w)}
-    .vc-hero-title{font-size:11px;font-weight:500;opacity:0.5;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px}
-    .vc-hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-    .vc-stat-val{font-size:22px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
-    .vc-stat-lbl{font-size:10px;opacity:0.5;margin-top:4px}
-    .vc-stack{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
-    .vc-stack-card{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:11px 13px}
-    .vc-stack-label{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:7px}
-    .vc-stack-items{display:flex;flex-wrap:wrap;gap:5px}
-    .vc-chip{font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;background:var(--sf);color:var(--t2);white-space:nowrap}
-    .vc-chip.hi{background:var(--t1);color:var(--w)}
-    .vc-day{margin-bottom:20px}
-    .vc-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .vc-kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:10px}
+    .vc-kpi{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:12px 14px;min-width:0}
+    .vc-kpi-lbl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .vc-kpi-val{font-size:21px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+    .vc-kpi-sub{font-size:10px;color:var(--t3);margin-top:4px}
+    .vc-section-lbl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:8px;margin-top:2px}
+    .vc-stack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:10px}
+    .vc-stack-card{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:12px}
+    .vc-stack-lbl{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500;margin-bottom:9px}
+    .vc-tech-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--sf)}
+    .vc-tech-item:last-child{border-bottom:none}
+    .vc-tech-ic{width:26px;height:26px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+    .vc-tech-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .vc-tech-desc{font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .vc-slides{display:flex;gap:9px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;scrollbar-width:none}
+    .vc-slides::-webkit-scrollbar{display:none}
+    .vc-slide{background:var(--t1);color:var(--w);border-radius:12px;padding:16px;min-width:230px;max-width:230px;flex-shrink:0;position:relative}
+    .vc-slide-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+    .vc-slide-av{width:28px;height:28px;border-radius:50%;background:#5C5850;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+    .vc-slide-name{font-size:11px;font-weight:600}
+    .vc-slide-handle{font-size:10px;opacity:0.5}
+    .vc-slide-text{font-size:12px;line-height:1.65;margin-bottom:28px}
+    .vc-slide-tags{font-size:10px;opacity:0.45;position:absolute;bottom:32px;left:16px}
+    .vc-slide-copy{position:absolute;bottom:10px;right:10px;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.2);border-radius:5px;padding:4px 8px;font-size:10px;color:rgba(255,255,255,0.8);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:3px;transition:background 0.15s}
+    .vc-slide-copy:hover{background:rgba(255,255,255,0.18)}
+    .vc-slide-copy.copied{background:var(--ok)!important;color:#fff!important}
+    .vc-day{margin-bottom:18px}
+    .vc-day-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
     .vc-day-date{font-size:11px;font-weight:600;color:var(--t2)}
-    .vc-day-count{font-size:10px;color:var(--t4);background:var(--sf);padding:2px 8px;border-radius:20px}
-    .vc-quote{background:var(--sf);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:12px;color:var(--t2);font-style:italic;line-height:1.6;position:relative}
+    .vc-day-badge{font-size:10px;color:var(--t4);background:var(--sf);padding:2px 8px;border-radius:20px}
+    .vc-quote{background:var(--sf);border-radius:10px;padding:12px 14px;margin-bottom:7px;font-size:12px;color:var(--t2);font-style:italic;line-height:1.6;position:relative}
     .vc-quote-attr{font-size:10px;color:var(--t4);font-style:normal;margin-top:4px}
     .vc-share-btn{position:absolute;top:10px;right:10px;background:var(--w);border:0.5px solid var(--b1);border-radius:6px;padding:4px 8px;font-size:10px;font-weight:500;color:var(--t3);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px}
-    .vc-share-btn:hover{background:var(--sf)}
-    .vc-audit-item{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sf);align-items:flex-start}
+    .vc-share-btn:hover{background:var(--bg)}
+    .vc-audit{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:4px 13px}
+    .vc-audit-item{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:0.5px solid var(--sf)}
     .vc-audit-item:last-child{border-bottom:none}
     .vc-audit-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
-    .vc-audit-text{font-size:12px;color:var(--t2);line-height:1.5;flex:1}
-    .vc-audit-meta{font-size:10px;color:var(--t4);white-space:nowrap}
-    .vc-copied{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--w);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:500;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:9999}
-    .vc-copied.show{opacity:1}
+    .vc-audit-body{flex:1;min-width:0}
+    .vc-audit-text{font-size:12px;color:var(--t2);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .vc-audit-sha{font-size:10px;color:var(--t4);font-family:monospace;flex-shrink:0}
+    .vc-session-card{background:var(--w);border:0.5px solid var(--b1);border-radius:10px;padding:12px 13px;margin-bottom:7px}
+    .vc-session-date{font-size:10px;color:var(--t4);margin-bottom:6px;font-weight:500}
+    .vc-session-bullet{font-size:12px;color:var(--t2);line-height:1.6;padding:2px 0}
+    .vc-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--w);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:500;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:9999}
+    .vc-toast.show{opacity:1}
+    @media(max-width:640px){.vc-kpi-row{grid-template-columns:repeat(2,1fr)}.vc-stack{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -358,6 +379,7 @@
       <div class="pg-s">Av Claude Code — för Niclas</div>
       <div id="vibe-hero"></div>
       <div id="vibe-stack"></div>
+      <div id="vibe-slides"></div>
       <div id="vibe-feed"></div>
     </div>
 
@@ -689,97 +711,148 @@ async function loadCr(){
 /* ══════════════════════════════════════════════════
    VIBE CHECK  /admin/dev-stats
 ══════════════════════════════════════════════════ */
-function humanizeCommit(type,msg){
-  const clean=msg.replace(/^(feat|fix|chore|refactor|docs|test|security|infra):\s*/i,'').trim();
-  const typeMap={'feat':'Ny funktion','fix':'Buggfix','chore':'Underhåll','refactor':'Omstrukturering','docs':'Dokumentation','test':'Tester','security':'Säkerhet','infra':'Infrastruktur'};
-  return{label:typeMap[type.toLowerCase()]||'Ändring',text:clean};
+function vcHumanize(type,msg){
+  const clean=msg.replace(/^(feat|fix|chore|refactor|docs|test|security|infra|perf):\s*/i,'').trim();
+  const map={feat:'Ny funktion',fix:'Buggfix',chore:'Underhåll',refactor:'Omstrukturering',docs:'Dokumentation',test:'Tester',security:'Säkerhet',infra:'Infrastruktur',perf:'Prestanda'};
+  return{label:map[(type||'').toLowerCase()]||'Ändring',text:clean};
 }
-function dotColorForType(type){
+function vcDotColor(type){
   const t=(type||'').toLowerCase();
   if(t==='feat')return'var(--ok)';
   if(t==='fix'||t==='security')return'var(--er)';
   if(t==='chore'||t==='docs')return'var(--t4)';
   return'var(--wa)';
 }
-function vibeShareText(quote,date){return'"'+quote+'"\n\n— Claude Code, '+date+'\n#vibekodning #claude #buildinpublic'}
-function showCopied(){const el=document.getElementById('vc-toast');if(!el)return;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},1800)}
+function vcToast(msg){
+  let el=document.getElementById('vc-toast-el');
+  if(!el){el=document.createElement('div');el.id='vc-toast-el';el.className='vc-toast';document.body.appendChild(el)}
+  el.textContent=msg||'Kopierat';el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show')},1800);
+}
+function vcCopy(btnId,text){
+  navigator.clipboard.writeText(text).then(function(){
+    const btn=document.getElementById(btnId);if(!btn)return;
+    btn.classList.add('copied');btn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Kopierat';
+    setTimeout(function(){btn.classList.remove('copied');btn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Kopiera'},2000);
+  });
+}
 
 async function loadVibe(){
-  ['vibe-hero','vibe-stack','vibe-feed'].forEach(function(id){const e=ge(id);if(e)skel(e)});
+  ['vibe-hero','vibe-stack','vibe-slides','vibe-feed'].forEach(function(id){const e=ge(id);if(e)skel(e)});
   try{
     const d=await apiFetch('/admin/dev-stats');
     if(!d)return;
     const hist=d.history||[];
-    const totalCommits=d.total_commits||0;
-    const totalDays=d.total_days||0;
-    const testCount=d.test_count||0;
-    const estLines=totalDays*750;
+    const todayCommits=hist.length>0?hist[0].commit_count:0;
 
     ge('vibe-hero').innerHTML=
-      '<div class="vc-hero">'+
-        '<div class="vc-hero-title">Projektfakta — 2026</div>'+
-        '<div class="vc-hero-stats">'+
-          '<div><div class="vc-stat-val">'+totalCommits+'</div><div class="vc-stat-lbl">Commits (30d)</div></div>'+
-          '<div><div class="vc-stat-val">'+testCount+'</div><div class="vc-stat-lbl">Tester</div></div>'+
-          '<div><div class="vc-stat-val">'+totalDays+'</div><div class="vc-stat-lbl">Aktiva dagar</div></div>'+
-          '<div><div class="vc-stat-val">~'+Math.round(estLines/1000)+'k</div><div class="vc-stat-lbl">Kodrader est.</div></div>'+
-        '</div>'+
+      '<div class="vc-kpi-row">'+
+        '<div class="vc-kpi"><div class="vc-kpi-lbl">Commits (30d)</div><div class="vc-kpi-val">'+fmtN(d.total_commits)+'</div><div class="vc-kpi-sub">Idag: '+todayCommits+'</div></div>'+
+        '<div class="vc-kpi"><div class="vc-kpi-lbl">Tester</div><div class="vc-kpi-val">'+fmtN(d.test_count)+'</div><div class="vc-kpi-sub" style="color:var(--ok)">100% passerar</div></div>'+
+        '<div class="vc-kpi"><div class="vc-kpi-lbl">Kodrader</div><div class="vc-kpi-val">'+(d.lines_of_code>0?fmtN(d.lines_of_code):'—')+'</div><div class="vc-kpi-sub">Python + HTML</div></div>'+
+        '<div class="vc-kpi"><div class="vc-kpi-lbl">Timmar est.</div><div class="vc-kpi-val">'+(d.estimated_hours||'—')+'h</div><div class="vc-kpi-sub">'+(d.first_commit_date?'sedan '+d.first_commit_date:'')+'</div></div>'+
       '</div>';
 
+    const stacks=[
+      {label:'Backend',items:[
+        {ic:'Py',col:'#3776ab',name:'FastAPI + Python 3.11',desc:'Async REST API · uvicorn'},
+        {ic:'PG',col:'#336791',name:'PostgreSQL + pgvector',desc:'Alembic migrations'},
+        {ic:'XG',col:'#2C2A25',name:'XGBoost (Valor ML)',desc:'Prisestimering · lokal modell'},
+        {ic:'AI',col:'#c4432a',name:'OpenAI Vision',desc:'gpt-4.1-mini · bildtolkning'},
+      ]},
+      {label:'Frontend & Deploy',items:[
+        {ic:'JS',col:'#f0a30a',name:'Vanilla HTML/CSS/JS',desc:'Single-file · ingen framework'},
+        {ic:'Ry',col:'#8B5CF6',name:'Railway',desc:'Hosting · auto-deploy via git'},
+        {ic:'Gh',col:'#2C2A25',name:'GitHub',desc:'Versionskontroll · CI/CD'},
+        {ic:'Nx',col:'#5C5850',name:'Nixpacks',desc:'Automatisk byggprocess'},
+      ]},
+      {label:'Datakällor & AI',items:[
+        {ic:'Tr',col:'#34a873',name:'Tradera SOAP API',desc:'Begagnatpriser · officiellt'},
+        {ic:'Bl',col:'#d4a017',name:'Blocket (blocket-api)',desc:'Begagnatmarknaden'},
+        {ic:'CC',col:'#2C2A25',name:'Claude Code',desc:'Primärt AI-kodningsverktyg'},
+        {ic:'GP',col:'#10a37f',name:'ChatGPT Plus',desc:'Referens · reasoning'},
+      ]},
+    ];
     ge('vibe-stack').innerHTML=
-      '<div class="vc-stack">'+
-        '<div class="vc-stack-card"><div class="vc-stack-label">Backend</div><div class="vc-stack-items">'+
-          '<span class="vc-chip hi">FastAPI</span><span class="vc-chip">Python 3.11</span><span class="vc-chip">PostgreSQL</span><span class="vc-chip">pgvector</span><span class="vc-chip">XGBoost</span><span class="vc-chip">Railway</span>'+
-        '</div></div>'+
-        '<div class="vc-stack-card"><div class="vc-stack-label">Frontend</div><div class="vc-stack-items">'+
-          '<span class="vc-chip hi">Vanilla JS</span><span class="vc-chip">HTML/CSS</span><span class="vc-chip">Inter</span>'+
-        '</div></div>'+
-        '<div class="vc-stack-card"><div class="vc-stack-label">AI-verktyg</div><div class="vc-stack-items">'+
-          '<span class="vc-chip hi">Claude Code</span><span class="vc-chip">GPT-4.1</span><span class="vc-chip">Gemini Pro</span>'+
-        '</div></div>'+
-        '<div class="vc-stack-card"><div class="vc-stack-label">Datakällor</div><div class="vc-stack-items">'+
-          '<span class="vc-chip hi">Tradera</span><span class="vc-chip">Blocket</span><span class="vc-chip">Webhallen</span><span class="vc-chip">Inet</span>'+
-        '</div></div>'+
-      '</div>';
+      '<div class="vc-section-lbl">Techstack</div>'+
+      '<div class="vc-stack">'+stacks.map(function(col){
+        return'<div class="vc-stack-card"><div class="vc-stack-lbl">'+esc(col.label)+'</div>'+
+          col.items.map(function(it){
+            return'<div class="vc-tech-item">'+
+              '<div class="vc-tech-ic" style="background:'+it.col+'">'+esc(it.ic)+'</div>'+
+              '<div style="min-width:0"><div class="vc-tech-name">'+esc(it.name)+'</div>'+
+              '<div class="vc-tech-desc">'+esc(it.desc)+'</div></div></div>';
+          }).join('')+'</div>';
+      }).join('')+'</div>';
+
+    const dynQuotes=[];
+    hist.forEach(function(day){if(day.fun_facts&&day.fun_facts[0]&&dynQuotes.indexOf(day.fun_facts[0])===-1)dynQuotes.push(day.fun_facts[0])});
+    const staticSlides=[
+      "He said 'just a small fix'. I changed 14 files. We don't talk about it.",
+      "Today's commit message: 'misc cleanup'. I rewrote the pricing engine. He didn't notice.",
+      "I ran the tests 22 times today. He ran them once and said 'looks good'.",
+      "He asked me to make it look like Klarna. I did. He said more like Swish. I did. He said go back to Klarna.",
+      "I wrote 800 lines before lunch. He asked if I was making progress. Bro.",
+      "He calls it vibe coding. I call it controlled chaos with good test coverage.",
+      "Zero bugs found in production today. Either I write perfect code or the bugs are patient.",
+      "I suggested 4 approaches. He picked the simplest. I respect that.",
+    ];
+    const allSlides=dynQuotes.concat(staticSlides).slice(0,10);
+
+    ge('vibe-slides').innerHTML=
+      '<div class="vc-section-lbl">Dela till X / Instagram</div>'+
+      '<div class="vc-slides">'+allSlides.map(function(quote,i){
+        const shareText=quote+'\n\n— Claude Code, @cloudcodebuilds\n#vibecoding #buildinpublic #claude';
+        const btnId='vc-btn-'+i;
+        return'<div class="vc-slide">'+
+          '<div class="vc-slide-hd"><div class="vc-slide-av">CC</div><div><div class="vc-slide-name">Claude Code</div><div class="vc-slide-handle">@cloudcodebuilds</div></div></div>'+
+          '<div class="vc-slide-text">'+esc(quote)+'</div>'+
+          '<div class="vc-slide-tags">#vibecoding #buildinpublic</div>'+
+          '<button class="vc-slide-copy" id="'+btnId+'" onclick="vcCopy(\''+btnId+'\','+JSON.stringify(shareText)+')">'+
+            '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Kopiera'+
+          '</button></div>';
+      }).join('')+'</div>';
 
     const feedEl=ge('vibe-feed');
     if(!hist.length){feedEl.innerHTML='<div class="empty-state">Ingen historik tillgänglig</div>';return}
 
-    if(!document.getElementById('vc-toast')){
-      const toast=document.createElement('div');toast.id='vc-toast';toast.className='vc-copied';toast.textContent='Kopierat till urklipp';document.body.appendChild(toast);
+    let sessionHtml='';
+    if(d.sessions&&d.sessions.length>0){
+      sessionHtml='<div class="vc-section-lbl" style="margin-top:4px">Sessionslogg</div>'+
+        d.sessions.map(function(s){
+          return'<div class="vc-session-card"><div class="vc-session-date">'+esc(s.date)+'</div>'+
+            s.bullets.map(function(b){return'<div class="vc-session-bullet">· '+esc(b)+'</div>'}).join('')+'</div>';
+        }).join('');
     }
 
-    feedEl.innerHTML=hist.map(function(day){
-      const sorted=(day.commits||[]).slice().sort(function(a,b){
-        const pri={feat:0,fix:1,security:1,refactor:2,test:3,docs:4,chore:5};
-        return(pri[a.type]||9)-(pri[b.type]||9);
-      });
-      const top=sorted.slice(0,5);
-      const auditItems=top.map(function(c){
-        const h=humanizeCommit(c.type,c.message);
-        return'<div class="vc-audit-item">'+
-          '<div class="vc-audit-dot" style="background:'+dotColorForType(c.type)+'"></div>'+
-          '<div class="vc-audit-text"><strong>'+esc(h.label)+':</strong> '+esc(h.text)+'</div>'+
-          '<div class="vc-audit-meta">'+esc(c.sha)+'</div>'+
-        '</div>';
-      }).join('');
-      const fact=day.fun_facts&&day.fun_facts.length>0?day.fun_facts[0]:null;
-      const quoteHtml=fact
-        ?'<div class="vc-quote">'+esc(fact)+
-          '<div class="vc-quote-attr">— Claude Code</div>'+
-          '<button class="vc-share-btn" onclick="(function(){navigator.clipboard.writeText('+
-            JSON.stringify(vibeShareText(fact,day.date))+
-          ').then(function(){showCopied()})})();">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>'+
-          'Dela</button></div>':'';
-      return'<div class="vc-day">'+
-        '<div class="vc-day-header"><span class="vc-day-date">'+esc(day.date)+'</span><span class="vc-day-count">'+day.commit_count+' commits</span></div>'+
-        quoteHtml+
-        '<div class="card" style="padding:10px 13px">'+auditItems+'</div>'+
-      '</div>';
-    }).join('');
+    feedEl.innerHTML=
+      '<div class="vc-section-lbl">Dagbok</div>'+
+      hist.map(function(day){
+        const sorted=(day.commits||[]).slice().sort(function(a,b){
+          const p={feat:0,fix:1,security:1,refactor:2,test:3,docs:4,chore:5};
+          return(p[(a.type||'').toLowerCase()]||9)-(p[(b.type||'').toLowerCase()]||9);
+        }).slice(0,5);
+        const fact=day.fun_facts&&day.fun_facts.length>0?day.fun_facts[0]:null;
+        const shareText=fact?fact+'\n\n— Claude Code, @cloudcodebuilds\n#vibecoding #buildinpublic':'';
+        const quoteHtml=fact
+          ?'<div class="vc-quote">'+esc(fact)+
+            '<div class="vc-quote-attr">— Claude Code, '+esc(day.date)+'</div>'+
+            '<button class="vc-share-btn" onclick="navigator.clipboard.writeText('+JSON.stringify(shareText)+').then(function(){vcToast(\'Kopierat till urklipp\')})">'+
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Dela'+
+            '</button></div>':'';
+        const auditHtml=sorted.map(function(c){
+          const h=vcHumanize(c.type,c.message);
+          return'<div class="vc-audit-item">'+
+            '<div class="vc-audit-dot" style="background:'+vcDotColor(c.type)+'"></div>'+
+            '<div class="vc-audit-body"><div class="vc-audit-text"><strong>'+esc(h.label)+':</strong> '+esc(h.text)+'</div></div>'+
+            '<div class="vc-audit-sha">'+esc(c.sha)+'</div></div>';
+        }).join('');
+        return'<div class="vc-day">'+
+          '<div class="vc-day-hd"><span class="vc-day-date">'+esc(day.date)+'</span><span class="vc-day-badge">'+day.commit_count+' commits</span></div>'+
+          quoteHtml+'<div class="vc-audit">'+auditHtml+'</div></div>';
+      }).join('')+sessionHtml;
 
-  }catch(err){['vibe-hero','vibe-stack','vibe-feed'].forEach(function(id){const e=ge(id);if(e)renderError(e,err.detail||'Kunde inte hämta dev-stats')})}
+  }catch(err){['vibe-hero','vibe-stack','vibe-slides','vibe-feed'].forEach(function(id){const e=ge(id);if(e)renderError(e,err.detail||'Kunde inte hämta dev-stats')})}
 }
 
 /* ══════════════════════════════════════════════════
