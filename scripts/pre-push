@@ -1,0 +1,15 @@
+#!/bin/sh
+# pre-push hook — runs tests before allowing push.
+# Install: cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+# Or: bash scripts/install_hook.sh
+
+echo "Running tests before push..."
+python -m pytest tests/ -q --tb=short
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "Tests failed — push aborted."
+    echo "Fix the failing tests and try again."
+    exit 1
+fi
+
+echo "Tests passed — pushing."
