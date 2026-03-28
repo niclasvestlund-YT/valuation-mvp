@@ -21,6 +21,7 @@ from fastapi.responses import JSONResponse
 
 from backend.app.db.database import async_session
 from backend.app.utils import api_counter
+from backend.app.utils.admin_errors import raise_admin_error
 from backend.app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -97,6 +98,10 @@ class ValuationMetrics(BaseModel):
     top_brands: list[dict]
     hourly_volume: list[dict]
     daily_volume: list[dict]
+    recent_valuations: list[dict] = []
+    valor_stats: dict = {}
+    status_breakdown_dict: dict = {}
+    source_stats: dict = {}
 
 
 class TableRow(BaseModel):
@@ -167,8 +172,7 @@ async def db_overview():
             ],
         )
     except Exception as exc:
-        logger.error("admin endpoint error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internt serverfel")
+        raise_admin_error("OVERVIEW_FETCH_FAILED", "/admin/overview", raw_error=exc)
 
 
 @admin_router.get("/metrics", response_model=ValuationMetrics)
@@ -247,6 +251,82 @@ async def valuation_metrics():
             """
         )
 
+        # ── Recent valuations (top 5) ──
+        recent_vals = await _fetch(
+            """
+            SELECT product_name, category, status, estimated_value,
+                   num_comparables_used, num_comparables_raw, created_at
+            FROM valuations
+            ORDER BY created_at DESC
+            LIMIT 5
+            """
+        )
+        recent_valuations = [
+            {
+                "product_name": r.get("product_name") or "Okänd produkt",
+                "category": r.get("category") or "—",
+                "status": r.get("status") or "unknown",
+                "estimated_value_sek": r.get("estimated_value"),
+                "source_count": int(r.get("num_comparables_raw") or 0),
+                "comparable_count": int(r.get("num_comparables_used") or 0),
+                "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+            }
+            for r in recent_vals
+        ]
+
+        # ── Status breakdown as dict ──
+        status_dict = {}
+        for r in status_breakdown:
+            status_dict[r["status"]] = int(r["count"])
+        for s in ("ok", "degraded", "insufficient_evidence", "ambiguous_model", "depreciation_estimate", "error"):
+            status_dict.setdefault(s, 0)
+
+        # ── VALOR stats ──
+        from backend.app.core.config import settings as _cfg
+        valor_model_row = await _fetch(
+            """
+            SELECT model_version, mae_sek, mape_pct, trained_at, training_samples
+            FROM valor_model
+            WHERE is_active = true
+            ORDER BY trained_at DESC LIMIT 1
+            """
+        )
+        obs_total = await _fetchval("SELECT COUNT(*) FROM price_observation") or 0
+        obs_7d = await _fetchval(
+            "SELECT COUNT(*) FROM price_observation WHERE observed_at >= NOW() - INTERVAL '7 days'"
+        ) or 0
+        samples_per_day = round(int(obs_7d) / 7, 1) if obs_7d else 0.0
+        threshold = _cfg.valor_min_samples_for_production
+        vm = valor_model_row[0] if valor_model_row else {}
+        days_to_threshold = None
+        if samples_per_day > 0 and int(obs_total) < threshold:
+            days_to_threshold = max(1, round((threshold - int(obs_total)) / samples_per_day))
+
+        valor_stats_data = {
+            "sample_count": int(obs_total),
+            "threshold": threshold,
+            "model_available": bool(valor_model_row),
+            "model_version": vm.get("model_version"),
+            "last_trained_at": vm["trained_at"].isoformat() if vm.get("trained_at") else None,
+            "mae_sek": float(vm["mae_sek"]) if vm.get("mae_sek") else None,
+            "mape_pct": float(vm["mape_pct"]) if vm.get("mape_pct") else None,
+            "samples_per_day": samples_per_day,
+            "days_to_threshold": days_to_threshold,
+        }
+
+        # ── Source stats ──
+        last_val_at = await _fetchval(
+            "SELECT MAX(created_at) FROM valuations"
+        )
+        avg_comp = await _fetchval(
+            "SELECT ROUND(AVG(num_comparables_used)::numeric, 1) FROM valuations WHERE num_comparables_used IS NOT NULL"
+        )
+        source_stats_data = {
+            "last_valuation_at": last_val_at.isoformat() if last_val_at else None,
+            "avg_comparables_per_valuation": float(avg_comp) if avg_comp else 0.0,
+            "cache_hit_rate_pct": None,
+        }
+
         return ValuationMetrics(
             total_valuations=int(total),
             last_24h=int(last_24h),
@@ -267,10 +347,68 @@ async def valuation_metrics():
                 }
                 for r in daily_volume
             ],
+            recent_valuations=recent_valuations,
+            valor_stats=valor_stats_data,
+            status_breakdown_dict=status_dict,
+            source_stats=source_stats_data,
         )
     except Exception as exc:
-        logger.error("admin endpoint error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internt serverfel")
+        raise_admin_error("METRICS_FETCH_FAILED", "/admin/metrics", raw_error=exc)
+
+
+@admin_router.get("/assistant-stats")
+async def assistant_stats():
+    """Prisassistent conversation stats from valuations (last 7 days)."""
+    try:
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+
+        total = await _fetchval(
+            "SELECT COUNT(*) FROM valuations WHERE created_at >= :since",
+            {"since": seven_days_ago},
+        ) or 0
+
+        # Feedback-based corrections
+        corrections = await _fetchval(
+            "SELECT COUNT(*) FROM valuations WHERE created_at >= :since AND corrected_product IS NOT NULL",
+            {"since": seven_days_ago},
+        ) or 0
+
+        # Status-based phase approximation (no assistant_context JSON column on Valuation)
+        phase_rows = await _fetch(
+            """
+            SELECT status, COUNT(*) AS count
+            FROM valuations
+            WHERE created_at >= :since
+            GROUP BY status
+            """,
+            {"since": seven_days_ago},
+        )
+        status_counts = {r["status"]: int(r["count"]) for r in phase_rows}
+
+        # Map statuses to assistant phases
+        complete = status_counts.get("ok", 0) + status_counts.get("depreciation_estimate", 0)
+        confirming = status_counts.get("ambiguous_model", 0)
+        correcting = int(corrections)
+        unsupported = status_counts.get("error", 0)
+
+        confirmed_pct = round(complete / total * 100) if total > 0 else 0
+
+        return {
+            "period_days": 7,
+            "total_conversations": int(total),
+            "confirmed_directly": complete,
+            "confirmed_pct": confirmed_pct,
+            "corrections": correcting,
+            "phase_breakdown": {
+                "confirming": confirming,
+                "correcting": correcting,
+                "complete": complete,
+                "unsupported": unsupported,
+            },
+            "note": "Baserat på valuation-status och feedback senaste 7 dagarna",
+        }
+    except Exception as exc:
+        raise_admin_error("ASSISTANT_STATS_FAILED", "/admin/assistant-stats", raw_error=exc)
 
 
 ALLOWED_TABLES = {
@@ -367,8 +505,7 @@ async def slow_queries(min_ms: float = 500):
             for r in rows
         ]
     except Exception as exc:
-        logger.error("admin endpoint error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internt serverfel")
+        raise_admin_error("METRICS_FETCH_FAILED", "/admin/endpoint", raw_error=exc)
 
 
 @admin_router.get("/valuations")
@@ -400,8 +537,7 @@ async def list_valuations(
         )
         return {"total": total or 0, "valuations": rows}
     except Exception as exc:
-        logger.error("admin endpoint error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internt serverfel")
+        raise_admin_error("METRICS_FETCH_FAILED", "/admin/endpoint", raw_error=exc)
 
 
 @admin_router.get("/valuation/{valuation_id}")
@@ -447,8 +583,7 @@ async def index_health():
         )
         return [dict(r) for r in rows]
     except Exception as exc:
-        logger.error("admin endpoint error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internt serverfel")
+        raise_admin_error("METRICS_FETCH_FAILED", "/admin/endpoint", raw_error=exc)
 
 
 @admin_router.get("/data-quality")
@@ -507,8 +642,7 @@ async def data_quality():
             "coverage": [dict(r) for r in coverage],
         }
     except Exception as exc:
-        logger.error("admin endpoint error: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internt serverfel")
+        raise_admin_error("METRICS_FETCH_FAILED", "/admin/endpoint", raw_error=exc)
 
 
 @admin_router.get("/api-usage")
@@ -690,8 +824,7 @@ async def market_data():
         logger.info("admin /market-data called, rows returned: %d", total_comparables)
         return result
     except Exception as exc:
-        logger.error("admin /market-data failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
+        raise_admin_error("MARKET_DATA_FAILED", "/admin/market-data", raw_error=exc)
 
 
 @admin_router.get("/valuations-data")
@@ -815,8 +948,7 @@ async def valuations_data():
         logger.info("admin /valuations-data called, rows returned: %d", total)
         return result
     except Exception as exc:
-        logger.error("admin /valuations-data failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
+        raise_admin_error("VALUATIONS_FETCH_FAILED", "/admin/valuations-data", raw_error=exc)
 
 
 @admin_router.get("/ocr-stats")
@@ -892,8 +1024,7 @@ async def ocr_stats():
         logger.info("admin /ocr-stats called, rows returned: %d", total)
         return result
     except Exception as exc:
-        logger.error("admin /ocr-stats failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
+        raise_admin_error("OCR_STATS_FAILED", "/admin/ocr-stats", raw_error=exc)
 
 
 @admin_router.get("/agent-stats")
@@ -986,8 +1117,7 @@ async def agent_stats():
         logger.info("admin /agent-stats ok, observations=%d coverage=%d", total_observations, coverage)
         return result
     except Exception as exc:
-        logger.error("admin /agent-stats failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
+        raise_admin_error("AGENT_STATS_FAILED", "/admin/agent-stats", raw_error=exc)
 
 
 @admin_router.get("/valor-stats")
@@ -1118,5 +1248,4 @@ async def valor_stats():
                      model.get("model_version") if model else "none", total_samples)
         return result
     except Exception as exc:
-        logger.error("admin /valor-stats failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
+        raise_admin_error("VALOR_STATS_FAILED", "/admin/valor-stats", raw_error=exc)
