@@ -167,7 +167,8 @@ async def db_overview():
             ],
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error("admin endpoint error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internt serverfel")
 
 
 @admin_router.get("/metrics", response_model=ValuationMetrics)
@@ -268,7 +269,16 @@ async def valuation_metrics():
             ],
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error("admin endpoint error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internt serverfel")
+
+
+ALLOWED_TABLES = {
+    "valuations", "market_comparable", "price_observation",
+    "training_sample", "valor_model", "valor_estimate",
+    "agent_job", "product", "price_snapshot", "new_price_snapshot",
+    "product_embedding",
+}
 
 
 @admin_router.get("/table/{table_name}", response_model=TableRow)
@@ -282,7 +292,7 @@ async def browse_table(
     """Browse any table with pagination. Returns columns + rows.
 
     SQL-injection defense:
-    1. table_name is validated against information_schema (whitelist)
+    1. table_name is validated against ALLOWED_TABLES (static allowlist)
     2. order_by is validated against actual column names (whitelist)
     3. Both identifiers are regex-validated via _validate_identifier()
     4. direction is hardcoded to DESC/ASC
@@ -292,12 +302,12 @@ async def browse_table(
     _validate_identifier(table_name)
     _validate_identifier(order_by)
 
-    allowed = await _fetch(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
-    )
-    allowed_names = {r["table_name"] for r in allowed}
-    if table_name not in allowed_names:
-        raise HTTPException(status_code=404, detail="Table not found")
+    # Static allowlist — blocks system tables like pg_shadow
+    if table_name not in ALLOWED_TABLES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Okänd tabell. Tillåtna: {sorted(ALLOWED_TABLES)}",
+        )
 
     cols = await _fetch(
         "SELECT column_name FROM information_schema.columns "
@@ -357,7 +367,8 @@ async def slow_queries(min_ms: float = 500):
             for r in rows
         ]
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error("admin endpoint error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internt serverfel")
 
 
 @admin_router.get("/valuations")
@@ -389,7 +400,8 @@ async def list_valuations(
         )
         return {"total": total or 0, "valuations": rows}
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error("admin endpoint error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internt serverfel")
 
 
 @admin_router.get("/valuation/{valuation_id}")
@@ -435,7 +447,8 @@ async def index_health():
         )
         return [dict(r) for r in rows]
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error("admin endpoint error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internt serverfel")
 
 
 @admin_router.get("/data-quality")
@@ -494,7 +507,8 @@ async def data_quality():
             "coverage": [dict(r) for r in coverage],
         }
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error("admin endpoint error: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internt serverfel")
 
 
 @admin_router.get("/api-usage")
@@ -677,7 +691,7 @@ async def market_data():
         return result
     except Exception as exc:
         logger.error("admin /market-data failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
 
 
 @admin_router.get("/valuations-data")
@@ -802,7 +816,7 @@ async def valuations_data():
         return result
     except Exception as exc:
         logger.error("admin /valuations-data failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
 
 
 @admin_router.get("/ocr-stats")
@@ -879,7 +893,7 @@ async def ocr_stats():
         return result
     except Exception as exc:
         logger.error("admin /ocr-stats failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
 
 
 @admin_router.get("/agent-stats")
@@ -973,7 +987,7 @@ async def agent_stats():
         return result
     except Exception as exc:
         logger.error("admin /agent-stats failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})
 
 
 @admin_router.get("/valor-stats")
@@ -1105,4 +1119,4 @@ async def valor_stats():
         return result
     except Exception as exc:
         logger.error("admin /valor-stats failed: %s", exc, exc_info=True)
-        return JSONResponse(status_code=500, content={"error": "DB-fel", "detail": str(exc)})
+        return JSONResponse(status_code=500, content={"error": "Internt serverfel"})

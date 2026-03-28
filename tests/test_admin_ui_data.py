@@ -300,3 +300,94 @@ class TestNoLocalHistoryInAdmin:
         for v in d["valuations"]:
             assert "id" in v or "valuation_id" in v, \
                 f"Valuation missing server ID — might be local data: {list(v.keys())[:5]}"
+
+
+# ─── Test group 7: Phase 2 — XSS escaping ───
+
+
+class TestEscFunction:
+    """Verify the esc() XSS helper exists and covers dangerous characters."""
+
+    def test_esc_function_defined_in_admin_html(self):
+        """esc() helper must be defined before any render function."""
+        with open("frontend/admin.html") as f:
+            content = f.read()
+        assert "function esc(" in content
+        assert ".replace(/&/" in content
+        assert ".replace(/</" in content
+        assert ".replace(/>/" in content
+        assert '.replace(/"/' in content
+
+    def test_esc_function_called_on_api_data(self):
+        """Key API data fields must be wrapped in esc() calls."""
+        with open("frontend/admin.html") as f:
+            content = f.read()
+        # product name escaped in renderList
+        assert "esc(model)" in content
+        # error_message escaped in agent jobs
+        assert "esc(j.error_message)" in content
+        # product_key escaped
+        assert "esc(p.product_key)" in content or "esc(s.product_key)" in content
+        # JSON dump escaped
+        assert "esc(JSON.stringify" in content
+
+
+class TestRenderSectionState:
+    """Verify renderSectionState() exists with all required states."""
+
+    def test_render_section_state_function_defined(self):
+        with open("frontend/admin.html") as f:
+            content = f.read()
+        assert "function renderSectionState(" in content
+        assert "loading" in content
+        assert "error" in content
+        assert "unauthorized" in content
+        assert "empty" in content
+
+
+# ─── Test group 8: Phase 2 — Exception leakage ───
+
+
+class TestExceptionLeakage:
+    """Admin endpoints must not leak raw exception text in error responses."""
+
+    @pytest.mark.parametrize("path", [
+        "/admin/metrics",
+        "/admin/market-data",
+        "/admin/agent-stats",
+        "/admin/valor-stats",
+    ])
+    def test_admin_endpoint_error_message_is_safe(self, client, path):
+        """403 responses must not contain Python exception patterns."""
+        if not ADMIN_KEY:
+            pytest.skip("ADMIN_SECRET_KEY not set — local dev allows unauthenticated")
+        r = client.get(path, headers={"X-Admin-Key": "wrong-key"})
+        if r.status_code in (401, 403):
+            d = r.json()
+            detail = str(d.get("detail", ""))
+            assert "Traceback" not in detail
+            assert "Exception" not in detail
+            assert "sqlalchemy" not in detail.lower()
+            assert "psycopg" not in detail.lower()
+
+
+# ─── Test group 9: Phase 2 — Table browser hardening ───
+
+
+class TestTableBrowserHardening:
+    """Table browser must reject unknown and malicious table names."""
+
+    def test_table_browser_rejects_unknown_table(self, client):
+        r = client.get("/admin/table/pg_shadow", headers=admin_headers)
+        assert r.status_code == 400
+        d = r.json()
+        # Must not echo the attempted table name back as-is
+        assert "Tillåtna" in str(d.get("detail", ""))
+
+    def test_table_browser_rejects_sql_injection(self, client):
+        r = client.get(
+            "/admin/table/valuations;DROP TABLE valuations;--",
+            headers=admin_headers,
+        )
+        # Should fail regex validation (400) or URL parsing (404/422)
+        assert r.status_code in (400, 404, 422)

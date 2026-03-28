@@ -1411,6 +1411,47 @@
 </div>
 
 <script>
+/* ─── XSS escaping helper — must be first ─── */
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ─── Shared section state renderer ─── */
+function renderSectionState(containerId, state, message) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  const styles = {
+    loading:      'color:var(--text-faint)',
+    ok:           '',
+    empty:        'color:var(--text-muted)',
+    error:        'color:var(--accent-danger)',
+    unauthorized: 'color:var(--accent-warning)',
+  };
+
+  const icons = {
+    loading:      '○',
+    empty:        '—',
+    error:        '!',
+    unauthorized: '⊘',
+  };
+
+  if (state === 'loading') {
+    el.innerHTML = `<div class="skeleton skeleton-row" style="height:40px;margin:8px 0;"></div>`.repeat(3);
+    return;
+  }
+
+  if (state !== 'ok') {
+    el.innerHTML = `<div style="text-align:center;padding:20px;font-size:var(--text-sm);${styles[state] || ''};">${icons[state] || ''} ${esc(message || state)}</div>`;
+  }
+}
+
 /* ─── Admin key — in-memory only (never persisted to localStorage) ─── */
 let ADMIN_KEY = '';
 let headers = { 'X-Admin-Key': ADMIN_KEY };
@@ -1586,12 +1627,12 @@ function showMetricsError(msg) {
     if (el) el.textContent = '—';
   });
   const bar = document.getElementById('status-bar');
-  if (bar) bar.innerHTML = '<div style="text-align:center;padding:8px;color:var(--accent-danger);font-size:var(--text-sm);">' + msg + '</div>';
+  if (bar) bar.innerHTML = '<div style="text-align:center;padding:8px;color:var(--accent-danger);font-size:var(--text-sm);">' + esc(msg) + '</div>';
 }
 
 function showValuationsError(msg) {
   const list = document.getElementById('valuation-list');
-  if (list) list.innerHTML = '<div class="empty-state" style="color:var(--accent-danger);">' + msg + '</div>';
+  if (list) list.innerHTML = '<div class="empty-state" style="color:var(--accent-danger);">' + esc(msg) + '</div>';
 }
 
 async function resetApiCounters(scope = 'all') {
@@ -1635,21 +1676,21 @@ async function fetchApiUsage() {
       const currentBlocked = s.quota_period === 'month' ? s.blocked_this_month : s.blocked_today;
       const quotaSummary = s.quota_limit != null
         ? (s.quota_period === 'day'
-            ? `Idag ${s.quota_used}/${s.quota_limit} ${s.quota_unit_label}, månad ${s.quota_this_month}, blockerade idag ${currentBlocked}`
-            : `Månad ${s.quota_used}/${s.quota_limit} ${s.quota_unit_label}, blockerade denna månad ${currentBlocked}`)
+            ? `Idag ${s.quota_used}/${s.quota_limit} ${esc(s.quota_unit_label)}, månad ${s.quota_this_month}, blockerade idag ${currentBlocked}`
+            : `Månad ${s.quota_used}/${s.quota_limit} ${esc(s.quota_unit_label)}, blockerade denna månad ${currentBlocked}`)
         : `Ingen gratisgräns satt. Totalt ok ${s.total_calls}, idag ${s.today}.`;
       let quotaColor = 'var(--text-muted)';
       if (s.quota_exhausted) quotaColor = 'var(--accent-danger)';
       else if (s.quota_limit != null && s.quota_remaining <= Math.max(1, Math.round(s.quota_limit * 0.2))) quotaColor = 'var(--accent-warning)';
       else if (s.quota_limit != null) quotaColor = 'var(--accent-positive)';
       const quotaChip = s.quota_limit != null
-        ? `${s.quota_used}/${s.quota_limit} ${s.quota_unit_label}`
+        ? `${s.quota_used}/${s.quota_limit} ${esc(s.quota_unit_label)}`
         : `tot ${s.total_calls}`;
       const quotaStatus = s.quota_exhausted ? 'stoppad' : s.quota_limit != null ? `kvar ${s.quota_remaining}` : 'ingen gräns';
       const blockedText = s.blocked_total > 0 ? `block ${s.blocked_total}` : 'block 0';
       html += `<div class="api-source-row">
         <div class="api-source-header">
-          <strong class="api-source-name">${label}</strong>
+          <strong class="api-source-name">${esc(label)}</strong>
           <span class="api-source-rate" style="color:${rateColor};">${rateText}</span>
         </div>
         <div class="api-source-detail">${quotaSummary}</div>
@@ -1754,7 +1795,7 @@ function renderList() {
       <div class="valuation-card-top">
         <div class="valuation-thumb">${icon}</div>
         <div class="valuation-info">
-          <div class="valuation-product">${model}</div>
+          <div class="valuation-product">${esc(model)}</div>
           <div class="valuation-meta">
             ${getStatusPill(status)}
             <span>${time}</span>
@@ -1792,8 +1833,8 @@ function openDetail(idx) {
     `}
 
     <div class="detail-field"><span class="detail-field-label">Status</span><span class="detail-field-value">${getStatusPill(status)}</span></div>
-    <div class="detail-field"><span class="detail-field-label">Brand</span><span class="detail-field-value">${v.brand || '—'}</span></div>
-    <div class="detail-field"><span class="detail-field-label">Kategori</span><span class="detail-field-value">${v.category || '—'}</span></div>
+    <div class="detail-field"><span class="detail-field-label">Brand</span><span class="detail-field-value">${esc(v.brand) || '—'}</span></div>
+    <div class="detail-field"><span class="detail-field-label">Kategori</span><span class="detail-field-value">${esc(v.category) || '—'}</span></div>
     <div class="detail-field"><span class="detail-field-label">Nypris</span><span class="detail-field-value">${formatKr(v.new_price)}</span></div>
     <div class="detail-field"><span class="detail-field-label">Konfidens</span><span class="detail-field-value">${conf > 0 ? (conf * 100).toFixed(0) + '%' : '—'}</span></div>
     ${v.valor_estimate_sek ? `
@@ -1801,17 +1842,17 @@ function openDetail(idx) {
       <span class="detail-field-label">VALOR-estimat</span>
       <span class="detail-field-value" style="color:var(--accent-positive);">
         ${Math.round(v.valor_estimate_sek).toLocaleString('sv-SE')} kr
-        ${v.valor_model_version ? '<span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:6px;">' + v.valor_model_version + '</span>' : ''}
+        ${v.valor_model_version ? '<span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:6px;">' + esc(v.valor_model_version) + '</span>' : ''}
       </span>
     </div>` : ''}
     <div class="detail-field"><span class="detail-field-label">Comparables</span><span class="detail-field-value">${v.num_comparables_used ?? v.comparable_count ?? '—'}</span></div>
-    <div class="detail-field"><span class="detail-field-label">Condition</span><span class="detail-field-value">${v.condition || '—'}</span></div>
+    <div class="detail-field"><span class="detail-field-label">Condition</span><span class="detail-field-value">${esc(v.condition) || '—'}</span></div>
     <div class="detail-field"><span class="detail-field-label">Svarstid</span><span class="detail-field-value">${v.response_time_ms ? v.response_time_ms + ' ms' : '—'}</span></div>
     <div class="detail-field"><span class="detail-field-label">Tidpunkt</span><span class="detail-field-value">${v.created_at ? new Date(v.created_at).toLocaleString('sv-SE') : '—'}</span></div>
-    <div class="detail-field"><span class="detail-field-label">ID</span><span class="detail-field-value" style="font-size:var(--text-xs);">${v.valuation_id || v.id || '—'}</span></div>
+    <div class="detail-field"><span class="detail-field-label">ID</span><span class="detail-field-value" style="font-size:var(--text-xs);">${esc(v.valuation_id || v.id) || '—'}</span></div>
 
     <div class="section-label" style="margin-top: var(--space-6);">RÅDATA</div>
-    <div class="detail-json">${JSON.stringify(v, null, 2)}</div>
+    <div class="detail-json">${esc(JSON.stringify(v, null, 2))}</div>
   `;
 
   document.getElementById('detail-panel').classList.add('active');
@@ -1872,9 +1913,9 @@ async function loadMarketData() {
     if ((c.latest || []).length) {
       latestEl.innerHTML = c.latest.map(r => `
         <div class="source-row">
-          <span class="source-name">${r.title || '—'}</span>
+          <span class="source-name">${esc(r.title) || '—'}</span>
           <div class="source-stats">
-            <span style="color:var(--text-muted);font-size:var(--text-xs);">${r.source}</span>
+            <span style="color:var(--text-muted);font-size:var(--text-xs);">${esc(r.source)}</span>
             <span style="font-weight:600;">${r.price_sek?.toLocaleString('sv-SE') || '—'} kr</span>
             ${relevanceBadge(r.relevance_score)}
           </div>
@@ -1899,9 +1940,9 @@ async function loadMarketData() {
     if (top.length) {
       topEl.innerHTML = top.map(p => `
         <div class="source-row">
-          <span class="source-name">${p.brand} ${p.model}</span>
+          <span class="source-name">${esc(p.brand)} ${esc(p.model)}</span>
           <div class="source-stats">
-            <span style="color:var(--text-muted);font-size:var(--text-xs);">${p.category || ''}</span>
+            <span style="color:var(--text-muted);font-size:var(--text-xs);">${esc(p.category)}</span>
             <span style="font-weight:500;">${p.comparable_count} st</span>
             <span style="font-weight:600;">${p.avg_price_sek?.toLocaleString('sv-SE') || '—'} kr</span>
           </div>
@@ -1941,7 +1982,7 @@ async function loadValuationsData() {
     if (recent.length) {
       recentEl.innerHTML = recent.map(r => `
         <div class="source-row">
-          <span class="source-name" style="flex:1;">${r.brand || ''} ${r.model || '—'}</span>
+          <span class="source-name" style="flex:1;">${esc(r.brand)} ${esc(r.model) || '—'}</span>
           <div class="source-stats">
             <span style="font-weight:600;">${r.estimated_value ? r.estimated_value.toLocaleString('sv-SE') + ' kr' : '—'}</span>
             <span style="font-size:var(--text-xs);color:var(--text-muted);">${r.value_range_low || '—'}–${r.value_range_high || '—'}</span>
@@ -1988,9 +2029,9 @@ async function loadValuationsData() {
       if (corrections.length) {
         html += corrections.map(c => `
           <div class="source-row" style="font-size:var(--text-sm);">
-            <span style="color:var(--accent-danger);">Vi gissade ${c.original_guess || '?'}</span>
+            <span style="color:var(--accent-danger);">Vi gissade ${esc(c.original_guess) || '?'}</span>
             <span style="color:var(--text-muted);">&rarr;</span>
-            <span style="color:var(--accent-positive);">${c.corrected_to || '?'}</span>
+            <span style="color:var(--accent-positive);">${esc(c.corrected_to) || '?'}</span>
             <span style="color:var(--text-faint);font-size:var(--text-xs);">${confBadge(c.confidence_at_time)} &middot; ${c.created_at ? new Date(c.created_at).toLocaleString('sv-SE') : ''}</span>
           </div>`).join('');
       }
@@ -2053,7 +2094,7 @@ async function loadOcrStats() {
           : '<span style="font-size:0.6875rem;font-weight:500;padding:3px 8px;border-radius:6px;background:var(--bg-base);color:var(--text-muted);border:1px solid var(--border-subtle);">Ingen</span>';
       const name = [r.brand, r.model].filter(Boolean).join(' ') || '—';
       const t = r.created_at ? timeAgo(r.created_at) : '—';
-      return `<div class="source-row">${dot} <span class="source-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span><span style="font-size:0.75rem;color:var(--text-muted);margin-right:8px;">${t}</span>${chip}</div>`;
+      return `<div class="source-row">${dot} <span class="source-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(name)}</span><span style="font-size:0.75rem;color:var(--text-muted);margin-right:8px;">${t}</span>${chip}</div>`;
     }).join('');
   } catch (e) {
     console.warn('ocr-stats failed:', e);
@@ -2074,7 +2115,7 @@ function showAgentEmpty(msg) {
   document.getElementById('agent-last-run').textContent = '—';
   ['agent-source-table','agent-stale-table','agent-jobs-table','agent-top-products'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">${msg}</div>`;
+    if (el) el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">${esc(msg)}</div>`;
   });
 }
 async function loadAgentStats() {
@@ -2113,7 +2154,7 @@ async function loadAgentStats() {
     if (sources.length) {
       srcEl.innerHTML = sources.map(s => `
         <div class="source-row">
-          <span class="source-name">${s.source || '—'}</span>
+          <span class="source-name">${esc(s.source) || '—'}</span>
           <div class="source-stats">
             <span style="font-weight:600;">${(s.count || 0).toLocaleString('sv-SE')}</span>
             <span style="color:var(--text-muted);font-size:var(--text-xs);">${s.pct || 0}%</span>
@@ -2129,7 +2170,7 @@ async function loadAgentStats() {
     if (stale.length) {
       staleEl.innerHTML = stale.map(s => `
         <div class="source-row" style="color:var(--accent-warning);">
-          <span class="source-name">${s.product_key}</span>
+          <span class="source-name">${esc(s.product_key)}</span>
           <span style="font-size:var(--text-xs);">${s.latest_observed_at ? timeAgo(s.latest_observed_at) : '—'}</span>
         </div>`).join('');
     } else {
@@ -2146,12 +2187,12 @@ async function loadAgentStats() {
         return `
         <div class="source-row" style="flex-wrap:wrap;gap:4px;">
           <span style="font-size:var(--text-xs);color:var(--text-muted);min-width:100px;">${t}</span>
-          <span class="source-name" style="flex:1;min-width:80px;">${j.product_key || '—'}</span>
-          <span style="font-size:var(--text-xs);color:var(--text-muted);">${j.source || ''}</span>
+          <span class="source-name" style="flex:1;min-width:80px;">${esc(j.product_key) || '—'}</span>
+          <span style="font-size:var(--text-xs);color:var(--text-muted);">${esc(j.source)}</span>
           <span style="font-weight:500;color:var(--accent-positive);min-width:30px;">+${j.observations_added || 0}</span>
           <span style="font-weight:500;color:var(--accent-danger);min-width:30px;">-${j.observations_rejected || 0}</span>
           ${pill}
-          ${j.error_message ? '<div style="font-size:var(--text-xs);color:var(--accent-danger);margin-top:4px;padding-left:4px;border-left:2px solid var(--accent-danger);width:100%;">' + j.error_message + '</div>' : ''}
+          ${j.error_message ? '<div style="font-size:var(--text-xs);color:var(--accent-danger);margin-top:4px;padding-left:4px;border-left:2px solid var(--accent-danger);width:100%;">' + esc(j.error_message) + '</div>' : ''}
         </div>`;
       }).join('');
     } else {
@@ -2164,7 +2205,7 @@ async function loadAgentStats() {
     if (tops.length) {
       topEl.innerHTML = tops.map(p => `
         <div class="source-row">
-          <span class="source-name">${p.product_key}</span>
+          <span class="source-name">${esc(p.product_key)}</span>
           <div class="source-stats">
             <span style="font-weight:600;">${(p.count || 0).toLocaleString('sv-SE')} obs</span>
             <span style="font-size:var(--text-xs);color:var(--text-muted);">${p.latest_observed_at ? timeAgo(p.latest_observed_at) : '—'}</span>
@@ -2176,11 +2217,11 @@ async function loadAgentStats() {
   } catch (e) { console.warn('agent-stats failed:', e); showAgentEmpty('Inga agent-data tillgängliga'); }
 }
 
-loadValorStats();
+/* loadValorStats called via initAdminData() after auth */
 
 function showValorEmpty(msg) {
   const modelEl = document.getElementById('valor-model-status');
-  if (modelEl) modelEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">${msg}</div>`;
+  if (modelEl) modelEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">${esc(msg)}</div>`;
   document.getElementById('valor-total-samples').textContent = '0';
   document.getElementById('valor-included').textContent = '0';
   document.getElementById('valor-avg-quality').textContent = '—';
@@ -2200,7 +2241,7 @@ async function loadValorStats() {
     if (m) {
       modelEl.innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:12px;">
-          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Version</div><div style="font-weight:600;">${m.model_version || '—'}</div></div>
+          <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Version</div><div style="font-weight:600;">${esc(m.model_version) || '—'}</div></div>
           <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">MAE</div><div style="font-weight:600;">${m.mae_sek ? Math.round(m.mae_sek) + ' kr' : '—'}</div></div>
           <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">MAPE</div><div style="font-weight:600;">${m.mape_pct ? m.mape_pct.toFixed(1) + '%' : '—'}</div></div>
           <div><div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;">Inom ±10%</div><div style="font-weight:600;color:var(--accent-positive);">${m.within_10pct ? m.within_10pct.toFixed(1) + '%' : '—'}</div></div>
@@ -2211,7 +2252,7 @@ async function loadValorStats() {
           <span style="font-size:var(--text-xs);color:var(--accent-positive);font-weight:500;">● Aktiv</span>
           ${m.vs_baseline_improvement_pct != null ? '<span style="font-size:var(--text-xs);font-weight:500;padding:2px 8px;border-radius:6px;background:var(--chip-green-bg);color:var(--chip-green-text);">+' + m.vs_baseline_improvement_pct.toFixed(1) + '% vs baseline</span>' : ''}
         </div>
-        ${(m.data_quality_warnings && m.data_quality_warnings.length) ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">' + m.data_quality_warnings.map(w => '<span style="font-size:var(--text-xs);padding:2px 8px;border-radius:6px;background:var(--chip-amber-bg);color:var(--chip-amber-text);">⚠ ' + w + '</span>').join('') + '</div>' : ''}`;
+        ${(m.data_quality_warnings && m.data_quality_warnings.length) ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">' + m.data_quality_warnings.map(w => '<span style="font-size:var(--text-xs);padding:2px 8px;border-radius:6px;background:var(--chip-amber-bg);color:var(--chip-amber-text);">⚠ ' + esc(w) + '</span>').join('') + '</div>' : ''}`;
     } else if (d.model === null && (t.total_samples || 0) > 0) {
       const threshold = d.production_threshold || 50;
       modelEl.innerHTML = `
@@ -2253,7 +2294,7 @@ async function loadValorStats() {
     if (srcs.length) {
       srcEl.innerHTML = srcs.map(s => `
         <div class="source-row">
-          <span class="source-name">${s.source_type || '—'}</span>
+          <span class="source-name">${esc(s.source_type) || '—'}</span>
           <span style="font-weight:600;">${(s.count || 0).toLocaleString('sv-SE')}</span>
         </div>`).join('');
     } else {
@@ -2414,21 +2455,21 @@ function selectDiaryDay(idx) {
       <div class="diary-stat"><div class="diary-stat-val">${day.test_count}</div><div class="diary-stat-lbl">tests</div></div>
     </div>
 
-    <div class="diary-quote">${day.fun_facts[0]}</div>
+    <div class="diary-quote">${esc(day.fun_facts[0])}</div>
 
-    <p style="font-size:var(--text-base);color:var(--text-secondary);line-height:1.7;margin-bottom:var(--space-4);">${generateBody(day.commit_messages)}</p>
+    <p style="font-size:var(--text-base);color:var(--text-secondary);line-height:1.7;margin-bottom:var(--space-4);">${esc(generateBody(day.commit_messages))}</p>
 
     <div style="font-size:var(--text-xs);font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-faint);margin-bottom:var(--space-2);">COMMITS</div>
     <div style="margin-bottom:var(--space-4);">
-      ${day.commits.map(c => `<div class="diary-commit"><span class="${badgeClass(c.type)}">${c.type}</span><span>${c.message.replace(/^[^:]+:\s*/, '')}</span></div>`).join('')}
+      ${day.commits.map(c => `<div class="diary-commit"><span class="${badgeClass(c.type)}">${esc(c.type)}</span><span>${esc(c.message.replace(/^[^:]+:\s*/, ''))}</span></div>`).join('')}
     </div>
 
     <div style="font-size:var(--text-xs);font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-faint);margin-bottom:var(--space-2);">EXPORT — SOCIAL CARDS</div>
     <div class="diary-export-grid">
       ${cards.map((card, ci) => `
-        <div class="diary-card" onclick="copyDiaryCard(this, ${ci})" data-text="${card.text.replace(/"/g, '&quot;')}">
-          <div class="diary-card-label">${card.label}</div>
-          ${card.text.replace(/\n/g, '<br>')}
+        <div class="diary-card" onclick="copyDiaryCard(this, ${ci})" data-text="${esc(card.text)}">
+          <div class="diary-card-label">${esc(card.label)}</div>
+          ${esc(card.text).replace(/\n/g, '<br>')}
           <div class="diary-card-flash">Kopierad!</div>
         </div>
       `).join('')}
@@ -2463,8 +2504,8 @@ async function loadDevDiary() {
 
     daysEl.innerHTML = days.map((d, i) => `
       <button class="diary-day-btn ${i === 0 ? 'active' : ''}" onclick="selectDiaryDay(${i})">
-        <span class="diary-day-date">${d.date}</span>
-        ${generateHeadline(d.commits)}
+        <span class="diary-day-date">${esc(d.date)}</span>
+        ${esc(generateHeadline(d.commits))}
         <span class="diary-day-count">${d.commit_count} commits</span>
       </button>
     `).join('');
