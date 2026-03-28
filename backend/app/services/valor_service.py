@@ -16,7 +16,7 @@ from backend.app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-MODELS_DIR = Path(__file__).resolve().parents[3] / "models"
+MODELS_DIR = Path(os.getenv("VALOR_MODEL_DIR", str(Path(__file__).resolve().parents[3] / "models")))
 MODEL_PATH = MODELS_DIR / "valor_latest.pkl"
 FEATURES_PATH = MODELS_DIR / "valor_features.json"
 
@@ -42,6 +42,8 @@ class ValorService:
         self.features: list[str] | None = None
         self.model_version: str | None = None
         self.mae_at_load: float | None = None
+        self._loaded_at: str | None = None
+        self._training_sample_count: int = 0
         self._load_model()
 
     def _load_model(self):
@@ -66,7 +68,8 @@ class ValorService:
                     async with async_session() as session:
                         from sqlalchemy import select
                         result = await session.execute(
-                            select(ValorModel.mae_sek, ValorModel.model_version)
+                            select(ValorModel.mae_sek, ValorModel.model_version,
+                                   ValorModel.training_samples)
                             .where(ValorModel.is_active.is_(True))
                             .order_by(ValorModel.trained_at.desc())
                             .limit(1)
@@ -75,6 +78,7 @@ class ValorService:
                         if row:
                             self.mae_at_load = row[0]
                             self.model_version = row[1]
+                            self._training_sample_count = row[2] or 0
 
                 try:
                     loop = asyncio.get_running_loop()
@@ -88,6 +92,7 @@ class ValorService:
             except Exception:
                 pass  # DB not available — fine
 
+            self._loaded_at = datetime.utcnow().isoformat()
             logger.info("valor.model_loaded", extra={
                 "version": self.model_version,
                 "features": len(self.features) if self.features else 0,
@@ -99,8 +104,15 @@ class ValorService:
             self.features = None
 
     def reload_model(self):
-        """Reload model after retraining. Called without server restart."""
+        """Reload model from disk — call after training completes."""
+        self.model = None
+        self.features = None
+        self.model_version = None
         self._load_model()
+        logger.info("valor.model.reloaded", extra={
+            "available": self.is_available(),
+            "version": self.model_version,
+        })
 
     def is_available(self) -> bool:
         return self.model is not None and self.features is not None
@@ -118,18 +130,19 @@ class ValorService:
         NEVER raises — all errors caught internally.
         """
         try:
-            if not self.is_available():
-                return None
-
-            # Mock mode for testing
-            if os.getenv("USE_MOCK_VALOR") == "true":
+            # Mock mode — does NOT require a real model file
+            if os.getenv("USE_MOCK_VALOR", "").lower() == "true":
                 return {
                     "estimated_price_sek": 2500,
                     "confidence_label": "low",
                     "model_version": "mock",
                     "mae_at_prediction": 500.0,
                     "feature_values": {},
+                    "is_mock": True,
                 }
+
+            if not self.is_available():
+                return None
 
             fv = {
                 "condition_encoded": CONDITION_MAP.get(condition, 0.5),

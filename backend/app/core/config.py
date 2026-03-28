@@ -115,6 +115,8 @@ class Settings:
     agent_max_tokens: int
     agent_temperature: float
     use_mock_agent: bool
+    # VALOR
+    valor_min_samples_for_production: int
     # Crawler
     crawler_enabled: bool
     crawler_sleep_seconds: int
@@ -189,6 +191,7 @@ settings = Settings(
     embedding_model=_read_env("EMBEDDING_MODEL") or "google/siglip-base-patch16-224",
     use_mock_embedding=_read_bool_env("USE_MOCK_EMBEDDING", default=False),
     embedding_similarity_threshold=float(_read_env("EMBEDDING_SIMILARITY_THRESHOLD") or "0.92"),
+    valor_min_samples_for_production=_read_int_env("VALOR_MIN_SAMPLES_FOR_PRODUCTION", default=50),
     crawler_enabled=_read_bool_env("CRAWLER_ENABLED", default=False),
     crawler_sleep_seconds=_read_int_env("CRAWLER_SLEEP_SECONDS", default=5),
     crawler_tradera_sleep=_read_int_env("CRAWLER_TRADERA_SLEEP", default=3),

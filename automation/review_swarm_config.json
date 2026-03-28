@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "task_file": "automation/tasks/current_task.json",
+  "snapshot": {
+    "ignore_prefixes": [
+      "automation/review_runs/",
+      "automation/logs/",
+      ".claude/settings.local.json"
+    ]
+  },
+  "agent_runner": {
+    "enabled": true,
+    "provider": "codex_exec",
+    "binary": "codex",
+    "sandbox": "read-only",
+    "default_model": "gpt-5.4-mini",
+    "default_reasoning_effort": "low",
+    "default_timeout_seconds": 600,
+    "roles": {
+      "developer_reviewer": {
+        "enabled": true,
+        "model": "gpt-5.4-mini",
+        "reasoning_effort": "low",
+        "timeout_seconds": 600
+      },
+      "qa_reviewer": {
+        "enabled": true,
+        "model": "gpt-5.4",
+        "reasoning_effort": "medium",
+        "timeout_seconds": 900
+      },
+      "trust_reviewer": {
+        "enabled": true,
+        "model": "gpt-5.4",
+        "reasoning_effort": "medium",
+        "timeout_seconds": 900
+      },
+      "manager": {
+        "enabled": true,
+        "model": "gpt-5.4-mini",
+        "reasoning_effort": "low",
+        "timeout_seconds": 600
+      },
+      "product_explainer": {
+        "enabled": true,
+        "model": "gpt-5.4-mini",
+        "reasoning_effort": "low",
+        "timeout_seconds": 600
+      }
+    }
+  },
+  "checks": [
+    {
+      "id": "golden_cases",
+      "description": "Run the canonical golden regression cases.",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_golden_cases.py",
+        "-q"
+      ],
+      "allow_failure": false
+    },
+    {
+      "id": "trust_core",
+      "description": "Run trust-sensitive valuation tests.",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_value_engine.py",
+        "tests/test_pricing_service.py",
+        "tests/test_new_price_service.py",
+        "tests/test_market_discovery.py",
+        "tests/test_data_validator.py",
+        "-q"
+      ],
+      "allow_failure": true
+    },
+    {
+      "id": "collect_suite",
+      "description": "Collect the full suite to detect import and dependency breakage.",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "--collect-only",
+        "-q"
+      ],
+      "allow_failure": true
+    }
+  ],
+  "roles": [
+    {
+      "id": "developer_reviewer",
+      "title": "Developer Reviewer",
+      "artifact": "developer_output.md",
+      "focus": [
+        "implementation risks",
+        "testability and coupling",
+        "missing regression tests"
+      ]
+    },
+    {
+      "id": "qa_reviewer",
+      "title": "QA Reviewer",
+      "artifact": "qa_review.md",
+      "focus": [
+        "correctness",
+        "edge cases",
+        "API compatibility",
+        "golden cases"
+      ]
+    },
+    {
+      "id": "trust_reviewer",
+      "title": "Trust Reviewer",
+      "artifact": "trust_review.md",
+      "focus": [
+        "bad valuation prevention",
+        "refusal behavior",
+        "model confusion",
+        "evidence quality"
+      ]
+    },
+    {
+      "id": "manager",
+      "title": "Manager",
+      "artifact": "manager_summary.md",
+      "focus": [
+        "decision",
+        "risk triage",
+        "exact next Codex prompt"
+      ]
+    },
+    {
+      "id": "product_explainer",
+      "title": "Product Explainer",
+      "artifact": "product_summary.md",
+      "focus": [
+        "plain-language user impact",
+        "safety",
+        "remaining uncertainty"
+      ]
+    }
+  ]
+}

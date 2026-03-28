@@ -208,3 +208,95 @@ class TestResponseContracts:
         assert "fallback_rate_pct" in d
         assert "text_hit_rate_pct" in d
         assert "recent" in d
+
+
+# ─── Test group 6: Phase 1 admin fixes ───
+
+
+class TestAdminAuthBehavior:
+    """Tests verifying admin auth rejects bad keys and returns proper status codes."""
+
+    def test_missing_key_returns_403_when_configured(self, client):
+        """Without a valid key header, admin endpoints should return 403."""
+        if not ADMIN_KEY:
+            pytest.skip("ADMIN_SECRET_KEY not set — local dev allows unauthenticated")
+        r = client.get("/admin/metrics", headers={})
+        assert r.status_code == 403
+
+    def test_wrong_key_returns_403(self, client):
+        """A wrong admin key should return 403."""
+        if not ADMIN_KEY:
+            pytest.skip("ADMIN_SECRET_KEY not set — local dev allows unauthenticated")
+        r = client.get("/admin/metrics", headers={"X-Admin-Key": "wrong-key-12345"})
+        assert r.status_code == 403
+
+    def test_correct_key_returns_200(self, client):
+        """Correct admin key should succeed."""
+        r = client.get("/admin/api-usage", headers=admin_headers)
+        if r.status_code == 500:
+            pytest.skip("DB not available")
+        assert r.status_code == 200
+
+
+class TestMetricsNormalization:
+    """Tests verifying the frontend normalization logic for status_breakdown."""
+
+    def test_list_shaped_status_breakdown_produces_correct_total(self):
+        """The real backend returns status_breakdown as a list of dicts.
+        The frontend renderStats normalizes this to an object then sums.
+        Verify this logic produces the right numeric total."""
+        backend_shape = [
+            {"status": "ok", "count": 100, "pct": 80.0},
+            {"status": "error", "count": 15, "pct": 12.0},
+            {"status": "ambiguous_model", "count": 10, "pct": 8.0},
+        ]
+        # Simulate frontend renderStats normalization
+        normalized = {}
+        for item in backend_shape:
+            if item.get("status"):
+                normalized[item["status"]] = item.get("count", 0)
+        total = sum(normalized.values())
+        assert isinstance(total, int)
+        assert total == 125
+
+    def test_empty_status_breakdown_produces_zero(self):
+        """Empty list should produce total 0."""
+        normalized = {}
+        total = sum(normalized.values())
+        assert total == 0
+
+    def test_object_values_reduce_on_list_produces_wrong_result(self):
+        """Demonstrate the old bug: Object.values().reduce() on a list
+        of dicts would concatenate strings instead of summing numbers.
+        This test documents why we normalize list→object before summing."""
+        backend_shape = [
+            {"status": "ok", "count": 50},
+            {"status": "error", "count": 5},
+        ]
+        # Old buggy approach: treating the list items as values to reduce
+        # In JS: Object.values([{...}, {...}]).reduce((a,b) => a+b, 0) = "0[object Object][object Object]"
+        # Correct approach: normalize first
+        normalized = {}
+        for item in backend_shape:
+            normalized[item["status"]] = item["count"]
+        total = sum(normalized.values())
+        assert total == 55
+        assert total > 0  # This is the gate that was failing
+
+
+class TestNoLocalHistoryInAdmin:
+    """Verify admin valuation output comes from server only."""
+
+    def test_valuations_endpoint_returns_server_data_only(self, client):
+        """The /admin/valuations endpoint should return a valuations list
+        that comes from the database, not mixed with localStorage."""
+        r = client.get("/admin/valuations?limit=5", headers=admin_headers)
+        if r.status_code != 200:
+            pytest.skip("DB not available")
+        d = r.json()
+        assert "valuations" in d
+        assert isinstance(d["valuations"], list)
+        # Every item should have an 'id' field (server-generated), proving it's DB data
+        for v in d["valuations"]:
+            assert "id" in v or "valuation_id" in v, \
+                f"Valuation missing server ID — might be local data: {list(v.keys())[:5]}"

@@ -1,7 +1,7 @@
 # CONTEXT.md
 > Paste this into any new AI chat about this project for instant context.
 > Auto-maintained by Claude Code via CLAUDE.md rules.
-> Last updated: 2026-03-24
+> Last updated: 2026-03-28
 
 ## What This Is
 Local MVP for estimating the second-hand value of consumer tech products from photos. Identifies the product via OpenAI Vision, searches Swedish used markets (Tradera, Blocket), and returns a conservative value range. Prefers honest refusal over a misleading number.
@@ -98,6 +98,8 @@ tests/test_ingest_endpoint.py — 8 tests for /api/ingest validation (price limi
 tests/test_training_pipeline.py — 10 tests for VALOR training ETL (quality scores, encoding, inclusion criteria)
 tests/test_promote_reference_data.py — 21 tests for promotion safety (URL guards, localhost rejection, manifest, dry-run, env var mapping)
 tests/test_assistant_context.py — 33 tests for Prisassistent (confirmation normalization, phase derivation, quick replies, guardrails)
+tests/test_valor_pipeline.py — 29 tests for VALOR pipeline (quality scores, ETL null guard, feature consistency, dry-run, response fields)
+tests/test_admin_ui_data.py — 26 tests for admin endpoint shapes, auth behavior, metrics normalization, no-local-history
 automation/workflow.py — QA workflow automation
 automation/close.py — session close helper
 automation/product/GOLDEN_TEST_CASES.md — canonical test cases
@@ -112,7 +114,7 @@ ARCHITECTURE_REVIEW.md — full technical review: code quality, architecture, DB
 DB_GIT_REVIEW.md — database schema + git workflow review with prioritized fixes
 
 ## Endpoints
-POST /value — JSON body: `{image?, images?, filename?, brand?, model?}`; returns ValueEnvelope JSON (includes valuation_id)
+POST /value — JSON body: `{image?, images?, filename?, brand?, model?}`; returns ValueEnvelope JSON (includes valuation_id, valor_estimate_sek, valor_available)
 POST /feedback — JSON body: `{valuation_id, feedback, corrected_product?}`; saves user feedback
 GET / — serves frontend/index.html
 GET /admin — serves frontend/admin.html
@@ -147,6 +149,8 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - ADMIN_SECRET_KEY — required for /admin/* API access; MUST be set on Railway (admin locked without it); optional locally
 - RAILWAY_ENVIRONMENT — auto-set by Railway; "staging" or "production"; controls env detection, docs visibility, admin auth behavior
 - ALLOWED_ORIGINS — comma-separated CORS origins; default localhost only
+- VALOR_MODEL_DIR — optional; path to model directory; default "models" (relative); set to "/app/models" on Railway with persistent volume
+- VALOR_MIN_SAMPLES_FOR_PRODUCTION — minimum training samples before VALOR estimates shown to users; default 50; set to 1 to force-enable
 
 ## Response States
 - ok — enough evidence, shows used-value range
@@ -160,8 +164,13 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 - Prisjakt is blocked (HTTP 403 / Cloudflare): prisjakt_client.py is a documented stub; no price history source is wired
 - DB save is fire-and-forget via FastAPI BackgroundTasks — valuation_id is pre-generated UUID included in every response
 - SQL injection risk: admin.py table browser uses f-string SQL (mitigated by whitelist, but fragile)
+- VALOR model persistence: Railway volume now configured in railway.toml; create volume "valor-models" in dashboard to activate
+- Admin panel: innerHTML XSS risk remains (phase 2); admin HTML shell publicly served; raw exception leaks in error responses
 
 ## Recent Changes
+2026-03-28 — fix: admin phase 1 security — admin key memory-only (no localStorage), auth gate before fetches, 401/403 re-auth, demo fallback removed, status_breakdown metrics bug fixed, local valuation_history removed from admin, 7 new tests
+2026-03-28 — feat: VALOR production activation — Railway volume config, VALOR_MODEL_DIR env var, production threshold gate (50 samples), admin UI threshold display + training state, 405 tests pass
+2026-03-28 — feat: VALOR production readiness — ETL null brand/model guard, ETL summary logging, feature consistency tests, admin VALOR health cell + detail panel estimate + training CTA, 400 tests pass
 2026-03-27 — fix: promotion safety v2 — strict env vars (no DATABASE_URL fallback), localhost rejection, comparable recency filter, valuation_count excluded, DB name warning, 21 promotion tests, migration/URL path docs, weekly runbook
 2026-03-27 — feat: idempotent reference data promotion — promote_reference_data.py (export/import/verify), UPSERT-based, manifest+audit, ENVIRONMENT_AND_DATA_PROMOTION.md operating model
 2026-03-27 — fix: Railway staging safety — DATABASE_URL fail-closed + auto-normalize postgres://, admin auth locked on Railway, logger file sink best-effort, proper staging/production env detection, seed export/import/verify scripts, RAILWAY_STAGING_SETUP.md runbook
@@ -178,7 +187,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "dependencies": 
 2026-03-26 — refactor: thresholds.py (40+ constants), golden tests (7 cases, 73 total), calibration logging, market_data_json persisted, valuation-mvp/ removed from git
 2026-03-25 — feat: rate limiting (slowapi 10/min), hide /docs in prod, temperature=0 on vision, vision cache SHA-256, Tradera rate-limit logging
 2026-03-25 — docs: deep investigation report; AI usage map, pipeline analysis, 10 prioritized opportunities, evaluation plan, QA/trust findings
-2026-03-25 — fix+feat: vision prompt rewrite, pricing model improvements, Osmo scoring, brand inference, rate limiting
 
 ## Next Up
 [Empty — add manually]

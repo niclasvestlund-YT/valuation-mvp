@@ -205,6 +205,7 @@ class ValueEnvelope(BaseModel):
     valor_confidence_label: str | None = None
     valor_mae_at_prediction: float | None = None
     valor_available: bool = False
+    valor_status: str | None = None
     # Prisassistent conversation layer
     assistant_context: AssistantContext | None = None
 
@@ -480,7 +481,9 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
     # ── VALOR ML estimate (never crashes) ──
     try:
         valor_svc = request.app.state.valor_service
-        if valor_svc and valor_svc.is_available() and result.get("status") in {"ok", "depreciation_estimate"}:
+        _valor_threshold = request.app.state.settings.valor_min_samples_for_production
+        _valor_ready = valor_svc._training_sample_count >= _valor_threshold if valor_svc else False
+        if valor_svc and valor_svc.is_available() and _valor_ready and result.get("status") in {"ok", "depreciation_estimate"}:
             _data = result.get("data") or {}
             _brand = _data.get("brand")
             _model_id = _data.get("model")
@@ -510,6 +513,8 @@ def value_image(request: Request, background_tasks: BackgroundTasks, payload: Va
                     result["valor_confidence_label"] = valor_result["confidence_label"]
                     result["valor_mae_at_prediction"] = valor_result["mae_at_prediction"]
                     result["valor_available"] = True
+        if valor_svc and valor_svc.is_available() and not _valor_ready:
+            result["valor_status"] = "training"
     except Exception:
         pass  # VALOR must never crash the value endpoint
 

@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_ROOT / ".env")
 
 
-MODELS_DIR = PROJECT_ROOT / "models"
+MODELS_DIR = Path(os.getenv("VALOR_MODEL_DIR", str(PROJECT_ROOT / "models")))
 CONDITION_MAP = {
     "like_new": 1.0, "excellent": 0.9, "good": 0.8, "used": 0.6,
     "fair": 0.5, "poor": 0.3, "unknown": 0.5,
@@ -85,11 +85,16 @@ def step_etl(engine, args) -> "pd.DataFrame":
     print(f"  Totalt observationer: {len(df)}")
 
     # Compute quality_score
+    # Web-agent data needs at least one quality signal beyond price to be included (threshold=0.5).
+    # Base 0.2 + price bonus 0.1 + product_key 0.05 = 0.35 floor for web-agent data.
+    # Combined with any other signal (is_sold, condition known, etc.) it becomes includable.
     df["quality_score"] = 0.2
     df.loc[df["final_price"] == True, "quality_score"] += 0.3
     df.loc[df["is_sold"] == True, "quality_score"] += 0.2
     df.loc[df["condition"] != "unknown", "quality_score"] += 0.15
     df.loc[df["listing_type"] != "unknown", "quality_score"] += 0.15
+    df.loc[df["price_sek"].notna() & (df["price_sek"] > 0), "quality_score"] += 0.1
+    df.loc[df["product_key"].notna() & (df["product_key"] != ""), "quality_score"] += 0.05
 
     # Compute condition_encoded
     df["condition_encoded"] = df["condition"].map(CONDITION_MAP).fillna(0.5)
@@ -111,6 +116,8 @@ def step_etl(engine, args) -> "pd.DataFrame":
     excluded_count = len(df) - included_count
     print(f"  Inkluderade: {included_count}")
     print(f"  Exkluderade: {excluded_count}")
+    print(f"  [etl.summary] source=price_observation total_read={len(df)} "
+          f"included={included_count} excluded_quality={excluded_count} threshold=0.5")
 
     # Compute derived features
     now = datetime.now(timezone.utc)
@@ -164,6 +171,141 @@ def step_etl(engine, args) -> "pd.DataFrame":
                 except Exception as e:
                     pass  # Duplicate — fine
         print("  Training samples upserted till DB.")
+
+    return df[df["included"]].copy()
+
+
+def step_etl_valuations(engine, args) -> "pd.DataFrame":
+    """Extract training samples from the valuations table.
+
+    Valuations are real user-submitted with confirmed prices.
+    Higher base quality than price_observation since they went through
+    the full identification + pricing pipeline.
+    """
+    import pandas as pd
+    from sqlalchemy import text
+
+    print("\n── STEG 1b: ETL VALUATIONS ──")
+
+    where_parts = ["status = 'ok'", "estimated_value IS NOT NULL",
+                    "estimated_value BETWEEN 200 AND 150000", "confidence >= 0.4"]
+    params = {}
+    if args.product:
+        where_parts.append("product_key = :pk")
+        params["pk"] = args.product
+
+    where_clause = "WHERE " + " AND ".join(where_parts)
+
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT id, product_key, brand, product_identifier, category,
+                   estimated_value, confidence, new_price, condition,
+                   num_comparables_used, created_at
+            FROM valuations
+            {where_clause}
+            ORDER BY created_at
+        """), params).fetchall()
+
+    if not rows:
+        print("  Inga kvalificerande värderingar.")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows, columns=[
+        "id", "product_key", "brand", "product_identifier", "category",
+        "estimated_value", "confidence", "new_price", "condition",
+        "num_comparables_used", "created_at",
+    ])
+
+    print(f"  Totalt ok-värderingar: {len(df)}")
+
+    # Guard: skip rows with missing brand or model (product_identifier)
+    before_count = len(df)
+    df = df[df["brand"].notna() & (df["brand"] != "") &
+            df["product_identifier"].notna() & (df["product_identifier"] != "")]
+    excluded_no_product_key = before_count - len(df)
+    if excluded_no_product_key > 0:
+        print(f"  Exkluderade (saknar brand/model): {excluded_no_product_key}")
+
+    # Quality score — higher base than price_observation (0.3 vs 0.2)
+    df["quality_score"] = 0.3
+    df.loc[df["num_comparables_used"].fillna(0) >= 5, "quality_score"] += 0.2
+    df.loc[df["confidence"].fillna(0) >= 0.7, "quality_score"] += 0.2
+    df.loc[df["new_price"].notna(), "quality_score"] += 0.15
+    df.loc[df["category"].notna(), "quality_score"] += 0.15
+
+    df["included"] = df["quality_score"] >= 0.5
+
+    # Map fields to training_sample schema
+    df["price_sek"] = df["estimated_value"]
+    df["condition_encoded"] = df["condition"].map(CONDITION_MAP).fillna(0.5)
+    df["source_type"] = "valuation"
+    df["is_sold"] = True  # valuations represent market-clearing prices
+    df["final_price"] = True
+    df["listing_type"] = "fixed"
+    df["observed_at"] = df["created_at"]
+    df["price_to_new_ratio"] = (df["estimated_value"] / df["new_price"].replace(0, None)).fillna(0.6).clip(0.1, 1.0)
+    df["excluded_reason"] = None
+    df.loc[df["quality_score"] < 0.5, "excluded_reason"] = "low_quality_score"
+
+    now = datetime.now(timezone.utc)
+    df["days_since_observation"] = df["created_at"].apply(
+        lambda x: min((now - x.replace(tzinfo=timezone.utc) if x.tzinfo is None else now - x).days, 365) if x else 0
+    )
+    df["month_of_year"] = df["created_at"].apply(lambda x: x.month if x else 1)
+
+    included_count = df["included"].sum()
+    excluded_quality = len(df) - included_count
+    print(f"  Inkluderade: {included_count}")
+    print(f"  Exkluderade: {excluded_quality}")
+    print(f"  [etl.summary] source=valuations total_read={len(df)} "
+          f"included={included_count} excluded_quality={excluded_quality} "
+          f"excluded_missing_fields={excluded_no_product_key} threshold=0.5")
+
+    # Upsert to training_sample
+    if not args.dry_run:
+        from sqlalchemy import text as sql_text
+        upserted = 0
+        with engine.begin() as conn:
+            for _, row in df.iterrows():
+                source_id = f"val_{row['id']}"
+                try:
+                    conn.execute(sql_text("""
+                        INSERT INTO training_sample
+                            (id, product_key, price_sek, condition, condition_encoded,
+                             source_type, source_id, observed_at, listing_type,
+                             final_price, is_sold, price_to_new_ratio,
+                             new_price_at_observation, days_since_observation,
+                             month_of_year, quality_score, included_in_training,
+                             excluded_reason)
+                        VALUES
+                            (:id, :pk, :price, :cond, :ce, :st, :si, :oa, :lt,
+                             :fp, :is, :ptr, :npo, :dso, :moy, :qs, :iit, :er)
+                        ON CONFLICT (source_id) DO UPDATE SET
+                            price_sek = EXCLUDED.price_sek,
+                            quality_score = EXCLUDED.quality_score,
+                            included_in_training = EXCLUDED.included_in_training,
+                            excluded_reason = EXCLUDED.excluded_reason,
+                            days_since_observation = EXCLUDED.days_since_observation
+                    """), {
+                        "id": str(uuid.uuid4()), "pk": row["product_key"] or "unknown",
+                        "price": int(row["price_sek"]), "cond": row["condition"] or "unknown",
+                        "ce": float(row["condition_encoded"]),
+                        "st": "valuation", "si": source_id,
+                        "oa": row["observed_at"],
+                        "lt": "fixed",
+                        "fp": True, "is": True,
+                        "ptr": float(row["price_to_new_ratio"]),
+                        "npo": int(row["new_price"]) if row["new_price"] else None,
+                        "dso": int(row["days_since_observation"]),
+                        "moy": int(row["month_of_year"]),
+                        "qs": float(row["quality_score"]),
+                        "iit": bool(row["included"]),
+                        "er": row["excluded_reason"],
+                    })
+                    upserted += 1
+                except Exception:
+                    pass
+        print(f"  Upserted {upserted} valuation training samples.")
 
     return df[df["included"]].copy()
 
@@ -263,6 +405,10 @@ def step_train(df: "pd.DataFrame", args) -> dict | None:
     )
     model.fit(X_train, y_train)
 
+    # Baseline: naive prediction = mean of training set (standard ML baseline)
+    baseline_pred = np.full_like(y_test, y_train.mean())
+    baseline_mae = mean_absolute_error(y_test, baseline_pred)
+
     y_pred = model.predict(X_test)
     mae = mean_absolute_error(y_test, y_pred)
     mape = mean_absolute_percentage_error(y_test, y_pred) * 100
@@ -270,10 +416,14 @@ def step_train(df: "pd.DataFrame", args) -> dict | None:
     within_20 = (np.abs(y_pred - y_test) / np.maximum(y_test, 1) <= 0.20).mean() * 100
     fi = dict(zip(FEATURE_NAMES, [float(x) for x in model.feature_importances_]))
 
+    vs_baseline = round((baseline_mae - mae) / baseline_mae * 100, 1) if baseline_mae > 0 else 0.0
+
     print(f"  MAE:       {mae:.0f} kr")
     print(f"  MAPE:      {mape:.1f}%")
     print(f"  Inom ±10%: {within_10:.1f}%")
     print(f"  Inom ±20%: {within_20:.1f}%")
+    print(f"  Baseline:  {baseline_mae:.0f} kr MAE")
+    print(f"  vs baseln: {'+' if vs_baseline > 0 else ''}{vs_baseline}%")
 
     return {
         "model": model,
@@ -284,6 +434,8 @@ def step_train(df: "pd.DataFrame", args) -> dict | None:
         "feature_importance": fi,
         "train_count": len(train_df),
         "test_count": len(test_df),
+        "vs_baseline_mae": baseline_mae,
+        "vs_baseline_improvement_pct": vs_baseline,
     }
 
 
@@ -322,10 +474,13 @@ def step_save(result: dict, warnings: list[str], args) -> str:
         from sqlalchemy import text, update
         engine = get_sync_engine()
 
-        should_activate = args.force or (
-            result.get("vs_baseline_improvement_pct") is not None
-            and result["vs_baseline_improvement_pct"] > 5.0
-        ) or result.get("vs_baseline_improvement_pct") is None  # No baseline = first model
+        improvement = result.get("vs_baseline_improvement_pct", 0)
+        if not args.force and improvement < 0:
+            print(f"  ⚠ Modell är {improvement}% sämre än baseline — aktiveras INTE.")
+            print("  Använd --force för att aktivera ändå.")
+            should_activate = False
+        else:
+            should_activate = True
 
         with engine.begin() as conn:
             # Deactivate previous
@@ -376,11 +531,17 @@ def main():
     print("════════════════════════════════════")
 
     engine = get_sync_engine()
-    df = step_etl(engine, args)
+    df_obs = step_etl(engine, args)
+    df_val = step_etl_valuations(engine, args)
+
+    # Combine both sources
+    import pandas as pd
+    df = pd.concat([df_obs, df_val], ignore_index=True) if not df_val.empty else df_obs
+    print(f"\n  Totalt kombinerade samples: {len(df)} ({len(df_obs)} obs + {len(df_val)} val)")
 
     if df.empty:
         print("\n✗ Ingen träningsdata tillgänglig.")
-        print("  Kör web-agenten och POST /api/ingest först.")
+        print("  Kör web-agenten, POST /api/ingest, eller gör värderingar i appen först.")
         sys.exit(0)
 
     warnings, critical = step_validate(df)

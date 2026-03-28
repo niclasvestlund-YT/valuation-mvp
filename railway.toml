@@ -7,3 +7,9 @@ healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+# VALOR model storage — persistent volume keeps trained models across deploys.
+# Create a Railway Volume named "valor-models" in the dashboard first.
+[[volumes]]
+mountPath = "/app/models"
+name = "valor-models"

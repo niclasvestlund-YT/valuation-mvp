@@ -59,6 +59,11 @@ async def lifespan(app: FastAPI):
         "has_serper": settings.has_serper_credentials,
         "has_serpapi": settings.has_serpapi_credentials,
     })
+    # Ensure model directory exists for VALOR (Railway volume or local)
+    import os as _startup_os
+    model_dir = Path(_startup_os.getenv("VALOR_MODEL_DIR", "models"))
+    model_dir.mkdir(exist_ok=True, parents=True)
+    logger.info("valor.model_dir", extra={"path": str(model_dir.resolve())})
     await init_db()
     yield
     await dispose_engine()

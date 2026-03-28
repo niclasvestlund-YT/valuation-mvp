@@ -1086,6 +1086,10 @@
             <div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">Snitt konfidens</div>
             <div id="health-conf-val" style="font-size:var(--text-lg);font-weight:600;">—</div>
           </div>
+          <div id="health-valor">
+            <div style="font-size:var(--text-xs);color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;">VALOR</div>
+            <div id="health-valor-val" style="font-size:var(--text-lg);font-weight:600;color:var(--text-muted);">—</div>
+          </div>
         </div>
       </div>
 
@@ -1185,6 +1189,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
           </button>
         </div>
+        <div style="background:rgba(212,160,23,0.08);border:1px solid rgba(212,160,23,0.25);border-radius:10px;padding:12px 16px;font-size:var(--text-xs);color:var(--text-secondary);margin-bottom:var(--space-3);line-height:1.6;">
+          <strong style="color:var(--accent-warning);">Railway:</strong>
+          Tränade modeller försvinner vid omstart/redeploy om inte <code>models/</code> är monterad som Railway Volume. Träna om efter varje deploy tills persistent lagring är konfigurerad.
+        </div>
         <div class="card" id="valor-model-status">
           <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Laddar...</div>
         </div>
@@ -1204,12 +1212,13 @@
         <div id="training-progress-bar" style="margin-top:12px;">
           <div style="display:flex;justify-content:space-between;font-size:var(--text-xs);color:var(--text-muted);margin-bottom:4px;">
             <span>Träningsdata</span>
-            <span id="training-progress-text">0 / 50 minimum</span>
+            <span id="training-progress-text">0 / <span id="training-threshold">50</span> för produktion</span>
           </div>
           <div style="height:6px;background:var(--border-subtle);border-radius:3px;">
             <div id="training-progress-fill" style="height:100%;border-radius:3px;background:var(--text-primary);transition:width 0.4s ease;width:0%;"></div>
           </div>
         </div>
+        <div id="valor-train-cta" style="display:none;"></div>
       </div>
 
       <div class="section">
@@ -1402,9 +1411,11 @@
 </div>
 
 <script>
-/* ─── Admin key — inline UI instead of prompt() ─── */
-let ADMIN_KEY = localStorage.getItem('admin_key') || '';
+/* ─── Admin key — in-memory only (never persisted to localStorage) ─── */
+let ADMIN_KEY = '';
 let headers = { 'X-Admin-Key': ADMIN_KEY };
+// Clean up any previously persisted key
+try { localStorage.removeItem('admin_key'); } catch (_) {}
 
 function showKeyGate() {
   document.getElementById('key-gate').style.display = 'flex';
@@ -1413,25 +1424,34 @@ function showKeyGate() {
 function hideKeyGate() {
   document.getElementById('key-gate').style.display = 'none';
 }
-document.getElementById('key-submit').addEventListener('click', () => {
+document.getElementById('key-submit').addEventListener('click', async () => {
   const val = document.getElementById('key-input').value.trim();
   if (!val) return;
+  const btn = document.getElementById('key-submit');
+  btn.disabled = true;
+  btn.textContent = 'Verifierar...';
+  document.getElementById('key-error').style.display = 'none';
+  // Validate key against a lightweight endpoint before proceeding
+  try {
+    const testRes = await fetch('/admin/api-usage', { headers: { 'X-Admin-Key': val } });
+    if (testRes.status === 401 || testRes.status === 403) {
+      document.getElementById('key-error').style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Fortsätt';
+      return;
+    }
+  } catch (_) { /* network error — proceed and let individual fetches handle it */ }
   ADMIN_KEY = val;
   headers = { 'X-Admin-Key': ADMIN_KEY };
-  localStorage.setItem('admin_key', ADMIN_KEY);
+  btn.disabled = false;
+  btn.textContent = 'Fortsätt';
   hideKeyGate();
-  fetchData();
-  fetchApiUsage();
-  loadMarketData();
-  loadValuationsData();
-  loadOcrStats();
-  loadAgentStats();
-  loadValorStats();
+  initAdminData();
 });
 document.getElementById('key-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('key-submit').click();
 });
-if (!ADMIN_KEY) { showKeyGate(); }
+showKeyGate();
 
 /* ─── Mobile nav ─── */
 function toggleMobileNav() {
@@ -1504,76 +1524,74 @@ function confBadge(c) {
 /* ─── Data ─── */
 let valuations = [];
 
-const DEMO_VALUATIONS = [
-  { model: "Sony WH-1000XM5", brand: "Sony", category: "headphones", status: "ok", estimated_value: 3450, value_range_low: 3000, value_range_high: 3900, confidence: 0.83, num_comparables_used: 14, new_price: 4290, condition: "good", response_time_ms: 3200, created_at: new Date(Date.now() - 2*60000).toISOString() },
-  { model: "MacBook Air M2", brand: "Apple", category: "laptop", status: "ok", estimated_value: 11200, value_range_low: 9800, value_range_high: 12500, confidence: 0.89, num_comparables_used: 22, new_price: 14990, condition: "excellent", response_time_ms: 4100, created_at: new Date(Date.now() - 8*60000).toISOString() },
-  { model: "iPhone 14 Pro 256GB", brand: "Apple", category: "smartphone", status: "ok", estimated_value: 8900, value_range_low: 8000, value_range_high: 9800, confidence: 0.87, num_comparables_used: 34, new_price: 14990, condition: "good", response_time_ms: 3800, created_at: new Date(Date.now() - 14*60000).toISOString() },
-  { model: "Sony WH-1000X-serien", brand: "Sony", category: "headphones", status: "ambiguous_model", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.42, num_comparables_used: 0, new_price: null, condition: null, response_time_ms: 2100, created_at: new Date(Date.now() - 21*60000).toISOString() },
-  { model: "DJI Osmo Pocket 3", brand: "DJI", category: "camera", status: "ok", estimated_value: 3650, value_range_low: 3200, value_range_high: 4100, confidence: 0.78, num_comparables_used: 8, new_price: 4240, condition: "good", response_time_ms: 5200, created_at: new Date(Date.now() - 35*60000).toISOString() },
-  { model: "Canon EOS R6 Mark II", brand: "Canon", category: "camera", status: "insufficient_evidence", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.31, num_comparables_used: 1, new_price: 18990, condition: "fair", response_time_ms: 4800, created_at: new Date(Date.now() - 42*60000).toISOString() },
-  { model: "AirPods Pro 2", brand: "Apple", category: "headphones", status: "ok", estimated_value: 1850, value_range_low: 1600, value_range_high: 2100, confidence: 0.81, num_comparables_used: 24, new_price: 2999, condition: "good", response_time_ms: 3100, created_at: new Date(Date.now() - 60*60000).toISOString() },
-  { model: "Samsung Galaxy S24", brand: "Samsung", category: "smartphone", status: "ok", estimated_value: 7200, value_range_low: 6400, value_range_high: 8000, confidence: 0.76, num_comparables_used: 12, new_price: 9990, condition: "good", response_time_ms: 4400, created_at: new Date(Date.now() - 75*60000).toISOString() },
-  { model: "Okänd produkt", brand: null, category: null, status: "error", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0, num_comparables_used: 0, new_price: null, condition: null, response_time_ms: 1200, created_at: new Date(Date.now() - 80*60000).toISOString() },
-  { model: "MacBook Pro 14 M3 Pro", brand: "Apple", category: "laptop", status: "ok", estimated_value: 18500, value_range_low: 16000, value_range_high: 21000, confidence: 0.85, num_comparables_used: 11, new_price: 24990, condition: "excellent", response_time_ms: 5100, created_at: new Date(Date.now() - 120*60000).toISOString() },
-  { model: "Sony A7 IV", brand: "Sony", category: "camera", status: "ok", estimated_value: 14200, value_range_low: 12500, value_range_high: 16000, confidence: 0.77, num_comparables_used: 6, new_price: 21990, condition: "good", response_time_ms: 4600, created_at: new Date(Date.now() - 130*60000).toISOString() },
-  { model: "iPad Air M1", brand: "Apple", category: "tablet", status: "ok", estimated_value: 5400, value_range_low: 4800, value_range_high: 6000, confidence: 0.80, num_comparables_used: 14, new_price: 8499, condition: "good", response_time_ms: 3900, created_at: new Date(Date.now() - 180*60000).toISOString() },
-  { model: "Bose QC45", brand: "Bose", category: "headphones", status: "ok", estimated_value: 2100, value_range_low: 1800, value_range_high: 2400, confidence: 0.79, num_comparables_used: 11, new_price: 3290, condition: "fair", response_time_ms: 3400, created_at: new Date(Date.now() - 200*60000).toISOString() },
-  { model: "Nintendo Switch OLED", brand: "Nintendo", category: "console", status: "depreciation_estimate", estimated_value: 2800, value_range_low: 2400, value_range_high: 3200, confidence: 0.35, num_comparables_used: 0, new_price: 3990, condition: "good", response_time_ms: 4200, created_at: new Date(Date.now() - 240*60000).toISOString() },
-  { model: "DJI Osmo Action 5 Pro", brand: "DJI", category: "camera", status: "ok", estimated_value: 3500, value_range_low: 2460, value_range_high: 4050, confidence: 0.67, num_comparables_used: 4, new_price: 4240, condition: "good", response_time_ms: 5800, created_at: new Date(Date.now() - 300*60000).toISOString() },
-  { model: "iPhone 13 128GB", brand: "Apple", category: "smartphone", status: "ok", estimated_value: 4800, value_range_low: 4200, value_range_high: 5400, confidence: 0.82, num_comparables_used: 28, new_price: 6990, condition: "good", response_time_ms: 3600, created_at: new Date(Date.now() - 360*60000).toISOString() },
-  { model: "Canon EOS R-serien", brand: "Canon", category: "camera", status: "ambiguous_model", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.38, num_comparables_used: 0, new_price: null, condition: null, response_time_ms: 2400, created_at: new Date(Date.now() - 420*60000).toISOString() },
-  { model: "Sony WH-1000XM4", brand: "Sony", category: "headphones", status: "ok", estimated_value: 2950, value_range_low: 2600, value_range_high: 3500, confidence: 0.84, num_comparables_used: 18, new_price: 3490, condition: "good", response_time_ms: 3300, created_at: new Date(Date.now() - 480*60000).toISOString() },
-  { model: "Fujifilm X-T5", brand: "Fujifilm", category: "camera", status: "ok", estimated_value: 15800, value_range_low: 14000, value_range_high: 17500, confidence: 0.82, num_comparables_used: 5, new_price: 20990, condition: "excellent", response_time_ms: 5400, created_at: new Date(Date.now() - 540*60000).toISOString() },
-  { model: "DJI Mini 3 Pro", brand: "DJI", category: "camera", status: "insufficient_evidence", estimated_value: null, value_range_low: null, value_range_high: null, confidence: 0.28, num_comparables_used: 0, new_price: 8990, condition: null, response_time_ms: 4100, created_at: new Date(Date.now() - 600*60000).toISOString() },
-];
+/* Demo data, getLocalHistory, useDemoData removed — admin panel shows server data only */
 
-const DEMO_METRICS = {
-  status_breakdown: { ok: 168, insufficient_evidence: 39, ambiguous_model: 28, depreciation_estimate: 12, error: 8, degraded: 4 },
-  avg_estimate: 7420,
-  avg_confidence: 0.74,
-};
-
-function getLocalHistory() {
-  try { return JSON.parse(localStorage.getItem("valuation_history") || "[]"); }
-  catch { return []; }
+/* ─── Auth-aware fetch wrapper ─── */
+async function authFetch(url, opts = {}) {
+  const res = await fetch(url, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+  if (res.status === 401 || res.status === 403) {
+    ADMIN_KEY = '';
+    headers = { 'X-Admin-Key': '' };
+    document.getElementById('key-error').textContent = 'Sessionen ogiltigt — ange nyckel igen';
+    document.getElementById('key-error').style.display = 'block';
+    showKeyGate();
+    throw new Error('AUTH_FAILED');
+  }
+  return res;
 }
 
-function useDemoData() {
-  renderStats(DEMO_METRICS);
-  const local = getLocalHistory();
-  valuations = [...local, ...DEMO_VALUATIONS];
-  renderList();
+function initAdminData() {
+  fetchData();
+  fetchApiUsage();
+  loadMarketData();
+  loadValuationsData();
+  loadOcrStats();
+  loadAgentStats();
+  loadValorStats();
+  loadDevDiary();
 }
 
 /* ─── Fetch functions ─── */
 async function fetchData() {
   try {
-    const metricsRes = await fetch('/admin/metrics', { headers });
-    const valRes = await fetch('/admin/valuations?limit=30', { headers });
-    let hasData = false;
+    const metricsRes = await authFetch('/admin/metrics');
+    const valRes = await authFetch('/admin/valuations?limit=30');
 
     if (metricsRes.ok) {
       const metrics = await metricsRes.json();
-      const total = Object.values(metrics.status_breakdown || {}).reduce((a, b) => a + b, 0);
-      if (total > 0) { renderStats(metrics); hasData = true; }
+      renderStats(metrics);
+    } else {
+      showMetricsError('Kunde inte hämta metrics (' + metricsRes.status + ')');
     }
 
     if (valRes.ok) {
       const data = await valRes.json();
       const list = data.valuations || data || [];
-      if (list.length > 0) {
-        const local = getLocalHistory();
-        valuations = [...local, ...list];
-        renderList();
-        hasData = true;
-      }
+      valuations = list;
+      renderList();
+    } else {
+      showValuationsError('Kunde inte hämta värderingar (' + valRes.status + ')');
     }
-
-    if (!hasData) useDemoData();
   } catch (e) {
-    console.warn('Admin API unavailable, using demo data:', e.message);
-    useDemoData();
+    if (e.message === 'AUTH_FAILED') return;
+    console.warn('Admin API unavailable:', e.message);
+    showMetricsError('Serverfel — kontrollera anslutningen');
+    showValuationsError('Serverfel — kontrollera anslutningen');
   }
+}
+
+function showMetricsError(msg) {
+  ['stat-total','stat-ok-pct','stat-avg-estimate','stat-avg-conf'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  const bar = document.getElementById('status-bar');
+  if (bar) bar.innerHTML = '<div style="text-align:center;padding:8px;color:var(--accent-danger);font-size:var(--text-sm);">' + msg + '</div>';
+}
+
+function showValuationsError(msg) {
+  const list = document.getElementById('valuation-list');
+  if (list) list.innerHTML = '<div class="empty-state" style="color:var(--accent-danger);">' + msg + '</div>';
 }
 
 async function resetApiCounters(scope = 'all') {
@@ -1583,7 +1601,7 @@ async function resetApiCounters(scope = 'all') {
     : 'Nollställ alla API-räknare och historik?';
   if (!confirm(question)) return;
   try {
-    await fetch(`/admin/api-usage/reset?scope=${encodeURIComponent(scope)}`, { method: 'POST', headers });
+    await authFetch(`/admin/api-usage/reset?scope=${encodeURIComponent(scope)}`, { method: 'POST' });
     fetchApiUsage();
   } catch (e) { console.warn('Reset failed:', e); }
 }
@@ -1596,7 +1614,7 @@ async function fetchApiUsage() {
     serpapi_new_price: 'SerpAPI (new price)', vision_openai: 'OpenAI Vision'
   };
   try {
-    const res = await fetch('/admin/api-usage', { headers });
+    const res = await authFetch('/admin/api-usage');
     if (!res.ok) throw new Error(res.statusText);
     const data = await res.json();
     const hdr = document.getElementById('api-usage-header');
@@ -1778,6 +1796,14 @@ function openDetail(idx) {
     <div class="detail-field"><span class="detail-field-label">Kategori</span><span class="detail-field-value">${v.category || '—'}</span></div>
     <div class="detail-field"><span class="detail-field-label">Nypris</span><span class="detail-field-value">${formatKr(v.new_price)}</span></div>
     <div class="detail-field"><span class="detail-field-label">Konfidens</span><span class="detail-field-value">${conf > 0 ? (conf * 100).toFixed(0) + '%' : '—'}</span></div>
+    ${v.valor_estimate_sek ? `
+    <div class="detail-field">
+      <span class="detail-field-label">VALOR-estimat</span>
+      <span class="detail-field-value" style="color:var(--accent-positive);">
+        ${Math.round(v.valor_estimate_sek).toLocaleString('sv-SE')} kr
+        ${v.valor_model_version ? '<span style="font-size:var(--text-xs);color:var(--text-muted);margin-left:6px;">' + v.valor_model_version + '</span>' : ''}
+      </span>
+    </div>` : ''}
     <div class="detail-field"><span class="detail-field-label">Comparables</span><span class="detail-field-value">${v.num_comparables_used ?? v.comparable_count ?? '—'}</span></div>
     <div class="detail-field"><span class="detail-field-label">Condition</span><span class="detail-field-value">${v.condition || '—'}</span></div>
     <div class="detail-field"><span class="detail-field-label">Svarstid</span><span class="detail-field-value">${v.response_time_ms ? v.response_time_ms + ' ms' : '—'}</span></div>
@@ -1805,7 +1831,7 @@ let valCategoryChartInst = null;
 
 async function loadMarketData() {
   try {
-    const res = await fetch('/admin/market-data', { headers });
+    const res = await authFetch('/admin/market-data');
     if (!res.ok) {
       ['crawl-total','crawl-active','crawl-flagged','crawl-avg-rel'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = '—'; });
       const el = document.getElementById('crawl-latest'); if (el) el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--accent-danger);font-size:0.8125rem;">Kunde inte hämta data (${res.status})</div>`;
@@ -1886,7 +1912,7 @@ async function loadMarketData() {
 
 async function loadValuationsData() {
   try {
-    const res = await fetch('/admin/valuations-data', { headers });
+    const res = await authFetch('/admin/valuations-data');
     if (!res.ok) {
       document.getElementById('val-empty-msg').style.display = 'block';
       document.getElementById('val-empty-msg').textContent = `Kunde inte hämta värderingsdata (${res.status})`;
@@ -1985,13 +2011,10 @@ document.addEventListener('keydown', function(e) {
 });
 
 /* ─── Init ─── */
-fetchData();
-fetchApiUsage();
-loadMarketData();
-loadValuationsData();
+/* All data fetches are triggered by initAdminData() after auth validation */
 async function loadOcrStats() {
   try {
-    const res = await fetch('/admin/ocr-stats', { headers });
+    const res = await authFetch('/admin/ocr-stats');
     if (!res.ok) {
       document.getElementById('ocr-val-google').textContent = '0';
       document.getElementById('ocr-val-easyocr').textContent = '0';
@@ -2042,8 +2065,7 @@ async function loadOcrStats() {
   }
 }
 
-loadOcrStats();
-loadAgentStats();
+/* loadOcrStats + loadAgentStats called via initAdminData() after auth */
 
 function showAgentEmpty(msg) {
   document.getElementById('agent-total-obs').textContent = '0';
@@ -2057,7 +2079,7 @@ function showAgentEmpty(msg) {
 }
 async function loadAgentStats() {
   try {
-    const res = await fetch('/admin/agent-stats', { headers });
+    const res = await authFetch('/admin/agent-stats');
     if (!res.ok) { showAgentEmpty(`Kunde inte hämta data (${res.status})`); return; }
     const d = await res.json();
 
@@ -2168,7 +2190,7 @@ function showValorEmpty(msg) {
 }
 async function loadValorStats() {
   try {
-    const res = await fetch('/admin/valor-stats', { headers });
+    const res = await authFetch('/admin/valor-stats');
     if (!res.ok) { showValorEmpty(`Kunde inte hämta data (${res.status})`); return; }
     const d = await res.json();
 
@@ -2190,6 +2212,17 @@ async function loadValorStats() {
           ${m.vs_baseline_improvement_pct != null ? '<span style="font-size:var(--text-xs);font-weight:500;padding:2px 8px;border-radius:6px;background:var(--chip-green-bg);color:var(--chip-green-text);">+' + m.vs_baseline_improvement_pct.toFixed(1) + '% vs baseline</span>' : ''}
         </div>
         ${(m.data_quality_warnings && m.data_quality_warnings.length) ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">' + m.data_quality_warnings.map(w => '<span style="font-size:var(--text-xs);padding:2px 8px;border-radius:6px;background:var(--chip-amber-bg);color:var(--chip-amber-text);">⚠ ' + w + '</span>').join('') + '</div>' : ''}`;
+    } else if (d.model === null && (t.total_samples || 0) > 0) {
+      const threshold = d.production_threshold || 50;
+      modelEl.innerHTML = `
+        <div style="text-align:center;padding:20px;">
+          <div style="font-size:var(--text-sm);font-weight:600;color:var(--accent-warning);margin-bottom:8px;">
+            Modell tränas — för lite data för produktion
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--text-muted);line-height:1.6;">
+            Modellen aktiveras för slutanvändare vid ${threshold} träningsexempel. Nuvarande: ${t.total_samples || 0} st.
+          </div>
+        </div>`;
     } else {
       modelEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.8125rem;">Ingen VALOR-modell aktiv — samlar träningsdata</div>';
     }
@@ -2203,14 +2236,17 @@ async function loadValorStats() {
 
     // Training progress bar
     const samples = t.total_samples || 0;
-    const pct = Math.min(100, Math.round(samples / 50 * 100));
+    const threshold = d.production_threshold || 50;
+    const thresholdEl = document.getElementById('training-threshold');
+    if (thresholdEl) thresholdEl.textContent = threshold;
+    const pct = Math.min(100, Math.round(samples / threshold * 100));
     const progressFill = document.getElementById('training-progress-fill');
-    const progressText = document.getElementById('training-progress-text');
     if (progressFill) {
       progressFill.style.width = pct + '%';
       progressFill.style.background = pct >= 100 ? 'var(--accent-positive)' : pct >= 40 ? 'var(--accent-warning)' : 'var(--text-primary)';
     }
-    if (progressText) progressText.textContent = samples + ' / 50 minimum';
+    const progressText = document.getElementById('training-progress-text');
+    if (progressText) progressText.innerHTML = samples + ' / <span id="training-threshold">' + threshold + '</span> för produktion';
 
     const srcEl = document.getElementById('valor-source-breakdown');
     const srcs = t.samples_per_source || [];
@@ -2223,24 +2259,84 @@ async function loadValorStats() {
     } else {
       srcEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:0.8125rem;">Inga training samples ännu</div>';
     }
+    // Health cell: VALOR
+    const valorHealth = document.getElementById('health-valor-val');
+    if (valorHealth) {
+      if (d.model) {
+        const mape = d.model.mape_pct;
+        const color = mape < 10 ? 'var(--accent-positive)' : mape < 20 ? 'var(--accent-warning)' : 'var(--accent-danger)';
+        valorHealth.innerHTML = mape != null ? `<span style="color:${color};">${mape.toFixed(1)}% MAPE</span>` : 'Aktiv';
+      } else {
+        valorHealth.textContent = 'Ej tränad';
+        valorHealth.style.color = 'var(--text-faint)';
+      }
+    }
+
+    // Training CTA
+    const ctaEl = document.getElementById('valor-train-cta');
+    if (ctaEl) {
+      if (samples >= 10 && !d.model) {
+        ctaEl.style.display = 'block';
+        ctaEl.innerHTML = '<div style="font-size:var(--text-sm);color:var(--accent-positive);margin-top:8px;">Du har ' + samples + ' träningsexempel — klicka "Träna om VALOR" för att aktivera modellen.</div>';
+      } else {
+        ctaEl.style.display = 'none';
+      }
+    }
   } catch (e) { console.warn('valor-stats failed:', e); showValorEmpty('Inga VALOR-data tillgängliga'); }
 }
 
 async function trainValor() {
-  if (!confirm('Starta VALOR-träning? (Kräver att du kör scripts/train_valor.py manuellt)')) return;
+  if (!confirm('Starta VALOR-träning?\n\nKräver minst 10 värderingar i databasen.\nTar ~60 sekunder. Sidan uppdateras automatiskt.')) return;
+  const btn = document.querySelector('[onclick="trainValor()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Tränar...'; }
   try {
-    const res = await fetch('/api/valor/train', { method: 'POST', headers });
+    const res = await authFetch('/api/valor/train', { method: 'POST' });
     const d = await res.json();
-    alert(d.note || 'Träning startad');
-  } catch (e) { alert('Kunde inte starta träning: ' + e.message); }
+    const resetBtn = () => { if (btn) { btn.disabled = false; btn.textContent = 'Träna om VALOR'; } };
+    if (d.status === 'started') {
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        if (attempts > 12) {
+          clearInterval(poll); resetBtn();
+          alert('Träning tar längre tid än väntat. Kolla server-loggar.');
+          return;
+        }
+        try {
+          const sr = await authFetch('/api/valor/train/status');
+          const st = await sr.json();
+          if (st.training_running === false && st.last_result) {
+            clearInterval(poll); resetBtn();
+            if (st.last_result === 'success' && st.model_available) {
+              await loadValorStats();
+              alert('VALOR-träning klar! Modell aktiverad.');
+            } else if (st.last_result === 'failed') {
+              alert(st.last_error ? 'Träning misslyckades:\n\n' + st.last_error : 'Träning misslyckades. Kolla server-loggar.');
+            } else if (st.last_result === 'success' && !st.model_available) {
+              alert('Träning körde klart men ingen modell aktiverades.\nTrolig orsak: för få samples (minimum 10).\nGör fler värderingar och försök igen.');
+            }
+          }
+        } catch (_) {}
+      }, 5000);
+    } else if (d.status === 'already_running') {
+      alert('Träning pågår redan.');
+      resetBtn();
+    } else {
+      alert(d.note || 'Något gick fel');
+      resetBtn();
+    }
+  } catch (e) {
+    alert('Kunde inte starta träning: ' + e.message);
+    resetBtn();
+  }
 }
 
 async function rollbackValor() {
   const version = prompt('Ange modellversion att rulla tillbaka till (t.ex. valor_v1_20260327):');
   if (!version) return;
   try {
-    const res = await fetch('/api/valor/rollback', {
-      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+    const res = await authFetch('/api/valor/rollback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ version })
     });
     if (res.ok) { alert('Rollback klar till ' + version); loadValorStats(); }
@@ -2248,7 +2344,7 @@ async function rollbackValor() {
   } catch (e) { alert('Rollback fel: ' + e.message); }
 }
 
-setTimeout(function refresh() { loadMarketData(); loadValuationsData(); loadOcrStats(); loadAgentStats(); loadValorStats(); setTimeout(refresh, 60000); }, 60000);
+setTimeout(function refresh() { if (ADMIN_KEY) { loadMarketData(); loadValuationsData(); loadOcrStats(); loadAgentStats(); loadValorStats(); } setTimeout(refresh, 60000); }, 60000);
 
 /* ─── Dev Diary ─── */
 let _diaryData = null;
@@ -2351,7 +2447,7 @@ function copyDiaryCard(el, idx) {
 
 async function loadDevDiary() {
   try {
-    const res = await fetch('/admin/dev-stats', { headers });
+    const res = await authFetch('/admin/dev-stats');
     if (!res.ok) {
       document.getElementById('diary-days').innerHTML = '<div style="text-align:center;padding:20px;color:var(--accent-danger);font-size:var(--text-sm);">Kunde inte hämta data (' + res.status + ')</div>';
       return;
@@ -2380,7 +2476,7 @@ async function loadDevDiary() {
   }
 }
 
-loadDevDiary();
+/* loadDevDiary called via initAdminData() after auth */
 
 /* ─── Bottom tabs + nav active state sync ─── */
 document.querySelectorAll('[data-section]').forEach(link => {

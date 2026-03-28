@@ -1,0 +1,10 @@
+# Example cron entry for recurring review runs.
+# Replace /path/to/repo with your actual repository path.
+#
+# Weekdays at 07:15 local time:
+#
+# 15 7 * * 1-5 cd /path/to/repo && .venv/bin/python automation/review_swarm.py run --label nightly --execute-reviewers >> automation/logs/review_swarm.log 2>&1
+#
+# Weekly deeper trust review every Monday at 08:00:
+#
+# 0 8 * * 1 cd /path/to/repo && .venv/bin/python automation/review_swarm.py run --label weekly_trust --execute-reviewers --roles qa_reviewer,trust_reviewer,manager >> automation/logs/review_swarm.log 2>&1

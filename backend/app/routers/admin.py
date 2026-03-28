@@ -1091,12 +1091,14 @@ async def valor_stats():
             for r in recent_jobs
         ]
 
+        from backend.app.core.config import settings as _cfg
         result = {
             "model": model,
             "training": training,
             "estimates": estimates,
             "observations": observations,
             "jobs": jobs,
+            "production_threshold": _cfg.valor_min_samples_for_production,
         }
         logger.info("admin /valor-stats ok, model=%s samples=%d",
                      model.get("model_version") if model else "none", total_samples)

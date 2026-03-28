@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 
@@ -287,13 +288,103 @@ class RollbackRequest(BaseModel):
     version: str
 
 
+# ─── VALOR training state (module-level, survives across requests) ───
+_training_state: dict = {
+    "running": False,
+    "last_result": None,    # "success" | "failed" | None
+    "last_error": None,
+    "last_run_at": None,
+}
+
+
+def _find_project_root():
+    """Walk up from this file to find the directory containing scripts/train_valor.py."""
+    candidate = Path(__file__).resolve()
+    for _ in range(6):
+        candidate = candidate.parent
+        if (candidate / "scripts" / "train_valor.py").exists():
+            return candidate
+    return None
+
+
 @ingest_router.post("/valor/train")
-async def valor_train(request_obj: "Request" = None):
-    """Trigger VALOR training. Returns immediately."""
-    from fastapi import Request as _Req
-    # Import training function inline to avoid heavy deps at startup
+async def valor_train(background_tasks: BackgroundTasks):
+    """Trigger VALOR training as a background subprocess."""
+    import subprocess
+    import sys
+
+    if _training_state["running"]:
+        return {"status": "already_running", "note": "Träning pågår redan."}
+
+    root = _find_project_root()
+    if not root:
+        return {"status": "error", "note": f"train_valor.py not found. Searched from {Path(__file__).resolve()}"}
+
+    script_path = root / "scripts" / "train_valor.py"
+
+    def run_training():
+        _training_state["running"] = True
+        _training_state["last_error"] = None
+        try:
+            result = subprocess.run(
+                [sys.executable, str(script_path), "--force", "--min-samples", "10"],
+                capture_output=True, text=True, timeout=300,
+            )
+            _training_state["last_run_at"] = datetime.now(timezone.utc).isoformat()
+
+            if result.returncode == 0:
+                _training_state["last_result"] = "success"
+                logger.info("valor.train.completed", extra={"stdout": result.stdout[-500:]})
+                try:
+                    from backend.app.main import app
+                    if hasattr(app.state, "valor_service"):
+                        app.state.valor_service.reload_model()
+                        logger.info("valor.model.reloaded")
+                except Exception as e:
+                    logger.warning(f"valor.reload.failed: {e}")
+            else:
+                _training_state["last_result"] = "failed"
+                _training_state["last_error"] = (result.stderr or "")[-300:].strip() or "Okänt fel"
+                logger.error("valor.train.failed", extra={"stderr": result.stderr[-500:]})
+        except subprocess.TimeoutExpired:
+            _training_state["last_result"] = "failed"
+            _training_state["last_error"] = "Träning tog för lång tid (>5 min)"
+            logger.error("valor.train.timeout")
+        except Exception as e:
+            _training_state["last_result"] = "failed"
+            _training_state["last_error"] = str(e)
+            logger.error(f"valor.train.exception: {e}")
+        finally:
+            _training_state["running"] = False
+
+    background_tasks.add_task(run_training)
     logger.info("valor.train.triggered")
-    return {"status": "started", "note": "Run `python scripts/train_valor.py` to train. API trigger not yet wired."}
+    return {
+        "status": "started",
+        "note": "Träning startad i bakgrunden. Klar om ~60 sekunder.",
+        "min_samples": 10,
+        "force": True,
+    }
+
+
+@ingest_router.get("/valor/train/status")
+async def valor_train_status():
+    """Training state + model availability."""
+    try:
+        from backend.app.main import app
+        svc = getattr(app.state, "valor_service", None)
+        return {
+            "model_available": svc.is_available() if svc else False,
+            "model_version": getattr(svc, "model_version", None) if svc else None,
+            "last_reload": getattr(svc, "_loaded_at", None) if svc else None,
+            "training_running": _training_state["running"],
+            "last_result": _training_state["last_result"],
+            "last_error": _training_state["last_error"],
+            "last_run_at": _training_state["last_run_at"],
+        }
+    except Exception:
+        return {"model_available": False, "model_version": None, "training_running": False,
+                "last_result": None, "last_error": None, "last_run_at": None}
 
 
 @ingest_router.post("/valor/rollback")

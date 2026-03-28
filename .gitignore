@@ -17,6 +17,13 @@ valuation-mvp/
 automation/review_runs/*
 !automation/review_runs/.gitkeep
 automation/logs/review_swarm.log
+automation/outputs/
+automation/summaries/
+automation/reviews/
+automation/errors/
+
+# Claude Code local settings
+.claude/settings.local.json
 models/*.pkl
 models/valor_features.json
 data/snapshots/
