@@ -1,0 +1,12 @@
+[
+  "condition_encoded",
+  "month_of_year",
+  "days_since_observation",
+  "price_to_new_ratio",
+  "is_sold_int",
+  "listing_type_fixed",
+  "listing_type_auction",
+  "source_valuation",
+  "source_crawler",
+  "source_agent"
+]

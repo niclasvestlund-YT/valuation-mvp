@@ -10,10 +10,10 @@ _logger = get_logger(__name__)
 engine = create_async_engine(
     settings.database_url,
     echo=False,
-    pool_size=5,
-    max_overflow=10,
+    pool_size=2,
+    max_overflow=3,
     pool_pre_ping=True,          # detect stale connections after PG restart
-    pool_recycle=1800,            # recycle connections every 30 min
+    pool_recycle=300,             # recycle connections every 5 min
 )
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()

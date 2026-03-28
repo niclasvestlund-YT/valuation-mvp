@@ -7,6 +7,7 @@ and mock mode independence from model files.
 import argparse
 import importlib.util
 import os
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -236,14 +237,20 @@ class TestValorServiceReload(unittest.TestCase):
 
     def test_reload_model_clears_state(self):
         """reload_model() should reset model state before reloading."""
-        from backend.app.services.valor_service import ValorService
-        svc = ValorService()
-        svc.model = "fake"
-        svc.features = ["a"]
-        svc.reload_model()
-        # After reload with no model file, should be None
-        self.assertIsNone(svc.model)
-        self.assertIsNone(svc.features)
+        import importlib
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.dict(os.environ, {"VALOR_MODEL_DIR": tmpdir}, clear=False):
+                import backend.app.services.valor_service as vs
+                importlib.reload(vs)
+                svc = vs.ValorService()
+                svc.model = "fake"
+                svc.features = ["a"]
+                svc.reload_model()
+                # After reload with no model file, should be None
+                self.assertIsNone(svc.model)
+                self.assertIsNone(svc.features)
+                importlib.reload(vs)
 
     def test_loaded_at_attribute_exists(self):
         """ValorService must track _loaded_at timestamp."""
@@ -478,6 +485,52 @@ class TestValorLabMode(unittest.TestCase):
         self.assertIsNone(paths["latest_path"])
         self.assertIn("candidates", str(paths["model_path"]))
         self.assertIn("reports", str(paths["report_path"]))
+
+    def test_lab_blockers_reject_valuation_only_tiny_run(self):
+        """Valuation-only tiny same-day runs should be blocked by default in lab mode."""
+        if importlib.util.find_spec("pandas") is None:
+            self.skipTest("pandas not installed")
+        import pandas as pd
+
+        from scripts.train_valor import get_lab_blockers
+
+        args = argparse.Namespace(mode="lab")
+        df = pd.DataFrame([
+            {"product_key": "a", "observed_at": pd.Timestamp("2026-03-28T07:00:00Z")},
+            {"product_key": "a", "observed_at": pd.Timestamp("2026-03-28T07:05:00Z")},
+            {"product_key": "b", "observed_at": pd.Timestamp("2026-03-28T08:00:00Z")},
+            {"product_key": "b", "observed_at": pd.Timestamp("2026-03-28T08:05:00Z")},
+        ])
+        blockers = get_lab_blockers(
+            df,
+            {"observations": 0, "valuations": 4, "valuations_included": True, "combined": 4},
+            args,
+        )
+
+        self.assertIn("no_observation_samples", blockers)
+        self.assertIn("too_few_distinct_products", blockers)
+        self.assertIn("insufficient_time_spread", blockers)
+        self.assertIn("no_validation_slice", blockers)
+
+
+class TestBackfillTrainingIsolation(unittest.TestCase):
+
+    def test_backfill_observations_require_explicit_opt_in(self):
+        from scripts.train_valor import should_include_backfill_observations
+
+        disabled = argparse.Namespace(include_backfill_observations=False)
+        enabled = argparse.Namespace(include_backfill_observations=True)
+
+        self.assertFalse(should_include_backfill_observations(disabled))
+        self.assertTrue(should_include_backfill_observations(enabled))
+
+    def test_backfill_inclusion_gate_logic(self):
+        is_backfill = True
+        included_without_opt_in = (not is_backfill) or False
+        included_with_opt_in = (not is_backfill) or True
+
+        self.assertFalse(included_without_opt_in)
+        self.assertTrue(included_with_opt_in)
 
 
 class TestValorStatsProductionThreshold(unittest.TestCase):

@@ -61,6 +61,11 @@ def should_upsert_training_samples(args) -> bool:
     return args.mode == "production" and not args.dry_run
 
 
+def should_include_backfill_observations(args) -> bool:
+    """Synthetic *_backfill rows stay out of training unless explicitly enabled."""
+    return bool(getattr(args, "include_backfill_observations", False))
+
+
 def resolve_lab_validation_size(train_valid_count: int) -> int:
     """Use a small newest-slice validation window for lab-only early stopping."""
     if train_valid_count < 5:
@@ -69,6 +74,35 @@ def resolve_lab_validation_size(train_valid_count: int) -> int:
     if train_valid_count - valid_size < 2:
         return 1
     return valid_size
+
+
+def get_lab_blockers(df, source_summary: dict, args) -> list[str]:
+    """Reject low-trust lab candidates by default unless explicitly forced."""
+    if args.mode != "lab" or df.empty:
+        return []
+
+    blockers: list[str] = []
+
+    if source_summary.get("observations", 0) == 0:
+        blockers.append("no_observation_samples")
+
+    product_count = int(df["product_key"].nunique()) if "product_key" in df.columns else 0
+    if product_count < 3:
+        blockers.append("too_few_distinct_products")
+
+    if "observed_at" in df.columns and len(df) > 1:
+        date_range_days = int((df["observed_at"].max() - df["observed_at"].min()).days)
+        if date_range_days < 7:
+            blockers.append("insufficient_time_spread")
+
+    test_size = max(2, int(len(df) * 0.2))
+    if len(df) - test_size < 3:
+        test_size = max(1, len(df) - 2)
+    train_valid_count = len(df.iloc[:-test_size]) if test_size < len(df) else 0
+    if resolve_lab_validation_size(train_valid_count) == 0:
+        blockers.append("no_validation_slice")
+
+    return blockers
 
 
 def combine_training_sources(df_obs, df_val, *, include_valuations: bool):
@@ -231,6 +265,7 @@ def step_etl(engine, args) -> "pd.DataFrame":
         "observed_at", "is_sold", "listing_type", "final_price",
         "suspicious", "price_to_new_ratio", "new_price_at_observation",
     ])
+    df["is_backfill"] = df["source"].fillna("").str.endswith("_backfill")
 
     print(f"  Totalt observationer: {len(df)}")
 
@@ -253,19 +288,26 @@ def step_etl(engine, args) -> "pd.DataFrame":
     df["included"] = (
         (df["quality_score"] >= 0.5) &
         (df["suspicious"] == False) &
+        ((~df["is_backfill"]) | should_include_backfill_observations(args)) &
         (df["price_sek"] >= 200) &
         (df["price_sek"] <= 150_000)
     )
     df["excluded_reason"] = None
     df.loc[df["quality_score"] < 0.5, "excluded_reason"] = "low_quality_score"
     df.loc[df["suspicious"] == True, "excluded_reason"] = "suspicious"
+    df.loc[df["is_backfill"] == True, "excluded_reason"] = "backfill_opt_in_required"
     df.loc[df["price_sek"] < 200, "excluded_reason"] = "price_too_low"
     df.loc[df["price_sek"] > 150_000, "excluded_reason"] = "price_too_high"
+    if should_include_backfill_observations(args):
+        df.loc[df["is_backfill"] == True, "excluded_reason"] = None
 
     included_count = df["included"].sum()
     excluded_count = len(df) - included_count
+    backfill_excluded = int((df["is_backfill"] & ~df["included"]).sum())
     print(f"  Inkluderade: {included_count}")
     print(f"  Exkluderade: {excluded_count}")
+    if backfill_excluded and not should_include_backfill_observations(args):
+        print(f"  Backfill-observationer exkluderade tills opt-in aktiveras: {backfill_excluded}")
     print(f"  [etl.summary] source=price_observation total_read={len(df)} "
           f"included={included_count} excluded_quality={excluded_count} threshold=0.5")
 
@@ -778,6 +820,11 @@ def main():
         action="store_true",
         help="Include valuation-derived samples in lab mode. Production already includes them.",
     )
+    parser.add_argument(
+        "--include-backfill-observations",
+        action="store_true",
+        help="Include synthetic *_backfill observations in training. Off by default.",
+    )
     args = parser.parse_args()
 
     print("════════════════════════════════════")
@@ -810,16 +857,26 @@ def main():
         sys.exit(0)
 
     warnings, critical = step_validate(df)
+    lab_blockers = get_lab_blockers(df, source_summary, args)
+    if lab_blockers:
+        print(f"\n  Lab-blockers: {', '.join(lab_blockers)}")
 
     if args.dry_run:
         print("\n[DRY RUN] Stoppar här — ingen träning.")
         print(f"  Tillgängliga samples: {len(df)}")
         print(f"  Varningar: {warnings or 'Inga'}")
+        if lab_blockers:
+            print(f"  Blockers: {lab_blockers}")
         sys.exit(0)
 
     if critical and not args.force:
         print("\n✗ Kritiska datakvalitetsfel — avbryter.")
         print("  Använd --force för att träna ändå.")
+        sys.exit(1)
+
+    if lab_blockers and not args.force:
+        print("\n✗ Lab-kandidat blockerad av trust-gates.")
+        print("  Använd --force endast för debug, inte som promotionssignal.")
         sys.exit(1)
 
     result = step_train(df, args)

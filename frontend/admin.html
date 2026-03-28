@@ -2234,6 +2234,8 @@ async function loadValorStats() {
     const res = await authFetch('/admin/valor-stats');
     if (!res.ok) { showValorEmpty(`Kunde inte hämta data (${res.status})`); return; }
     const d = await res.json();
+    // training data must be read before any branch that depends on it (TDZ fix)
+    const t = d.training || {};
 
     // Model status
     const modelEl = document.getElementById('valor-model-status');
@@ -2258,10 +2260,16 @@ async function loadValorStats() {
       modelEl.innerHTML = `
         <div style="text-align:center;padding:20px;">
           <div style="font-size:var(--text-sm);font-weight:600;color:var(--accent-warning);margin-bottom:8px;">
-            Modell tränas — för lite data för produktion
+            Ingen aktiv VALOR-modell ännu
           </div>
           <div style="font-size:var(--text-xs);color:var(--text-muted);line-height:1.6;">
+            VALOR använder bara training samples som gått igenom vår ETL och trust-filtrering.<br>
             Modellen aktiveras för slutanvändare vid ${threshold} träningsexempel. Nuvarande: ${t.total_samples || 0} st.
+          </div>
+          <div style="margin-top:10px;padding:8px 12px;background:rgba(212,160,23,0.06);border:1px solid rgba(212,160,23,0.18);border-radius:8px;font-size:var(--text-xs);color:var(--text-muted);line-height:1.6;text-align:left;">
+            Insamlade marknadsjämförelser är inte automatiskt träningsdata för VALOR.<br>
+            VALOR räknar bara training samples som gått igenom ETL och trust-filtrering.<br>
+            Därför kan tusentals jämförelser finnas i systemet samtidigt som VALOR bara har få training samples.
           </div>
         </div>`;
     } else {
@@ -2269,7 +2277,6 @@ async function loadValorStats() {
     }
 
     // Training data
-    const t = d.training || {};
     document.getElementById('valor-total-samples').textContent = (t.total_samples || 0).toLocaleString('sv-SE');
     document.getElementById('valor-included').textContent = (t.included_in_training || 0).toLocaleString('sv-SE');
     document.getElementById('valor-avg-quality').textContent = t.avg_quality_score != null ? t.avg_quality_score.toFixed(2) : '—';

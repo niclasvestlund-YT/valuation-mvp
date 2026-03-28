@@ -1,0 +1,65 @@
+{
+  "created_at": "2026-03-28T13:49:25.594328+00:00",
+  "mode": "production",
+  "product": null,
+  "min_samples": 10,
+  "force": true,
+  "valuations_included": true,
+  "source_summary": {
+    "observations": 0,
+    "valuations": 4,
+    "valuations_included": true,
+    "combined": 4
+  },
+  "metrics": {
+    "mae_sek": 0.01611328125,
+    "mape_pct": 0.00038930372674559076,
+    "within_10pct": 100.0,
+    "within_20pct": 100.0,
+    "vs_baseline_mae": 552.0,
+    "vs_baseline_improvement_pct": 100.0
+  },
+  "windows": {
+    "train_start_at": "2026-03-28T07:26:58.724938",
+    "train_end_at": "2026-03-28T08:16:46.533828",
+    "valid_start_at": null,
+    "valid_end_at": null,
+    "test_start_at": "2026-03-28T08:17:33.656297",
+    "test_end_at": "2026-03-28T08:17:33.656297"
+  },
+  "train_source_breakdown": {
+    "valuation": 3
+  },
+  "valid_source_breakdown": {},
+  "test_source_breakdown": {
+    "valuation": 1
+  },
+  "best_iteration": null,
+  "lab_cv_summary": null,
+  "feature_importance": {
+    "condition_encoded": 0.0,
+    "month_of_year": 0.0,
+    "days_since_observation": 0.0,
+    "price_to_new_ratio": 1.0,
+    "is_sold_int": 0.0,
+    "listing_type_fixed": 0.0,
+    "listing_type_auction": 0.0,
+    "source_valuation": 0.0,
+    "source_crawler": 0.0,
+    "source_agent": 0.0
+  },
+  "warnings": [
+    "Bara 0 produkter med >=10 obs",
+    "All data inom 0 dagar — överfit-risk"
+  ],
+  "artifacts": {
+    "model_path": "/Users/niclasvestlund/Documents/New project/models/valor_v31_20260328.pkl",
+    "features_path": "/Users/niclasvestlund/Documents/New project/models/valor_features.json",
+    "report_path": "/Users/niclasvestlund/Documents/New project/models/reports/valor_v31_20260328.report.json",
+    "latest_path": "/Users/niclasvestlund/Documents/New project/models/valor_latest.pkl"
+  },
+  "activation": {
+    "is_candidate_only": false,
+    "activated": false
+  }
+}

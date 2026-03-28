@@ -6,6 +6,7 @@ Protected by ADMIN_SECRET_KEY via X-Admin-Key header.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -97,6 +98,7 @@ async def _get_median_price(session, product_key: str) -> int | None:
         .where(
             PriceObservation.product_key == product_key,
             PriceObservation.suspicious.is_(False),
+            ~PriceObservation.source.endswith("_backfill"),
         )
         .order_by(PriceObservation.price_sek)
     )
@@ -116,11 +118,21 @@ def _check_accessory(title: str | None) -> bool:
     return any(kw in title_lower for kw in ACCESSORY_KEYWORDS)
 
 
-# ─── Endpoints ───
+def _observed_at_for(obs) -> datetime:
+    observed_at = getattr(obs, "observed_at", None)
+    if observed_at is None:
+        return datetime.now(timezone.utc)
+    if observed_at.tzinfo is None:
+        return observed_at.replace(tzinfo=timezone.utc)
+    return observed_at
 
-@ingest_router.post("/ingest", response_model=IngestResponse)
-async def ingest_observations(req: IngestRequest):
-    """Accept price observations from external agents."""
+
+async def _persist_observations(
+    observations: Sequence[ObservationIn],
+    *,
+    search_terms: list[str] | None = None,
+) -> IngestResponse:
+    """Shared ingest path for API requests and local tools."""
     accepted = 0
     rejected = 0
     suspicious_count = 0
@@ -130,12 +142,12 @@ async def ingest_observations(req: IngestRequest):
 
     async with async_session() as session:
         async with session.begin():
-            first_obs = req.observations[0] if req.observations else None
+            first_obs = observations[0] if observations else None
             job = AgentJob(
                 id=job_id,
                 started_at=datetime.now(timezone.utc),
                 product_key=first_obs.product_key if first_obs else "unknown",
-                search_terms=req.search_terms,
+                search_terms=search_terms,
                 source=first_obs.source if first_obs else "unknown",
                 status="running",
             )
@@ -144,7 +156,7 @@ async def ingest_observations(req: IngestRequest):
         median_cache: dict[str, int | None] = {}
         to_insert: list[PriceObservation] = []
 
-        for obs in req.observations:
+        for obs in observations:
             # ── Hard rejects ──
             if not obs.product_key or not obs.product_key.strip():
                 rejected += 1
@@ -205,6 +217,7 @@ async def ingest_observations(req: IngestRequest):
             row = PriceObservation(
                 id=str(uuid.uuid4()),
                 product_key=pk,
+                observed_at=_observed_at_for(obs),
                 price_sek=obs.price_sek,
                 condition=obs.condition,
                 source=obs.source.strip(),
@@ -246,6 +259,14 @@ async def ingest_observations(req: IngestRequest):
         accepted=accepted, rejected=rejected, suspicious=suspicious_count,
         rejection_reasons=rejection_reasons, agent_job_id=job_id,
     )
+
+
+# ─── Endpoints ───
+
+@ingest_router.post("/ingest", response_model=IngestResponse)
+async def ingest_observations(req: IngestRequest):
+    """Accept price observations from external agents."""
+    return await _persist_observations(req.observations, search_terms=req.search_terms)
 
 
 @ingest_router.post("/agent/job/start", response_model=JobStartResponse)

@@ -391,3 +391,43 @@ class TestTableBrowserHardening:
         )
         # Should fail regex validation (400) or URL parsing (404/422)
         assert r.status_code in (400, 404, 422)
+
+
+# ─── Test group 10: VALOR loadValorStats TDZ regression ───
+
+
+class TestValorTrainingDeclarationOrder:
+    """Regression guard: `const t = d.training || {}` must be declared
+    before any code branch that reads t.total_samples.
+
+    Bug: when `const t` was declared *after* the model-status branch,
+    the no-model-with-training path hit a JS temporal dead zone error,
+    causing a false empty state."""
+
+    def _read_loadValorStats(self):
+        """Extract the loadValorStats function body from admin.html."""
+        with open("frontend/admin.html") as f:
+            content = f.read()
+        start = content.find("async function loadValorStats()")
+        assert start != -1, "loadValorStats function not found"
+        return content[start:]
+
+    def test_training_declared_before_first_use(self):
+        """const t = d.training must appear before t.total_samples."""
+        body = self._read_loadValorStats()
+        decl_pos = body.find("const t = d.training")
+        first_use = body.find("t.total_samples")
+        assert decl_pos != -1, "training declaration not found"
+        assert first_use != -1, "t.total_samples usage not found"
+        assert decl_pos < first_use, (
+            f"TDZ regression: const t declared at offset {decl_pos} "
+            f"but t.total_samples used at {first_use}"
+        )
+
+    def test_no_model_branch_has_explanatory_copy(self):
+        """The no-model-with-training state must explain that
+        market comparables are not automatically training samples."""
+        body = self._read_loadValorStats()
+        assert "training samples" in body.lower() or "träningsdata" in body.lower(), (
+            "Missing explanatory copy about training samples in no-model state"
+        )

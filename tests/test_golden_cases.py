@@ -7,9 +7,10 @@ are discovered.
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from backend.app.core.value_engine import ValueEngine
+from backend.app.integrations.easyocr_client import EasyOcrClient
 from backend.app.schemas.product_identification import ProductIdentificationResult
 
 
@@ -72,6 +73,7 @@ class GoldenTestCases(unittest.TestCase):
     def _run_pipeline(self, vision_result, comparables, new_price):
         engine = ValueEngine()
         with (
+            patch.object(EasyOcrClient, "is_configured", new_callable=PropertyMock, return_value=False),
             patch.object(engine.vision_service, "detect_product", return_value=vision_result),
             patch.object(engine.market_service, "get_comparables", return_value=comparables),
             patch.object(engine.new_price_service, "get_new_price", return_value=new_price),

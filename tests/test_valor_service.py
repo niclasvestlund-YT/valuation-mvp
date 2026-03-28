@@ -1,6 +1,8 @@
 """Tests for VALOR ML pricing service."""
 
+import importlib
 import os
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -34,11 +36,18 @@ class TestValorService(unittest.TestCase):
 
     def test_valor_does_not_crash_on_bad_input(self):
         """predict() with None/None should return None, never crash."""
-        with patch.dict(os.environ, {"USE_MOCK_VALOR": "false"}, clear=False):
-            from backend.app.services.valor_service import ValorService
-            svc = ValorService()
-            result = svc.predict(None, None)
-            self.assertIsNone(result)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.dict(
+                os.environ,
+                {"USE_MOCK_VALOR": "false", "VALOR_MODEL_DIR": tmpdir},
+                clear=False,
+            ):
+                import backend.app.services.valor_service as vs
+                importlib.reload(vs)
+                svc = vs.ValorService()
+                result = svc.predict(None, None)
+                self.assertIsNone(result)
+                importlib.reload(vs)
 
     def test_valor_is_not_available_without_model(self):
         """is_available() should be False without loaded model."""

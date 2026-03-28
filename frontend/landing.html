@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>usevalor — Begagnat teknikvärde, direkt</title>
+<meta name="description" content="Fota din teknikpryl och få ett marknadsvärde baserat på riktiga annonser från Tradera, Blocket och Google Shopping. Under 30 sekunder.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #F7F5F0;
+  --surface:   #EDEAE3;
+  --raised:    #FFFFFF;
+  --border:    #E8E4DB;
+  --border-md: #D5D0C5;
+  --ink:       #2C2A25;
+  --ink2:      #5C5850;
+  --ink3:      #6B6660;
+  --ink4:      #7A756F;
+  --serif: 'DM Serif Display', Georgia, serif;
+  --sans:  'DM Sans', system-ui, -apple-system, sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+.wrap{max-width:680px;margin:0 auto;padding:0 24px}
+img{max-width:100%;display:block}
+
+/* ─── NAV ─── */
+.nav{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:680px;margin:0 auto}
+.nav-logo{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.02em;text-decoration:none}
+.nav-btns{display:flex;gap:8px}
+.btn-outline{border:1.5px solid var(--border-md);background:transparent;color:var(--ink2);border-radius:12px;padding:8px 18px;font-size:13px;font-family:var(--sans);cursor:pointer;font-weight:500}
+.btn-solid{background:var(--ink);color:var(--bg);border:none;border-radius:12px;padding:9px 18px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+
+/* ─── HERO ─── */
+.hero{padding:60px 0 52px}
+.eyebrow{display:inline-block;font-family:var(--sans);font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:0.14em;text-transform:uppercase;border:1.5px solid var(--border-md);border-radius:6px;padding:5px 12px;margin-bottom:28px}
+.hero h1{font-family:var(--serif);font-size:clamp(42px,9vw,60px);font-weight:400;color:var(--ink);line-height:1.06;letter-spacing:-0.025em;max-width:520px;margin-bottom:24px}
+.hero h1 em{font-style:italic;color:var(--ink)}
+.hero-sub{font-family:var(--sans);font-size:17px;color:var(--ink2);line-height:1.72;max-width:46ch;margin-bottom:36px}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.btn-primary{background:var(--ink);color:var(--bg);border:none;border-radius:14px;padding:16px 28px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);display:inline-flex;align-items:center;gap:9px}
+.btn-secondary{background:transparent;color:var(--ink2);border:1.5px solid var(--border-md);border-radius:14px;padding:15px 22px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--sans);display:inline-flex;align-items:center;gap:8px}
+.hero-meta{font-family:var(--sans);font-size:13px;color:var(--ink3);margin-bottom:52px}
+.hero-grid{display:grid;gap:20px}
+@media(max-width:560px){.hero-grid{grid-template-columns:1fr}}
+@media(min-width:561px){.hero-grid{grid-template-columns:1fr 1fr}}
+
+/* Photo mockup */
+.photo-mock{background:var(--surface);border-radius:16px;border:1px solid var(--border);aspect-ratio:1/1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:260px}
+.photo-badge{position:absolute;bottom:10px;left:10px;background:var(--ink);color:var(--bg);font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;border-radius:5px}
+
+/* Value card */
+.val-card{background:var(--raised);border:1px solid var(--border);border-radius:20px;padding:22px;box-shadow:0 1px 16px rgba(44,42,37,0.05)}
+.val-product{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.val-icon-box{width:44px;height:44px;background:var(--surface);border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.val-pname{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--ink)}
+.val-psub{font-family:var(--sans);font-size:12px;color:var(--ink3)}
+.val-label{font-family:var(--sans);font-size:10px;font-weight:700;color:var(--ink4);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:5px}
+.val-estimate{font-family:var(--serif);font-size:44px;font-weight:700;color:var(--ink);letter-spacing:-0.03em;line-height:1;margin-bottom:8px}
+.val-info{font-family:var(--sans);font-size:13px;color:var(--ink3);margin-bottom:16px}
+.val-info b{font-weight:700;color:var(--ink2)}
+.retention-box{background:var(--surface);border-radius:11px;padding:12px 14px;margin-bottom:14px}
+.retention-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.retention-left{font-family:var(--sans);font-size:12px;color:var(--ink3)}
+.retention-left b{font-weight:700;color:var(--ink2)}
+.retention-pct{font-size:15px;font-weight:700;color:var(--ink)}
+.bar-bg{height:5px;background:var(--border-md);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;background:var(--ink);border-radius:3px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--surface);border:1px solid var(--border-md);border-radius:999px;padding:4px 11px;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink2)}
+
+/* ─── TRUST ─── */
+.trust{border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;max-width:680px;margin:0 auto}
+.trust-cell{flex:1;padding:20px 12px;text-align:center;border-right:1px solid var(--border)}
+.trust-cell:last-child{border-right:none}
+.trust-num{font-family:var(--serif);font-size:18px;color:var(--ink);letter-spacing:-0.02em;margin-bottom:4px}
+.trust-label{font-family:var(--sans);font-size:12px;color:var(--ink3);line-height:1.4}
+
+/* ─── HOW ─── */
+.how{padding:72px 0;background:var(--bg)}
+.section-label{font-family:var(--sans);font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:12px}
+.section-h2{font-family:var(--serif);font-size:clamp(26px,5vw,34px);color:var(--ink);font-weight:400;letter-spacing:-0.02em;margin-bottom:12px;line-height:1.2}
+.section-intro{font-family:var(--sans);font-size:15px;color:var(--ink2);line-height:1.72;max-width:58ch}
+.steps{margin-top:36px}
+.step{display:flex;gap:20px;padding:28px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-num{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border-md);display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:12px;font-weight:700;color:var(--ink3);flex-shrink:0;margin-top:3px}
+.step-kicker{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink4);margin-bottom:6px}
+.step-title{font-family:var(--serif);color:var(--ink);line-height:1.28;margin-bottom:9px}
+.step-body{font-family:var(--sans);font-size:14px;color:var(--ink2);line-height:1.72;max-width:52ch}
+
+/* ─── TESTIMONIAL ─── */
+.testimonial{padding:0 0 64px;background:var(--bg)}
+.testimonial-inner{border-left:3px solid var(--border-md);padding-left:24px}
+.testimonial-quote{font-family:var(--serif);font-size:19px;font-style:italic;color:var(--ink);line-height:1.55;margin-bottom:14px}
+.testimonial-source{font-family:var(--sans);font-size:13px;color:var(--ink3)}
+.testimonial-source b{font-weight:600;color:var(--ink2)}
+
+/* ─── WHY TRUST ─── */
+.why-trust{padding:72px 0;background:var(--surface)}
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px}
+@media(max-width:480px){.trust-grid{grid-template-columns:1fr}}
+.trust-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px 18px}
+.trust-card-icon{width:32px;height:32px;background:var(--surface);border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:center}
+.trust-card h3{font-family:var(--serif);font-size:15px;color:var(--ink);margin-bottom:7px;line-height:1.35;font-weight:400}
+.trust-card p{font-family:var(--sans);font-size:13px;color:var(--ink2);line-height:1.65}
+
+/* ─── CATEGORIES ─── */
+.categories{padding:72px 0;background:var(--bg)}
+.cat-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.cat-chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink2)}
+.example-card{margin-top:20px;background:var(--raised);border:1px solid var(--border);border-radius:16px;padding:20px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}
+@media(max-width:480px){.example-card{grid-template-columns:1fr}}
+.example-label{font-size:10px;font-weight:700;color:var(--ink4);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px}
+.example-text{font-size:14px;color:var(--ink2);line-height:1.6}
+.example-text b{font-weight:700;color:var(--ink)}
+.example-price{font-family:var(--serif);font-size:28px;color:var(--ink);letter-spacing:-0.02em;text-align:right}
+.example-comps{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink3);text-align:right;margin-top:4px}
+.cat-foot{font-size:13px;color:var(--ink3);margin-top:16px}
+.cat-foot a{color:var(--ink2);text-decoration:underline}
+
+/* ─── FAQ ─── */
+.faq{padding:64px 0;background:var(--surface)}
+.faq-item{border-top:1px solid var(--border)}
+.faq-item:last-child{border-bottom:1px solid var(--border)}
+.faq-question{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;cursor:pointer;font-family:var(--serif);font-size:15px;color:var(--ink);user-select:none;background:none;border:none;width:100%;text-align:left}
+.faq-question svg{flex-shrink:0;transition:transform 0.22s ease;color:var(--ink3)}
+.faq-question.open svg{transform:rotate(180deg)}
+.faq-answer{font-family:var(--sans);font-size:14px;color:var(--ink2);line-height:1.72;padding-bottom:20px;max-width:56ch;display:none}
+.faq-answer.open{display:block}
+
+/* ─── FINAL CTA ─── */
+.final-cta{background:var(--ink);padding:80px 24px;text-align:center}
+.final-cta .section-label{color:#706B66}
+.final-cta h2{font-family:var(--serif);font-size:clamp(32px,6vw,48px);font-weight:400;color:var(--bg);line-height:1.14;letter-spacing:-0.025em;margin-bottom:16px}
+.final-cta p{font-family:var(--sans);font-size:15px;color:#A8A39D;line-height:1.7;max-width:38ch;margin:0 auto 36px}
+.btn-cta-inv{background:var(--bg);color:var(--ink);border:none;border-radius:14px;padding:17px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);display:inline-flex;align-items:center;gap:9px;letter-spacing:-0.01em}
+.final-foot{font-family:var(--sans);font-size:12px;color:#706B66;margin-top:18px;display:block}
+
+/* ─── FOOTER ─── */
+.footer{border-top:1px solid var(--border);background:var(--bg)}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:22px 24px;max-width:680px;margin:0 auto}
+.footer-brand{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-0.02em}
+.footer-links{display:flex;gap:16px}
+.footer-links a{font-family:var(--sans);font-size:12px;color:var(--ink3);text-decoration:underline;text-decoration-color:var(--border-md);cursor:pointer}
+.footer-copy{font-family:var(--sans);font-size:12px;color:var(--ink3)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">usevalor</a>
+    <div class="nav-btns">
+      <button class="btn-outline">Logga in</button>
+      <button class="btn-solid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Testa gratis</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">BEGAGNAT TEKNIKV&Auml;RDE &middot; SVERIGE</div>
+    <h1>S&auml;lj r&auml;tt.<br>K&ouml;p r&auml;tt.<br><em>Vet vad det &auml;r v&auml;rt.</em></h1>
+    <p class="hero-sub">Tradera &auml;r ett kaos av under- och &ouml;verprisade annonser. Att kolla manuellt tar 20 minuter &mdash; och du &auml;r fortfarande inte s&auml;ker. Usevalor sorterar igenom dem &aring;t dig och ger dig det pris du faktiskt kan s&auml;lja f&ouml;r.</p>
+    <div class="hero-btns">
+      <button class="btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>V&auml;rdera din pryl</button>
+      <button class="btn-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Hur det fungerar</button>
+    </div>
+    <p class="hero-meta">Gratis att testa &middot; Inget konto kr&auml;vs &middot; Svar p&aring; under 30 sekunder</p>
+
+    <div class="hero-grid">
+      <!-- Photo mockup -->
+      <div class="photo-mock">
+        <svg viewBox="0 0 260 260" width="100%" style="max-width:260px">
+          <rect width="260" height="260" fill="#EDEAE3"/>
+          <ellipse cx="130" cy="105" rx="72" ry="72" fill="#D5D0C5" opacity="0.3"/>
+          <rect x="46" y="110" width="38" height="54" rx="13" fill="#2C2A25"/>
+          <rect x="50" y="114" width="30" height="46" rx="10" fill="#3D3B36"/>
+          <rect x="176" y="110" width="38" height="54" rx="13" fill="#2C2A25"/>
+          <rect x="180" y="114" width="30" height="46" rx="10" fill="#3D3B36"/>
+          <path d="M64 130 C64 66 196 66 196 130" stroke="#2C2A25" stroke-width="15" stroke-linecap="round" fill="none"/>
+          <path d="M68 128 C68 72 192 72 192 128" stroke="#3D3B36" stroke-width="9" stroke-linecap="round" fill="none"/>
+          <circle cx="64" cy="130" r="6" fill="#5C5850"/>
+          <circle cx="196" cy="130" r="6" fill="#5C5850"/>
+          <rect x="123" y="66" width="14" height="8" rx="3" fill="#5C5850"/>
+          <ellipse cx="130" cy="188" rx="52" ry="9" fill="#2C2A25" opacity="0.06"/>
+        </svg>
+        <span class="photo-badge">DITT FOTO</span>
+      </div>
+
+      <!-- Value card -->
+      <div class="val-card">
+        <div class="val-product">
+          <div class="val-icon-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+          <div style="flex:1"><div class="val-pname">Sony WH-1000XM4</div><div class="val-psub">Tr&aring;dl&ouml;sa h&ouml;rlurar &middot; Identifierad &#10003;</div></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;flex-shrink:0"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        </div>
+        <div class="val-label">BEGAGNAT MARKNADSV&Auml;RDE</div>
+        <div class="val-estimate">2 950 kr</div>
+        <div class="val-info"><b>2 600&ndash;3 500 kr</b> &middot; H&ouml;g konfidens &middot; <b>18 k&auml;llor</b></div>
+        <div class="retention-box">
+          <div class="retention-row">
+            <span class="retention-left">Nypris <b>3 990 kr</b> &rarr; du beh&aring;ller</span>
+            <span class="retention-pct">74%</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:74%"></div></div>
+        </div>
+        <div class="chips"><span class="chip">Tradera: 14</span><span class="chip">Google Shopping: 4</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust">
+  <div class="trust-cell"><div class="trust-num">Tradera + Blocket + Google</div><div class="trust-label">Tre k&auml;llor i varje estimat</div></div>
+  <div class="trust-cell"><div class="trust-num">18+ j&auml;mf&ouml;relser</div><div class="trust-label">Medianpris &mdash; inte enstaka annonser</div></div>
+  <div class="trust-cell"><div class="trust-num">Under 30 sek</div><div class="trust-label">Fr&aring;n foto till f&auml;rdigt estimat</div></div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="section-label">S&Aring; FUNKAR DET</div>
+    <h2 class="section-h2">Tre steg. Inga manuella s&ouml;kningar.</h2>
+    <p class="section-intro">Det som annars tar 20 minuter och fortfarande l&auml;mnar dig os&auml;ker &mdash; l&ouml;ser Usevalor p&aring; under 30 sekunder.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-kicker">STEG ETT</div>
+          <div class="step-title" style="font-size:20px">En bild r&auml;cker</div>
+          <p class="step-body">Fota produkten med din telefon. Usevalor identifierar m&auml;rke, modell och variant automatiskt &mdash; inga formul&auml;r, inget att skriva. Beh&ouml;vs fler bilder ber vi om dem.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-kicker">STEG TV&Aring;</div>
+          <div class="step-title" style="font-size:23px">Vi g&ouml;r de 20 minuternas s&ouml;kning p&aring; 20 sekunder</div>
+          <p class="step-body">Systemet h&auml;mtar aktuella annonser fr&aring;n Tradera, Blocket och Google Shopping, filtrerar bort irrelevanta tr&auml;ffar och r&auml;knar ut ett medianpris fr&aring;n vad liknande produkter faktiskt s&aring;lts f&ouml;r &mdash; inte vad folk hoppas p&aring;.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-kicker">STEG TRE</div>
+          <div class="step-title" style="font-size:20px">Du vet vad du kan beg&auml;ra &mdash; och varf&ouml;r</div>
+          <p class="step-body">Du ser prisspannet, konfidensen och exakt hur m&aring;nga annonser estimatet grundas p&aring;. Hellre ett &auml;rligt &rdquo;vi vet inte&rdquo; &auml;n ett missvisande v&auml;rde.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial">
+  <div class="wrap">
+    <div class="testimonial-inner">
+      <p class="testimonial-quote">&ldquo;Jag hade satt ett pris som var 600 kr f&ouml;r l&aring;gt. Usevalor visade direkt att liknande MacBook Air s&auml;ljs f&ouml;r 8 500&ndash;9 200 kr p&aring; Tradera just nu. Den gick p&aring; 8 900 kr samma dag.&rdquo;</p>
+      <p class="testimonial-source"><b>S&auml;ljare p&aring; Blocket, G&ouml;teborg</b> &middot; MacBook Air M1, 2021</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHY TRUST -->
+<section class="why-trust">
+  <div class="wrap">
+    <div class="section-label">VARF&Ouml;R LITA P&Aring; ESTIMATET</div>
+    <h2 class="section-h2">Evidens, inte gissningar</h2>
+    <div class="trust-grid">
+      <div class="trust-card">
+        <div class="trust-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Du ser alltid varifr&aring;n priset kommer</h3>
+        <p>Tradera: 14 annonser. Google Shopping: 4. Varje datapunkt &auml;r namngiven. Inget d&ouml;ljer sig bakom ett snitt.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <h3>Vi s&auml;ger aldrig ett pris vi inte kan bel&auml;gga</h3>
+        <p>Om datan &auml;r tunn s&auml;ger vi det rakt ut. Hellre &auml;rlig os&auml;kerhet &auml;n ett falskt precist v&auml;rde.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <h3>Priserna &auml;r fr&aring;n idag &mdash; inte f&ouml;rra m&aring;naden</h3>
+        <p>Varje s&ouml;kning h&auml;mtar annonser i realtid. Marknaden f&ouml;r&auml;ndras &mdash; estimaten med den.</p>
+      </div>
+      <div class="trust-card">
+        <div class="trust-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h3>Extremannonser p&aring;verkar inte ditt estimat</h3>
+        <p>Den som s&auml;ljer sin iPhone f&ouml;r 200 kr drar inte ner ditt pris. Vi anv&auml;nder median, inte snitt.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="categories">
+  <div class="wrap">
+    <div class="section-label">PRODUKTKATEGORIER</div>
+    <h2 class="section-h2">Fungerar f&ouml;r de vanligaste teknikprylarna</h2>
+    <p class="section-intro">Usevalor k&auml;nner till prism&ouml;nster f&ouml;r popul&auml;ra konsumentkategorier och vet hur v&auml;rdet r&ouml;r sig med modell, &aring;lder och skick.</p>
+    <div class="cat-chips">
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>Mobiltelefoner</span>
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>Datorer &amp; Mac</span>
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>H&ouml;rlurar</span>
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M9 2h6M12 2v2"/></svg>Smartklockor</span>
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>Surfplattor</span>
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M18 12h.01"/><circle cx="12" cy="12" r="2"/></svg>Spel &amp; konsoler</span>
+      <span class="cat-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6660" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Kameror &amp; dr&ouml;nare</span>
+    </div>
+    <div class="example-card">
+      <div>
+        <div class="example-label">EXEMPEL &middot; IPHONE 14 PRO 128 GB &middot; GOTT SKICK</div>
+        <p class="example-text">V&auml;rderades till <b>4 850 kr</b> baserat p&aring; 22 annonser fr&aring;n Tradera och Blocket. Spann 4 500&ndash;5 300 kr. H&ouml;g konfidens.</p>
+      </div>
+      <div>
+        <div class="example-price">4 850 kr</div>
+        <div class="example-comps">22 j&auml;mf&ouml;relser</div>
+      </div>
+    </div>
+    <p class="cat-foot">Fler kategorier l&auml;ggs till l&ouml;pande. Saknar du n&aring;got? <a href="#">Ber&auml;tta.</a></p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="wrap">
+    <div class="section-label">VANLIGA FR&Aring;GOR</div>
+    <h2 class="section-h2" style="margin-bottom:32px">Det du undrar &ouml;ver</h2>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Hur exakt &auml;r v&auml;rderingen?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="faq-answer">Usevalor ger aldrig ett p&aring;hittat exaktpris. Vi ber&auml;knar ett median baserat p&aring; faktiska j&auml;mf&ouml;relseobjekt och visar alltid ett spann. Om datan &auml;r tunn s&auml;ger vi det &mdash; hellre ett &auml;rligt &rdquo;vi vet inte&rdquo; &auml;n ett falskt precist v&auml;rde.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Vilka marknadsplatser anv&auml;nds?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="faq-answer">Vi h&auml;mtar data fr&aring;n Tradera och Blocket f&ouml;r begagnatpriser, och Google Shopping f&ouml;r nypris. Alla k&auml;llor namnges i estimatet &mdash; du ser exakt vad ditt estimat grundar sig p&aring;.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Fungerar det f&ouml;r produkter utanf&ouml;r Sverige?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="faq-answer">Just nu &auml;r Usevalor anpassat f&ouml;r den svenska begagnatmarknaden. Bredare marknadsst&ouml;d &auml;r planerat.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Vad h&auml;nder om produkten inte kan identifieras?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="faq-answer">Vi ber dig ta fler bilder &mdash; g&auml;rna med modellnummer eller etikett synlig. Om vi &auml;nd&aring; &auml;r os&auml;kra visar vi vilka modeller det kan r&ouml;ra sig om och ber dig bekr&auml;fta, ist&auml;llet f&ouml;r att gissa.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">Kostar det n&aring;got?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="faq-answer">Grundl&auml;ggande v&auml;rderingar &auml;r kostnadsfria. Vi kommunicerar i f&ouml;rv&auml;g om och n&auml;r priss&auml;ttning introduceras.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="section-label">KOM IG&Aring;NG NU</div>
+  <h2>Fota din pryl.<br>Se vad den &auml;r v&auml;rd.</h2>
+  <p>Ladda upp ett foto och f&aring; ett estimat p&aring; under 30 sekunder. Inget konto, inga formul&auml;r &mdash; gratis att testa.</p>
+  <button class="btn-cta-inv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>V&auml;rdera gratis</button>
+  <span class="final-foot">Drivs av ValorAI &middot; Estimat &auml;r r&aring;dgivande, inte garanti</span>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="footer-brand">usevalor.com</span>
+    <div class="footer-links"><a>Integritetspolicy</a><a>Kontakt</a></div>
+    <span class="footer-copy">&copy; 2026</span>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(el){
+  const answer=el.nextElementSibling;
+  const isOpen=answer.classList.contains('open');
+  document.querySelectorAll('.faq-answer').forEach(a=>{a.classList.remove('open');a.style.display='none'});
+  document.querySelectorAll('.faq-question').forEach(q=>q.classList.remove('open'));
+  if(!isOpen){el.classList.add('open');answer.classList.add('open');answer.style.display='block'}
+}
+</script>
+</body>
+</html>
