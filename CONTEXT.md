@@ -180,6 +180,7 @@ GET /health — returns JSON {"status": "ok", "version": "...", "build_sha": "..
 - Admin panel: HTML shell still publicly served; XSS now mitigated via esc() helper; exception leakage removed
 
 ## Recent Changes
+2026-03-29 — fix: admin v17 — loadOv/loadCr null-safety, all ge() calls guarded to prevent crash when elements missing
 2026-03-29 — feat: admin UI v17 — Crawler redesign (source cards, listing feed, coverage bars, priority schedule), Översikt redesign (hero KPI trio, projektkostnad, milstolpar), DnD section reorder, swipe-to-hide (mobile), context menus, hidden-section pills
 2026-03-28 — feat: HTML cache headers v2 — Cache-Control: no-cache on / and /admin FileResponses, preserves ETag/Last-Modified for 304, 4 new tests
 2026-03-28 — feat: versioning v1 — BUILD_SHA from env var in version.py, /health exposes build_sha, admin sidebar reads version from backend, removed hardcoded v16 strings, 6 new tests
@@ -192,7 +193,6 @@ GET /health — returns JSON {"status": "ok", "version": "...", "build_sha": "..
 2026-03-28 — deploy: Railway pre-prod live — valor-models volume, first VALOR training (3 samples, MAE 1189 kr, MAPE 28.7%), model persists across restarts, threshold set to 50
 2026-03-28 — security: admin phase 2 — esc() XSS helper on all API data in innerHTML, renderSectionState() for consistent loader states, str(exc) removed from all HTTP error responses, table browser hardened via ALLOWED_TABLES allowlist, 10 new tests
 2026-03-28 — fix: admin phase 1 security — admin key memory-only (no localStorage), auth gate before fetches, 401/403 re-auth, demo fallback removed, status_breakdown metrics bug fixed, local valuation_history removed from admin, 7 new tests
-2026-03-28 — feat: VALOR production activation + readiness — Railway volume, threshold gate (50 samples), ETL guards, admin VALOR health + training CTA
 
 ## Next Up
 - Backfill price observations from existing comparables to bootstrap VALOR training data toward 50-sample threshold
